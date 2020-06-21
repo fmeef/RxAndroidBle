@@ -11,7 +11,7 @@ import org.robolectric.annotation.Config
 import static com.polidea.rxandroidble2.RxBleAdapterStateObservable.BleAdapterState.*
 
 @Config(manifest = Config.NONE)
-class RxBleAdapterStateObservableTest extends ElectricSpecification {
+class RxBleAdapterClientStateObservableTest extends ElectricSpecification {
     def contextMock = Mock Context
     def objectUnderTest = new RxBleAdapterStateObservable(contextMock)
     BroadcastReceiver registeredReceiver

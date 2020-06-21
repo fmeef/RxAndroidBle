@@ -5,13 +5,12 @@ import androidx.annotation.NonNull;
 
 import com.polidea.rxandroidble2.ClientComponent;
 import com.polidea.rxandroidble2.RxBleAdapterStateObservable;
-import com.polidea.rxandroidble2.RxBleClient;
+import com.polidea.rxandroidble2.RxBleBase;
 
 import java.util.concurrent.TimeUnit;
 
 import bleshadow.javax.inject.Inject;
 import bleshadow.javax.inject.Named;
-
 import io.reactivex.Observable;
 import io.reactivex.Observer;
 import io.reactivex.Scheduler;
@@ -24,9 +23,9 @@ import io.reactivex.functions.Predicate;
  * The Observable class which emits changes to the Client State. These can be useful for evaluating if particular functionality
  * of the library has a chance to work properly.
  * <p>
- * For more info check {@link RxBleClient.State}
+ * For more info check {@link RxBleBase.State}
  */
-public class ClientStateObservable extends Observable<RxBleClient.State> {
+public class ClientStateObservable extends Observable<RxBleBase.State> {
 
     final RxBleAdapterWrapper rxBleAdapterWrapper;
     final Observable<RxBleAdapterStateObservable.BleAdapterState> bleAdapterStateObservable;
@@ -79,7 +78,7 @@ public class ClientStateObservable extends Observable<RxBleClient.State> {
     }
 
     @NonNull
-    static Observable<RxBleClient.State> checkAdapterAndServicesState(
+    static Observable<RxBleBase.State> checkAdapterAndServicesState(
             RxBleAdapterWrapper rxBleAdapterWrapper,
             Observable<RxBleAdapterStateObservable.BleAdapterState> rxBleAdapterStateObservable,
             final Observable<Boolean> locationServicesOkObservable
@@ -92,18 +91,18 @@ public class ClientStateObservable extends Observable<RxBleClient.State> {
                          * we only check if it is STATE_ON or not
                          */
                         : RxBleAdapterStateObservable.BleAdapterState.STATE_OFF)
-                .switchMap(new Function<RxBleAdapterStateObservable.BleAdapterState, Observable<RxBleClient.State>>() {
+                .switchMap(new Function<RxBleAdapterStateObservable.BleAdapterState, Observable<RxBleBase.State>>() {
                     @Override
-                    public Observable<RxBleClient.State> apply(
+                    public Observable<RxBleBase.State> apply(
                             RxBleAdapterStateObservable.BleAdapterState bleAdapterState) {
                         if (bleAdapterState != RxBleAdapterStateObservable.BleAdapterState.STATE_ON) {
-                            return Observable.just(RxBleClient.State.BLUETOOTH_NOT_ENABLED);
+                            return Observable.just(RxBleBase.State.BLUETOOTH_NOT_ENABLED);
                         } else {
-                            return locationServicesOkObservable.map(new Function<Boolean, RxBleClient.State>() {
+                            return locationServicesOkObservable.map(new Function<Boolean, RxBleBase.State>() {
                                 @Override
-                                public RxBleClient.State apply(Boolean locationServicesOk) {
-                                    return locationServicesOk ? RxBleClient.State.READY
-                                            : RxBleClient.State.LOCATION_SERVICES_NOT_ENABLED;
+                                public RxBleBase.State apply(Boolean locationServicesOk) {
+                                    return locationServicesOk ? RxBleBase.State.READY
+                                            : RxBleBase.State.LOCATION_SERVICES_NOT_ENABLED;
                                 }
                             });
                         }
@@ -112,7 +111,7 @@ public class ClientStateObservable extends Observable<RxBleClient.State> {
     }
 
     @Override
-    protected void subscribeActual(Observer<? super RxBleClient.State> observer) {
+    protected void subscribeActual(Observer<? super RxBleBase.State> observer) {
         if (!rxBleAdapterWrapper.hasBluetoothAdapter()) {
             observer.onSubscribe(Disposables.empty());
             observer.onComplete();
@@ -120,10 +119,10 @@ public class ClientStateObservable extends Observable<RxBleClient.State> {
         }
 
         checkPermissionUntilGranted(locationServicesStatus, timerScheduler)
-                .flatMapObservable(new Function<Boolean, Observable<RxBleClient.State>>() {
+                .flatMapObservable(new Function<Boolean, Observable<RxBleBase.State>>() {
                     @Override
-                    public Observable<RxBleClient.State> apply(Boolean permissionWasInitiallyGranted) {
-                        Observable<RxBleClient.State> stateObservable = checkAdapterAndServicesState(
+                    public Observable<RxBleBase.State> apply(Boolean permissionWasInitiallyGranted) {
+                        Observable<RxBleBase.State> stateObservable = checkAdapterAndServicesState(
                                 rxBleAdapterWrapper,
                                 bleAdapterStateObservable,
                                 locationServicesOkObservable
