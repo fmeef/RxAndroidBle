@@ -8,10 +8,12 @@ import android.bluetooth.le.BluetoothLeScanner;
 import android.bluetooth.le.ScanCallback;
 import android.bluetooth.le.ScanFilter;
 import android.bluetooth.le.ScanSettings;
+
 import androidx.annotation.Nullable;
 import androidx.annotation.RequiresApi;
 
 import com.polidea.rxandroidble2.internal.RxBleLog;
+
 import java.util.List;
 import java.util.Set;
 

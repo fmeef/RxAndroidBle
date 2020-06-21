@@ -4,7 +4,7 @@ import android.bluetooth.BluetoothDevice;
 
 import com.jakewharton.rxrelay2.BehaviorRelay;
 import com.polidea.rxandroidble2.ClientComponent;
-import com.polidea.rxandroidble2.ClientComponent.NamedSchedulers;
+import com.polidea.rxandroidble2.RxBleComponent.NamedSchedulers;
 import com.polidea.rxandroidble2.RxBleConnection;
 import com.polidea.rxandroidble2.RxBleDevice;
 import com.polidea.rxandroidble2.internal.connection.ConnectionComponent;

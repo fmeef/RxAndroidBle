@@ -442,7 +442,7 @@ public interface RxBleConnection {
      */
     LongWriteOperationBuilder createNewLongWriteBuilder();
 
-    /**
+    /**LongWriteOperation
      * Performs GATT read operation on a descriptor from a characteristic with a given UUID from a service with a given UUID.
      *
      * @param serviceUuid Requested {@link android.bluetooth.BluetoothGattService} UUID
