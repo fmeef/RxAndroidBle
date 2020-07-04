@@ -76,7 +76,7 @@ public abstract class ConnectionModule {
     }
 
     @Provides
-    static BluetoothGatt provideBluetoothGatt(BluetoothGattProvider bluetoothGattProvider) {
+    static BluetoothGatt provideBluetoothGatt(BluetoothGattProvider<BluetoothGatt> bluetoothGattProvider) {
         return bluetoothGattProvider.getBluetoothGatt();
     }
 

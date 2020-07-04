@@ -42,7 +42,7 @@ public class ConnectOperation extends QueueOperation<BluetoothGatt> {
     final BluetoothDevice bluetoothDevice;
     final BleConnectionCompat connectionCompat;
     final RxBleGattCallback rxBleGattCallback;
-    final BluetoothGattProvider bluetoothGattProvider;
+    final BluetoothGattProvider<BluetoothGatt> bluetoothGattProvider;
     final TimeoutConfiguration connectTimeout;
     final boolean autoConnect;
     final ConnectionStateChangeListener connectionStateChangedAction;
@@ -52,7 +52,7 @@ public class ConnectOperation extends QueueOperation<BluetoothGatt> {
             BluetoothDevice bluetoothDevice,
             BleConnectionCompat connectionCompat,
             RxBleGattCallback rxBleGattCallback,
-            BluetoothGattProvider bluetoothGattProvider,
+            BluetoothGattProvider<BluetoothGatt> bluetoothGattProvider,
             @Named(CONNECT_TIMEOUT) TimeoutConfiguration connectTimeout,
             @Named(AUTO_CONNECT) boolean autoConnect,
             ConnectionStateChangeListener connectionStateChangedAction) {

@@ -4,6 +4,7 @@ package com.polidea.rxandroidble2.internal.connection;
 import android.bluetooth.BluetoothGatt;
 import com.polidea.rxandroidble2.exceptions.BleDisconnectedException;
 import com.polidea.rxandroidble2.exceptions.BleGattException;
+import com.polidea.rxandroidble2.exceptions.BleGattServerException;
 
 /**
  * Interface for routing causes of the disconnection. This may be for instance errors caused by
@@ -24,4 +25,16 @@ interface DisconnectionRouterInput {
      * @param disconnectedGattException the exception that happened
      */
     void onGattConnectionStateException(BleGattException disconnectedGattException);
+
+    /**
+     * Method to be called whenever a BluetoothGattServerCallback.onConnectionStateChange() will
+     * get called with status != GATT_SUCCESS
+     *
+     * @param disconnectedGattException the exception that happened
+     */
+    void onGattConnectionStateException(BleGattServerException disconnectedGattException);
+
+
+
+
 }

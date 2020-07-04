@@ -36,7 +36,7 @@ import static com.polidea.rxandroidble2.RxBleConnection.RxBleConnectionState.DIS
 public class DisconnectOperation extends QueueOperation<Void> {
 
     private final RxBleGattCallback rxBleGattCallback;
-    private final BluetoothGattProvider bluetoothGattProvider;
+    private final BluetoothGattProvider<BluetoothGatt> bluetoothGattProvider;
     private final String macAddress;
     private final BluetoothManager bluetoothManager;
     private final Scheduler bluetoothInteractionScheduler;
@@ -46,7 +46,7 @@ public class DisconnectOperation extends QueueOperation<Void> {
     @Inject
     DisconnectOperation(
             RxBleGattCallback rxBleGattCallback,
-            BluetoothGattProvider bluetoothGattProvider,
+            BluetoothGattProvider<BluetoothGatt> bluetoothGattProvider,
             @Named(DeviceModule.MAC_ADDRESS) String macAddress,
             BluetoothManager bluetoothManager,
             @Named(ClientComponent.NamedSchedulers.BLUETOOTH_INTERACTION) Scheduler bluetoothInteractionScheduler,

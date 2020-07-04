@@ -6,6 +6,7 @@ import com.polidea.rxandroidble2.RxBleAdapterStateObservable;
 import com.polidea.rxandroidble2.exceptions.BleDisconnectedException;
 import com.polidea.rxandroidble2.exceptions.BleException;
 import com.polidea.rxandroidble2.exceptions.BleGattException;
+import com.polidea.rxandroidble2.exceptions.BleGattServerException;
 import com.polidea.rxandroidble2.internal.DeviceModule;
 import com.polidea.rxandroidble2.internal.RxBleLog;
 import com.polidea.rxandroidble2.internal.util.RxBleAdapterWrapper;
@@ -24,7 +25,7 @@ import io.reactivex.functions.Predicate;
  * A class that is responsible for routing all potential sources of disconnection to an Observable that emits only errors.
  */
 @ConnectionScope
-class DisconnectionRouter implements DisconnectionRouterInput, DisconnectionRouterOutput {
+public class DisconnectionRouter implements DisconnectionRouterInput, DisconnectionRouterOutput {
 
     private final BehaviorRelay<BleException> bleExceptionBehaviorRelay = BehaviorRelay.create();
     private final Observable<BleException> firstDisconnectionValueObs;
@@ -112,6 +113,11 @@ class DisconnectionRouter implements DisconnectionRouterInput, DisconnectionRout
 
     @Override
     public void onGattConnectionStateException(BleGattException disconnectedGattException) {
+        bleExceptionBehaviorRelay.accept(disconnectedGattException);
+    }
+
+    @Override
+    public void onGattConnectionStateException(BleGattServerException disconnectedGattException) {
         bleExceptionBehaviorRelay.accept(disconnectedGattException);
     }
 
