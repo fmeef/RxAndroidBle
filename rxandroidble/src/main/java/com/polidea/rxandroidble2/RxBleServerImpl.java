@@ -1,26 +1,18 @@
 package com.polidea.rxandroidble2;
 
 import android.bluetooth.BluetoothDevice;
-import android.bluetooth.BluetoothGatt;
-import android.bluetooth.BluetoothGattCharacteristic;
-import android.bluetooth.BluetoothGattDescriptor;
 import android.bluetooth.BluetoothGattServer;
-import android.bluetooth.BluetoothGattServerCallback;
-import android.bluetooth.BluetoothGattService;
 import android.bluetooth.BluetoothManager;
-import android.bluetooth.BluetoothProfile;
 import android.content.Context;
 
 import androidx.annotation.NonNull;
 
 import com.polidea.rxandroidble2.exceptions.BleScanException;
 import com.polidea.rxandroidble2.internal.RxBleDeviceProvider;
-import com.polidea.rxandroidble2.internal.RxBleLog;
 import com.polidea.rxandroidble2.internal.serialization.ClientOperationQueue;
 import com.polidea.rxandroidble2.internal.util.RxBleAdapterWrapper;
 import com.polidea.rxandroidble2.internal.util.ServerStateObservable;
 
-import java.util.HashSet;
 import java.util.Set;
 
 import bleshadow.dagger.Lazy;
@@ -46,102 +38,10 @@ public class RxBleServerImpl extends RxBleServer {
     private final Observable<RxBleAdapterStateObservable.BleAdapterState> rxBleAdapterStateObservable;
     private final Lazy<ServerStateObservable> lazyServerStateObservable;
     private final BluetoothManager bluetoothManager;
-    private final Set<BluetoothDevice> connectedDevices;
+
     private BluetoothGattServer gattServer;
     private final PublishSubject<Set<BluetoothDevice>> bluetoothDeviceChangedSubject;
     private final Provider<GattServerSessionBuilder> gattServerSessionBuilderProvider;
-    private final BluetoothGattServerCallback gattServerCallback = new BluetoothGattServerCallback() {
-        @Override
-        public void onConnectionStateChange(final BluetoothDevice device, int status, int newState) {
-            super.onConnectionStateChange(device, status, newState);
-
-            if (status != BluetoothGatt.GATT_SUCCESS) {
-                RxBleLog.e("GattServer state change failed %i", status);
-                return;
-            }
-            switch (newState) {
-                case BluetoothProfile.STATE_CONNECTED:
-                    connectedDevices.add(device);
-                    break;
-
-                case BluetoothProfile.STATE_DISCONNECTED:
-                    connectedDevices.remove(device);
-                    break;
-
-                default:
-                    RxBleLog.e("undefined state");
-            }
-            bluetoothDeviceChangedSubject.onNext(connectedDevices);
-        }
-
-        @Override
-        public void onServiceAdded(int status, BluetoothGattService service) {
-            super.onServiceAdded(status, service);
-        }
-
-        @Override
-        public void onCharacteristicReadRequest(BluetoothDevice device,
-                                                int requestId,
-                                                int offset,
-                                                BluetoothGattCharacteristic characteristic) {
-            super.onCharacteristicReadRequest(device, requestId, offset, characteristic);
-        }
-
-        @Override
-        public void onCharacteristicWriteRequest(BluetoothDevice device,
-                                                 int requestId,
-                                                 BluetoothGattCharacteristic characteristic,
-                                                 boolean preparedWrite,
-                                                 boolean responseNeeded,
-                                                 int offset,
-                                                 byte[] value) {
-            super.onCharacteristicWriteRequest(device, requestId, characteristic, preparedWrite, responseNeeded, offset, value);
-        }
-
-        @Override
-        public void onDescriptorReadRequest(BluetoothDevice device,
-                                            int requestId,
-                                            int offset,
-                                            BluetoothGattDescriptor descriptor) {
-            super.onDescriptorReadRequest(device, requestId, offset, descriptor);
-        }
-
-        @Override
-        public void onDescriptorWriteRequest(BluetoothDevice device,
-                                             int requestId,
-                                             BluetoothGattDescriptor descriptor,
-                                             boolean preparedWrite,
-                                             boolean responseNeeded,
-                                             int offset,
-                                             byte[] value) {
-            super.onDescriptorWriteRequest(device, requestId, descriptor, preparedWrite, responseNeeded, offset, value);
-        }
-
-        @Override
-        public void onExecuteWrite(BluetoothDevice device, int requestId, boolean execute) {
-            super.onExecuteWrite(device, requestId, execute);
-        }
-
-        @Override
-        public void onNotificationSent(BluetoothDevice device, int status) {
-            super.onNotificationSent(device, status);
-        }
-
-        @Override
-        public void onMtuChanged(BluetoothDevice device, int mtu) {
-            super.onMtuChanged(device, mtu);
-        }
-
-        @Override
-        public void onPhyUpdate(BluetoothDevice device, int txPhy, int rxPhy, int status) {
-            super.onPhyUpdate(device, txPhy, rxPhy, status);
-        }
-
-        @Override
-        public void onPhyRead(BluetoothDevice device, int txPhy, int rxPhy, int status) {
-            super.onPhyRead(device, txPhy, rxPhy, status);
-        }
-    };
 
     @Inject
     public RxBleServerImpl(
@@ -165,7 +65,6 @@ public class RxBleServerImpl extends RxBleServer {
         this.bluetoothManager = bluetoothManager;
         this.gattServerSessionBuilderProvider = gattServerSessionBuilderProvider;
         this.gattServer = null;
-        this.connectedDevices = new HashSet<>();
         this.bluetoothDeviceChangedSubject = PublishSubject.create();
     }
 
@@ -177,7 +76,7 @@ public class RxBleServerImpl extends RxBleServer {
         if (this.gattServer != null) {
             return false;
         }
-        this.gattServer = bluetoothManager.openGattServer(context, gattServerCallback);
+        //this.gattServer = bluetoothManager.openGattServer(context, gattServerCallback); TODO
         return this.gattServer != null;
     }
 
