@@ -3,6 +3,8 @@ package com.polidea.rxandroidble2.internal.connection;
 import com.polidea.rxandroidble2.RxBleConnection;
 import com.polidea.rxandroidble2.Timeout;
 import com.polidea.rxandroidble2.internal.operations.ConnectOperation;
+import com.polidea.rxandroidble2.internal.server.RxBleGattServerCallback;
+
 import bleshadow.dagger.BindsInstance;
 import bleshadow.dagger.Subcomponent;
 import bleshadow.javax.inject.Named;
@@ -47,6 +49,9 @@ public interface ConnectionComponent {
 
     @ConnectionScope
     RxBleGattCallback gattCallback();
+
+    @ConnectionScope
+    RxBleGattServerCallback gattServerCallback();
 
     @ConnectionScope
     Set<ConnectionSubscriptionWatcher> connectionSubscriptionWatchers();
