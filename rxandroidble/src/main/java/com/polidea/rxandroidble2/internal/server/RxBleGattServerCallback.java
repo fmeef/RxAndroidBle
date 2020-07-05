@@ -29,6 +29,8 @@ import com.polidea.rxandroidble2.internal.connection.ConnectionScope;
 import com.polidea.rxandroidble2.internal.connection.DisconnectionRouter;
 import com.polidea.rxandroidble2.internal.util.ByteAssociation;
 
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
@@ -121,8 +123,9 @@ public class RxBleGattServerCallback {
             ConnectionInfo connectionInfo = getOrCreateConnectionInfo(device);
 
             if (preparedWrite) {
-                //TODO: handle long writes
-                throw new RuntimeException("not implemented");
+                if (!connectionInfo.writeCharacteristicBytes(characteristic, value)) {
+                    throw new BleGattServerException(-1, device, BleGattServerOperationType.CHARACTERISTIC_LONG_WRITE_REQUEST);
+                }
             } else if (connectionInfo.getWriteCharacteristicOutput().hasObservers() && !propagateErrorIfOccurred(
                         connectionInfo.getWriteCharacteristicOutput(),
                         device,
@@ -170,8 +173,10 @@ public class RxBleGattServerCallback {
             ConnectionInfo connectionInfo = getOrCreateConnectionInfo(device);
 
             if (preparedWrite) {
-                //TODO: implement long writes on descriptors
-                throw new RuntimeException("not implemented");
+                if (!connectionInfo.writeDescriptorBytes(descriptor, value)) {
+                    throw new BleGattServerException(-1, device,
+                            BleGattServerOperationType.CHARACTERISTIC_LONG_WRITE_REQUEST);
+                }
             } else if (connectionInfo.getWriteDescriptorOutput().hasObservers() && !propagateErrorIfOccurred(
                     connectionInfo.getWriteDescriptorOutput(),
                     device,
@@ -187,6 +192,46 @@ public class RxBleGattServerCallback {
         @Override
         public void onExecuteWrite(BluetoothDevice device, int requestId, boolean execute) {
             super.onExecuteWrite(device, requestId, execute);
+            if (execute) {
+                ConnectionInfo connectionInfo = getOrCreateConnectionInfo(device);
+
+                for (Map.Entry<BluetoothGattCharacteristic, ByteArrayOutputStream>  entry
+                        : connectionInfo.getCharacteristicLongWriteStreamMap().entrySet()) {
+                    ByteArrayOutputStream outputStream = entry.getValue();
+                    BluetoothGattCharacteristic characteristic = entry.getKey();
+                    if (connectionInfo.getWriteCharacteristicOutput().hasObservers() && !propagateErrorIfOccurred(
+                            connectionInfo.getWriteCharacteristicOutput(),
+                            device,
+                            -1,
+                            BleGattServerOperationType.CHARACTERISTIC_LONG_WRITE_REQUEST
+                        )) {
+                        connectionInfo.getWriteCharacteristicOutput().valueRelay.accept(
+                                new ByteAssociation<>(characteristic.getUuid(), outputStream.toByteArray())
+                        );
+                    }
+                }
+
+                for (Map.Entry<BluetoothGattDescriptor, ByteArrayOutputStream> entry
+                        : connectionInfo.getDescriptorByteArrayOutputStreamMap().entrySet()) {
+                    ByteArrayOutputStream outputStream = entry.getValue();
+                    BluetoothGattDescriptor descriptor = entry.getKey();
+
+                    if (connectionInfo.getWriteDescriptorOutput().hasObservers() && !propagateErrorIfOccurred(
+                            connectionInfo.getWriteDescriptorOutput(),
+                            device,
+                            -1,
+                            BleGattServerOperationType.DESCRIPTOR_LONG_WRITE_REQUEST
+                    )) {
+                        connectionInfo.getWriteDescriptorOutput().valueRelay.accept(
+                                new ByteAssociation<>(descriptor, outputStream.toByteArray())
+                        );
+                    }
+                }
+
+                connectionInfo.resetCharacteristicMap();
+                connectionInfo.resetDescriptorMap();
+            }
+
             //TODO: implement long writes
         }
 
@@ -418,9 +463,10 @@ public class RxBleGattServerCallback {
                 new RxBleGattServerCallback.Output<>();
         private final RxBleGattServerCallback.Output<Integer> changedMtuOutput =
                 new RxBleGattServerCallback.Output<>();
-
-
-
+        private final Map<BluetoothGattCharacteristic, ByteArrayOutputStream> characteristicByteArrayOutputStreamMap =
+                new HashMap<>();
+        private final Map<BluetoothGattDescriptor, ByteArrayOutputStream> descriptorByteArrayOutputStreamMap =
+                new HashMap<>();
 
         ConnectionInfo() {
         }
@@ -458,6 +504,61 @@ public class RxBleGattServerCallback {
         @NonNull
         public Output<Integer> getChangedMtuOutput() {
             return changedMtuOutput;
+        }
+
+        public boolean writeCharacteristicBytes(BluetoothGattCharacteristic characteristic, byte[] bytes) {
+            try {
+                ByteArrayOutputStream os = characteristicByteArrayOutputStreamMap.get(characteristic);
+                if (os == null) {
+                    return false;
+                }
+                os.write(bytes);
+            } catch (IOException e) {
+                return false;
+            }
+            return true;
+        }
+
+        public boolean writeDescriptorBytes(BluetoothGattDescriptor descriptor, byte[] bytes) {
+            try {
+                ByteArrayOutputStream os = descriptorByteArrayOutputStreamMap.get(descriptor);
+                if (os == null) {
+                    return false;
+                }
+                os.write(bytes);
+            } catch (IOException e) {
+                return false;
+            }
+            return true;
+        }
+
+        @NonNull
+        public ByteArrayOutputStream getDescriptorLongWriteStream(BluetoothGattDescriptor descriptor) {
+            ByteArrayOutputStream os = descriptorByteArrayOutputStreamMap.get(descriptor);
+            if (os == null) {
+                os = new ByteArrayOutputStream();
+                descriptorByteArrayOutputStreamMap.put(descriptor, os);
+            }
+
+            return os;
+        }
+
+        @NonNull
+        public Map<BluetoothGattCharacteristic, ByteArrayOutputStream> getCharacteristicLongWriteStreamMap() {
+            return characteristicByteArrayOutputStreamMap;
+        }
+
+        @NonNull
+        public Map<BluetoothGattDescriptor, ByteArrayOutputStream> getDescriptorByteArrayOutputStreamMap() {
+            return descriptorByteArrayOutputStreamMap;
+        }
+
+        public void resetDescriptorMap() {
+            descriptorByteArrayOutputStreamMap.clear();
+        }
+
+        public void resetCharacteristicMap() {
+            characteristicByteArrayOutputStreamMap.clear();
         }
     }
 

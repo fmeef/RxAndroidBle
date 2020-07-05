@@ -11,6 +11,8 @@ public class BleGattServerOperationType {
             new BleGattServerOperationType("CHARACTERISTIC_WRITE_REQUEST");
     public static final BleGattServerOperationType CHARACTERISTIC_LONG_WRITE_REQUEST =
             new BleGattServerOperationType("CHARACTERISTIC_LONG_WRITE_REQUEST");
+    public static final BleGattServerOperationType DESCRIPTOR_LONG_WRITE_REQUEST =
+            new BleGattServerOperationType("DESCRIPTOR_LONG_WRITE_REQUEST");
     public static final BleGattServerOperationType DESCRIPTOR_READ_REQUEST =
             new BleGattServerOperationType("DESCRIPTOR_READ_REQUEST");
     public static final BleGattServerOperationType DESCRIPTOR_WRITE_REQUEST =
