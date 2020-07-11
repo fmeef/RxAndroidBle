@@ -11,74 +11,57 @@ import android.bluetooth.BluetoothProfile;
 import android.content.res.Resources;
 import android.util.Pair;
 
-import androidx.annotation.NonNull;
-
 import com.jakewharton.rxrelay2.PublishRelay;
 import com.polidea.rxandroidble2.RxBleConnection;
-import com.polidea.rxandroidble2.RxBleDeviceServices;
 import com.polidea.rxandroidble2.ServerComponent;
-import com.polidea.rxandroidble2.exceptions.BleDisconnectedException;
-import com.polidea.rxandroidble2.exceptions.BleGattException;
 import com.polidea.rxandroidble2.exceptions.BleGattServerCharacteristicException;
 import com.polidea.rxandroidble2.exceptions.BleGattServerDescriptorException;
 import com.polidea.rxandroidble2.exceptions.BleGattServerException;
 import com.polidea.rxandroidble2.exceptions.BleGattServerOperationType;
 import com.polidea.rxandroidble2.internal.RxBleLog;
-import com.polidea.rxandroidble2.internal.connection.BluetoothGattProvider;
 import com.polidea.rxandroidble2.internal.connection.ConnectionScope;
-import com.polidea.rxandroidble2.internal.connection.DisconnectionRouter;
+import com.polidea.rxandroidble2.internal.connection.ServerConnectionComponent;
 import com.polidea.rxandroidble2.internal.util.ByteAssociation;
 
 import java.io.ByteArrayOutputStream;
-import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.UUID;
-import java.util.concurrent.TimeUnit;
 
 import bleshadow.javax.inject.Inject;
 import bleshadow.javax.inject.Named;
 import io.reactivex.Observable;
 import io.reactivex.Scheduler;
-import io.reactivex.functions.Function;
 
 @ConnectionScope
 public class RxBleGattServerCallback {
     final Scheduler callbackScheduler;
-    final BluetoothGattProvider<BluetoothDevice> bluetoothGattProvider;
-    final DisconnectionRouter disconnectionRouter;
     //TODO: make this per device
     final PublishRelay<Pair<BluetoothDevice, RxBleConnection.RxBleConnectionState>> connectionStatePublishRelay = PublishRelay.create();
-    final RxBleGattServerCallback.Output<RxBleDeviceServices> servicesDiscoveredOutput = new RxBleGattServerCallback.Output<>();
-    final Map<BluetoothDevice, ConnectionInfo> deviceConnectionInfoMap = new HashMap<>();
+    final Map<BluetoothDevice, RxBleServerConnection> deviceConnectionInfoMap = new HashMap<>();
+    final ServerConnectionComponent.Builder connectionComponentBuilder;
 
-    private final Function<BleGattServerException, Observable<?>> errorMapper = new Function<BleGattServerException, Observable<?>>() {
-        @Override
-        public Observable<?> apply(BleGattServerException bleGattException) {
-            return Observable.error(bleGattException);
-        }
-    };
+
 
     private final BluetoothGattServerCallback gattServerCallback = new BluetoothGattServerCallback() {
         @Override
         public void onConnectionStateChange(final BluetoothDevice device, int status, int newState) {
             super.onConnectionStateChange(device, status, newState);
-            bluetoothGattProvider.updateBluetoothGatt(device);
 
             if (status != BluetoothGatt.GATT_SUCCESS) {
                 RxBleLog.e("GattServer state change failed %i", status);
-                disconnectionRouter.onGattConnectionStateException(
-                        new BleGattServerException(status, device, BleGattServerOperationType.CONNECTION_STATE));
+                //TODO: route connect failures
             }
-            ConnectionInfo connectionInfo = getOrCreateConnectionInfo(device);
-            connectionInfo.getConnectionStatePublishRelay()
-                    .accept(mapConnectionStateToRxBleConnectionStatus(newState));
+            RxBleServerConnection connectionInfo = getOrCreateConnectionInfo(device);
 
             if (newState == BluetoothProfile.STATE_DISCONNECTED) {
-                disconnectionRouter.onDisconnectedException(new BleDisconnectedException(device.getAddress(), status));
                 deviceConnectionInfoMap.remove(device);
                 deviceConnectionInfoMap.remove(device);
             }
+
+            connectionStatePublishRelay.accept(new Pair<BluetoothDevice, RxBleConnection.RxBleConnectionState>(
+                    device,
+                    mapConnectionStateToRxBleConnectionStatus(newState)
+            ));
         }
 
         @Override
@@ -94,7 +77,7 @@ public class RxBleGattServerCallback {
                                                 BluetoothGattCharacteristic characteristic) {
             super.onCharacteristicReadRequest(device, requestId, offset, characteristic);
 
-            ConnectionInfo connectionInfo = getOrCreateConnectionInfo(device);
+            RxBleServerConnection connectionInfo = getOrCreateConnectionInfo(device);
 
 
             if (connectionInfo.getReadCharacteristicOutput().hasObservers() && !propagateErrorIfOccurred(
@@ -120,7 +103,7 @@ public class RxBleGattServerCallback {
                                                  byte[] value) {
             super.onCharacteristicWriteRequest(device, requestId, characteristic, preparedWrite, responseNeeded, offset, value);
 
-            ConnectionInfo connectionInfo = getOrCreateConnectionInfo(device);
+            RxBleServerConnection connectionInfo = getOrCreateConnectionInfo(device);
 
             if (preparedWrite) {
                 if (!connectionInfo.writeCharacteristicBytes(characteristic, value)) {
@@ -145,7 +128,7 @@ public class RxBleGattServerCallback {
                                             BluetoothGattDescriptor descriptor) {
             super.onDescriptorReadRequest(device, requestId, offset, descriptor);
 
-            ConnectionInfo connectionInfo = getOrCreateConnectionInfo(device);
+            RxBleServerConnection connectionInfo = getOrCreateConnectionInfo(device);
 
             if (connectionInfo.getReadDescriptorOutput().hasObservers() && !propagateErrorIfOccurred(
                     connectionInfo.getReadDescriptorOutput(),
@@ -170,7 +153,7 @@ public class RxBleGattServerCallback {
                                              byte[] value) {
             super.onDescriptorWriteRequest(device, requestId, descriptor, preparedWrite, responseNeeded, offset, value);
 
-            ConnectionInfo connectionInfo = getOrCreateConnectionInfo(device);
+            RxBleServerConnection connectionInfo = getOrCreateConnectionInfo(device);
 
             if (preparedWrite) {
                 if (!connectionInfo.writeDescriptorBytes(descriptor, value)) {
@@ -193,7 +176,7 @@ public class RxBleGattServerCallback {
         public void onExecuteWrite(BluetoothDevice device, int requestId, boolean execute) {
             super.onExecuteWrite(device, requestId, execute);
             if (execute) {
-                ConnectionInfo connectionInfo = getOrCreateConnectionInfo(device);
+                RxBleServerConnection connectionInfo = getOrCreateConnectionInfo(device);
 
                 for (Map.Entry<BluetoothGattCharacteristic, ByteArrayOutputStream>  entry
                         : connectionInfo.getCharacteristicLongWriteStreamMap().entrySet()) {
@@ -239,7 +222,7 @@ public class RxBleGattServerCallback {
         public void onNotificationSent(BluetoothDevice device, int status) {
             super.onNotificationSent(device, status);
 
-            ConnectionInfo connectionInfo = getOrCreateConnectionInfo(device);
+            RxBleServerConnection connectionInfo = getOrCreateConnectionInfo(device);
 
             if (connectionInfo.getNotificationPublishRelay().hasObservers() && !propagateErrorIfOccurred(
                     connectionInfo.getNotificationPublishRelay(),
@@ -258,7 +241,7 @@ public class RxBleGattServerCallback {
         public void onMtuChanged(BluetoothDevice device, int mtu) {
             super.onMtuChanged(device, mtu);
 
-            ConnectionInfo connectionInfo = getOrCreateConnectionInfo(device);
+            RxBleServerConnection connectionInfo = getOrCreateConnectionInfo(device);
 
             if (connectionInfo.getChangedMtuOutput().hasObservers()
                     && !propagateErrorIfOccurred(
@@ -282,11 +265,11 @@ public class RxBleGattServerCallback {
         }
     };
 
-    private ConnectionInfo getOrCreateConnectionInfo(BluetoothDevice device) {
-        ConnectionInfo connectionInfo = deviceConnectionInfoMap.get(device);
+    private RxBleServerConnection getOrCreateConnectionInfo(BluetoothDevice device) {
+        RxBleServerConnection connectionInfo = deviceConnectionInfoMap.get(device);
 
         if (connectionInfo == null) {
-            connectionInfo = new ConnectionInfo();
+            connectionInfo =  connectionComponentBuilder.build().rxBleServerConnection();
             deviceConnectionInfoMap.put(device, connectionInfo);
         }
         return connectionInfo;
@@ -295,12 +278,10 @@ public class RxBleGattServerCallback {
     @Inject
     public RxBleGattServerCallback(
             @Named(ServerComponent.NamedSchedulers.BLUETOOTH_CALLBACKS) Scheduler callbackScheduler,
-            BluetoothGattProvider<BluetoothDevice> bluetoothGattProvider,
-            DisconnectionRouter disconnectionRouter
+            ServerConnectionComponent.Builder connectionComponentBuilder
     ) {
         this.callbackScheduler = callbackScheduler;
-        this.bluetoothGattProvider = bluetoothGattProvider;
-        this.disconnectionRouter = disconnectionRouter;
+        this.connectionComponentBuilder = connectionComponentBuilder;
     }
 
     static RxBleConnection.RxBleConnectionState mapConnectionStateToRxBleConnectionStatus(int newState) {
@@ -364,8 +345,8 @@ public class RxBleGattServerCallback {
         return true;
     }
 
-    private ConnectionInfo getConnectionInfoOrError(BluetoothDevice device) throws Resources.NotFoundException {
-        ConnectionInfo connectionInfo = deviceConnectionInfoMap.get(device);
+    private RxBleServerConnection getConnectionInfoOrError(BluetoothDevice device) throws Resources.NotFoundException {
+        RxBleServerConnection connectionInfo = deviceConnectionInfoMap.get(device);
 
         if (connectionInfo == null) {
             throw new Resources.NotFoundException("device does not exist");
@@ -373,196 +354,19 @@ public class RxBleGattServerCallback {
         return connectionInfo;
     }
 
-    private <T> Observable<T> withDisconnectionHandling(RxBleGattServerCallback.Output<T> output) {
-        //noinspection unchecked
-        return Observable.merge(
-                disconnectionRouter.<T>asErrorOnlyObservable(),
-                output.valueRelay,
-                (Observable<T>) output.errorRelay.flatMap(errorMapper)
-        );
-    }
-
-    /**
-     * @return Observable that never emits onNext.
-     * @throws BleDisconnectedException emitted in case of a disconnect that is a part of the normal flow
-     * @throws BleGattException         emitted in case of connection was interrupted unexpectedly.
-     */
-    public <T> Observable<T> observeDisconnect() {
-        return disconnectionRouter.asErrorOnlyObservable();
-    }
-
     /**
      * @return Observable that emits RxBleConnectionState that matches BluetoothGatt's state.
-     * @param device device to observe
      * Does NOT emit errors even if status != GATT_SUCCESS.
      */
-    public Observable<RxBleConnection.RxBleConnectionState> getOnConnectionStateChange(BluetoothDevice device) {
-        ConnectionInfo connectionInfo =  getConnectionInfoOrError(device);
-
-        return connectionInfo.getConnectionStatePublishRelay().delay(0, TimeUnit.SECONDS, callbackScheduler);
-    }
-
-    public Observable<Integer> getOnMtuChanged(BluetoothDevice device) {
-        ConnectionInfo connectionInfo = getConnectionInfoOrError(device);
-
-        return withDisconnectionHandling(connectionInfo.getChangedMtuOutput())
-                .delay(0, TimeUnit.SECONDS, callbackScheduler);
+    public Observable<Pair<BluetoothDevice, RxBleConnection.RxBleConnectionState>> getOnConnectionStateChange() {
+        return connectionStatePublishRelay;
     }
 
     public BluetoothGattServerCallback getBluetoothGattServerCallback() {
         return gattServerCallback;
     }
 
-    public Observable<ByteAssociation<UUID>> getOnCharacteristicReadRequest(BluetoothDevice device) {
-        ConnectionInfo connectionInfo = getConnectionInfoOrError(device);
-
-        return withDisconnectionHandling(connectionInfo.getReadCharacteristicOutput())
-                .delay(0, TimeUnit.SECONDS, callbackScheduler);
-    }
-
-    public Observable<ByteAssociation<UUID>> getOnCharacteristicWriteRequest(BluetoothDevice device) {
-        ConnectionInfo connectionInfo = getConnectionInfoOrError(device);
-
-        return withDisconnectionHandling(connectionInfo.getWriteCharacteristicOutput())
-                .delay(0, TimeUnit.SECONDS, callbackScheduler);
-    }
-
-    public Observable<ByteAssociation<BluetoothGattDescriptor>> getOnDescriptorReadRequest(BluetoothDevice device) {
-        ConnectionInfo connectionInfo = getConnectionInfoOrError(device);
-
-        return withDisconnectionHandling(connectionInfo.getReadDescriptorOutput())
-                .delay(0, TimeUnit.SECONDS, callbackScheduler);
-    }
-
-    public Observable<ByteAssociation<BluetoothGattDescriptor>> getOnDescriptorWriteRequest(BluetoothDevice device) {
-        ConnectionInfo connectionInfo = getConnectionInfoOrError(device);
-
-        return withDisconnectionHandling(connectionInfo.getWriteDescriptorOutput())
-                .delay(0, TimeUnit.SECONDS, callbackScheduler);
-    }
-
-    public Observable<BluetoothDevice> getOnNotification(BluetoothDevice device) {
-        ConnectionInfo connectionInfo = getConnectionInfoOrError(device);
-
-        return withDisconnectionHandling(connectionInfo.getNotificationPublishRelay())
-                .delay(0, TimeUnit.SECONDS, callbackScheduler);
-    }
-
-    private static class ConnectionInfo {
-        private final RxBleGattServerCallback.Output<ByteAssociation<UUID>> readCharacteristicOutput =
-                new RxBleGattServerCallback.Output<>();
-        private final RxBleGattServerCallback.Output<ByteAssociation<UUID>> writeCharacteristicOutput =
-                new RxBleGattServerCallback.Output<>();
-        private final RxBleGattServerCallback.Output<ByteAssociation<BluetoothGattDescriptor>> readDescriptorOutput =
-                new RxBleGattServerCallback.Output<>();
-        private final RxBleGattServerCallback.Output<ByteAssociation<BluetoothGattDescriptor>> writeDescriptorOutput =
-                new RxBleGattServerCallback.Output<>();
-        private final PublishRelay<RxBleConnection.RxBleConnectionState> connectionStatePublishRelay =
-                PublishRelay.create();
-        private final RxBleGattServerCallback.Output<BluetoothDevice> notificationPublishRelay =
-                new RxBleGattServerCallback.Output<>();
-        private final RxBleGattServerCallback.Output<Integer> changedMtuOutput =
-                new RxBleGattServerCallback.Output<>();
-        private final Map<BluetoothGattCharacteristic, ByteArrayOutputStream> characteristicByteArrayOutputStreamMap =
-                new HashMap<>();
-        private final Map<BluetoothGattDescriptor, ByteArrayOutputStream> descriptorByteArrayOutputStreamMap =
-                new HashMap<>();
-
-        ConnectionInfo() {
-        }
-
-        @NonNull
-        public Output<ByteAssociation<UUID>> getReadCharacteristicOutput() {
-            return readCharacteristicOutput;
-        }
-
-        @NonNull
-        public Output<ByteAssociation<UUID>> getWriteCharacteristicOutput() {
-            return writeCharacteristicOutput;
-        }
-
-        @NonNull
-        public Output<ByteAssociation<BluetoothGattDescriptor>> getReadDescriptorOutput() {
-            return readDescriptorOutput;
-        }
-
-        @NonNull
-        public Output<ByteAssociation<BluetoothGattDescriptor>> getWriteDescriptorOutput() {
-            return writeDescriptorOutput;
-        }
-
-        @NonNull
-        public PublishRelay<RxBleConnection.RxBleConnectionState> getConnectionStatePublishRelay() {
-            return connectionStatePublishRelay;
-        }
-
-        @NonNull
-        public RxBleGattServerCallback.Output<BluetoothDevice> getNotificationPublishRelay() {
-            return notificationPublishRelay;
-        }
-
-        @NonNull
-        public Output<Integer> getChangedMtuOutput() {
-            return changedMtuOutput;
-        }
-
-        public boolean writeCharacteristicBytes(BluetoothGattCharacteristic characteristic, byte[] bytes) {
-            try {
-                ByteArrayOutputStream os = characteristicByteArrayOutputStreamMap.get(characteristic);
-                if (os == null) {
-                    return false;
-                }
-                os.write(bytes);
-            } catch (IOException e) {
-                return false;
-            }
-            return true;
-        }
-
-        public boolean writeDescriptorBytes(BluetoothGattDescriptor descriptor, byte[] bytes) {
-            try {
-                ByteArrayOutputStream os = descriptorByteArrayOutputStreamMap.get(descriptor);
-                if (os == null) {
-                    return false;
-                }
-                os.write(bytes);
-            } catch (IOException e) {
-                return false;
-            }
-            return true;
-        }
-
-        @NonNull
-        public ByteArrayOutputStream getDescriptorLongWriteStream(BluetoothGattDescriptor descriptor) {
-            ByteArrayOutputStream os = descriptorByteArrayOutputStreamMap.get(descriptor);
-            if (os == null) {
-                os = new ByteArrayOutputStream();
-                descriptorByteArrayOutputStreamMap.put(descriptor, os);
-            }
-
-            return os;
-        }
-
-        @NonNull
-        public Map<BluetoothGattCharacteristic, ByteArrayOutputStream> getCharacteristicLongWriteStreamMap() {
-            return characteristicByteArrayOutputStreamMap;
-        }
-
-        @NonNull
-        public Map<BluetoothGattDescriptor, ByteArrayOutputStream> getDescriptorByteArrayOutputStreamMap() {
-            return descriptorByteArrayOutputStreamMap;
-        }
-
-        public void resetDescriptorMap() {
-            descriptorByteArrayOutputStreamMap.clear();
-        }
-
-        public void resetCharacteristicMap() {
-            characteristicByteArrayOutputStreamMap.clear();
-        }
-    }
-
-    private static class Output<T> {
+    public static class Output<T> {
 
         final PublishRelay<T> valueRelay;
         final PublishRelay<BleGattServerException> errorRelay;
