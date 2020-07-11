@@ -1,5 +1,7 @@
 package com.polidea.rxandroidble2.mockrxandroidble;
 
+import android.bluetooth.BluetoothGatt;
+import android.bluetooth.BluetoothGattCallback;
 import android.bluetooth.BluetoothGattCharacteristic;
 import android.bluetooth.BluetoothGattDescriptor;
 import androidx.annotation.NonNull;
@@ -19,6 +21,7 @@ import com.polidea.rxandroidble2.exceptions.BleGattDescriptorException;
 import com.polidea.rxandroidble2.exceptions.BleGattOperationType;
 import com.polidea.rxandroidble2.internal.Priority;
 import com.polidea.rxandroidble2.internal.connection.ImmediateSerializedBatchAckStrategy;
+import com.polidea.rxandroidble2.internal.connection.RxBleGattCallback;
 import com.polidea.rxandroidble2.internal.util.ObservableUtil;
 import com.polidea.rxandroidble2.mockrxandroidble.callbacks.results.RxBleGattReadResultMock;
 import com.polidea.rxandroidble2.mockrxandroidble.callbacks.results.RxBleGattWriteResultMock;
@@ -661,12 +664,12 @@ public class RxBleConnectionMock implements RxBleConnection {
     }
 
     @Override
-    public <T> Observable<T> queue(@NonNull RxBleCustomOperation<T> operation) {
+    public <T> Observable<T> queue(@NonNull RxBleCustomOperation<T, BluetoothGatt, RxBleGattCallback> operation) {
         throw new UnsupportedOperationException("Mock does not support queuing custom operation.");
     }
 
     @Override
-    public <T> Observable<T> queue(@NonNull RxBleCustomOperation<T> operation, Priority priority) {
+    public <T> Observable<T> queue(@NonNull RxBleCustomOperation<T, BluetoothGatt, RxBleGattCallback> operation, Priority priority) {
         throw new UnsupportedOperationException("Mock does not support queuing custom operation.");
     }
 
