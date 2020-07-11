@@ -2,8 +2,8 @@ package com.polidea.rxandroidble2.internal.connection;
 
 import android.bluetooth.BluetoothGatt;
 
-import com.polidea.rxandroidble2.ClientComponent;
 import com.polidea.rxandroidble2.ConnectionSetup;
+import com.polidea.rxandroidble2.RxBleComponent;
 import com.polidea.rxandroidble2.RxBleConnection;
 import com.polidea.rxandroidble2.internal.serialization.ClientOperationQueue;
 
@@ -29,7 +29,7 @@ public class ConnectorImpl implements Connector {
     public ConnectorImpl(
             ClientOperationQueue clientOperationQueue,
             ConnectionComponent.Builder connectionComponentBuilder,
-            @Named(ClientComponent.NamedSchedulers.BLUETOOTH_CALLBACKS) Scheduler callbacksScheduler) {
+            @Named(RxBleComponent.NamedSchedulers.BLUETOOTH_CALLBACKS) Scheduler callbacksScheduler) {
         this.clientOperationQueue = clientOperationQueue;
         this.connectionComponentBuilder = connectionComponentBuilder;
         this.callbacksScheduler = callbacksScheduler;

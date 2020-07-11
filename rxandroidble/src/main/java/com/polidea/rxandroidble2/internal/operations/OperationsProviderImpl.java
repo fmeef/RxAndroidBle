@@ -3,6 +3,7 @@ package com.polidea.rxandroidble2.internal.operations;
 import android.bluetooth.BluetoothGatt;
 import android.bluetooth.BluetoothGattCharacteristic;
 import android.bluetooth.BluetoothGattDescriptor;
+
 import androidx.annotation.RequiresApi;
 
 import com.polidea.rxandroidble2.ClientComponent;
@@ -11,20 +12,17 @@ import com.polidea.rxandroidble2.internal.connection.ConnectionModule;
 import com.polidea.rxandroidble2.internal.connection.PayloadSizeLimitProvider;
 import com.polidea.rxandroidble2.internal.connection.RxBleGattCallback;
 import com.polidea.rxandroidble2.internal.logger.LoggerUtilBluetoothServices;
-import com.polidea.rxandroidble2.internal.server.RxBleGattServerCallback;
 
 import java.util.concurrent.TimeUnit;
 
 import bleshadow.javax.inject.Inject;
 import bleshadow.javax.inject.Named;
 import bleshadow.javax.inject.Provider;
-
 import io.reactivex.Scheduler;
 
 public class OperationsProviderImpl implements OperationsProvider {
 
     private final RxBleGattCallback rxBleGattCallback;
-    private final RxBleGattServerCallback rxBleGattServerCallback;
     private final BluetoothGatt bluetoothGatt;
     private final LoggerUtilBluetoothServices bleServicesLogger;
     private final TimeoutConfiguration timeoutConfiguration;
@@ -35,7 +33,6 @@ public class OperationsProviderImpl implements OperationsProvider {
     @Inject
     OperationsProviderImpl(
             RxBleGattCallback rxBleGattCallback,
-            RxBleGattServerCallback rxBleGattServerCallback,
             BluetoothGatt bluetoothGatt,
             LoggerUtilBluetoothServices bleServicesLogger,
             @Named(ConnectionModule.OPERATION_TIMEOUT) TimeoutConfiguration timeoutConfiguration,
@@ -43,7 +40,6 @@ public class OperationsProviderImpl implements OperationsProvider {
             @Named(ClientComponent.NamedSchedulers.TIMEOUT) Scheduler timeoutScheduler,
             Provider<ReadRssiOperation> rssiReadOperationProvider) {
         this.rxBleGattCallback = rxBleGattCallback;
-        this.rxBleGattServerCallback = rxBleGattServerCallback;
         this.bluetoothGatt = bluetoothGatt;
         this.bleServicesLogger = bleServicesLogger;
         this.timeoutConfiguration = timeoutConfiguration;
