@@ -18,7 +18,6 @@ import java.util.Set;
 import bleshadow.dagger.Lazy;
 import bleshadow.javax.inject.Inject;
 import bleshadow.javax.inject.Named;
-import bleshadow.javax.inject.Provider;
 import io.reactivex.Maybe;
 import io.reactivex.MaybeSource;
 import io.reactivex.Observable;
@@ -41,7 +40,6 @@ public class RxBleServerImpl extends RxBleServer {
 
     private BluetoothGattServer gattServer;
     private final PublishSubject<Set<BluetoothDevice>> bluetoothDeviceChangedSubject;
-    private final Provider<GattServerSessionBuilder> gattServerSessionBuilderProvider;
 
     @Inject
     public RxBleServerImpl(
@@ -52,8 +50,7 @@ public class RxBleServerImpl extends RxBleServer {
             final Observable<RxBleAdapterStateObservable.BleAdapterState> rxBleAdapterStateObservable,
             final ServerComponent.ServerComponentFinalizer serverComponentFinalizer,
             final Lazy<ServerStateObservable> lazyServerStateObservable,
-            final BluetoothManager bluetoothManager,
-            final Provider<GattServerSessionBuilder> gattServerSessionBuilderProvider
+            final BluetoothManager bluetoothManager
     ) {
         this.operationQueue = operationQueue;
         this.rxBleDeviceProvider = rxBleDeviceProvider;
@@ -63,7 +60,6 @@ public class RxBleServerImpl extends RxBleServer {
         this.serverComponentFinalizer = serverComponentFinalizer;
         this.lazyServerStateObservable = lazyServerStateObservable;
         this.bluetoothManager = bluetoothManager;
-        this.gattServerSessionBuilderProvider = gattServerSessionBuilderProvider;
         this.gattServer = null;
         this.bluetoothDeviceChangedSubject = PublishSubject.create();
     }
