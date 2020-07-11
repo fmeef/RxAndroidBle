@@ -4,6 +4,7 @@ import android.bluetooth.BluetoothGatt;
 import android.bluetooth.BluetoothGattCharacteristic;
 import android.bluetooth.BluetoothGattDescriptor;
 import android.os.DeadObjectException;
+
 import androidx.annotation.NonNull;
 import androidx.annotation.RequiresApi;
 
@@ -313,12 +314,13 @@ public class RxBleConnectionImpl implements RxBleConnection {
     }
 
     @Override
-    public <T> Observable<T> queue(@NonNull final RxBleCustomOperation<T> operation) {
+    public <T> Observable<T> queue(@NonNull final RxBleCustomOperation<T, BluetoothGatt, RxBleGattCallback> operation) {
         return queue(operation, Priority.NORMAL);
     }
 
     @Override
-    public <T> Observable<T> queue(@NonNull final RxBleCustomOperation<T> operation, @NonNull final Priority priority) {
+    public <T> Observable<T> queue(@NonNull final RxBleCustomOperation<T, BluetoothGatt, RxBleGattCallback> operation,
+                                   @NonNull final Priority priority) {
         return operationQueue.queue(new QueueOperation<T>() {
             @Override
             @SuppressWarnings("ConstantConditions")

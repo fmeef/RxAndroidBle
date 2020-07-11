@@ -14,7 +14,7 @@ import io.reactivex.Scheduler;
  * @inheritDoc
  * @deprecated use {@link RxBleCustomOperation}
  */
-public interface RxBleRadioOperationCustom<T> extends RxBleCustomOperation<T> {
+public interface RxBleRadioOperationCustom<T, V, C> extends RxBleCustomOperation<T, V, C> {
 
     /**
      * Return an observable that implement a custom radio operation using low-level Android BLE API.
@@ -39,12 +39,12 @@ public interface RxBleRadioOperationCustom<T> extends RxBleCustomOperation<T> {
      * your {@link Observable} to complete and the it will not continue to process queued operations.
      *
      * @param bluetoothGatt     The Android API GATT instance
-     * @param rxBleGattCallback The internal Rx ready bluetooth gatt callback to be notified of GATT operations
+     * @param rxBleCallback The internal Rx ready bluetooth gatt callback to be notified of GATT operations
      * @param scheduler         The RxBleRadio scheduler used to asObservable operation
      * @throws Throwable Any exception that your custom operation might throw
      */
     @NonNull
-    Observable<T> asObservable(BluetoothGatt bluetoothGatt,
-                               RxBleGattCallback rxBleGattCallback,
+    Observable<T> asObservable(V bluetoothGatt,
+                               C rxBleCallback,
                                Scheduler scheduler) throws Throwable;
 }
