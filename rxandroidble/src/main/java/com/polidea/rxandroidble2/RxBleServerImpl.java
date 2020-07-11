@@ -1,15 +1,10 @@
 package com.polidea.rxandroidble2;
 
 import android.bluetooth.BluetoothDevice;
-import android.bluetooth.BluetoothGattServer;
-import android.bluetooth.BluetoothManager;
-import android.content.Context;
-
-import androidx.annotation.NonNull;
 
 import com.polidea.rxandroidble2.exceptions.BleScanException;
-import com.polidea.rxandroidble2.internal.RxBleDeviceProvider;
 import com.polidea.rxandroidble2.internal.serialization.ClientOperationQueue;
+import com.polidea.rxandroidble2.internal.server.RxBleServerConnection;
 import com.polidea.rxandroidble2.internal.util.RxBleAdapterWrapper;
 import com.polidea.rxandroidble2.internal.util.ServerStateObservable;
 
@@ -24,61 +19,40 @@ import io.reactivex.Observable;
 import io.reactivex.Scheduler;
 import io.reactivex.functions.Function;
 import io.reactivex.functions.Predicate;
-import io.reactivex.subjects.PublishSubject;
 
 public class RxBleServerImpl extends RxBleServer {
     @Deprecated
-    public static final String TAG = "RxBleClient";
+    public static final String TAG = "RxBleCglient";
     final ClientOperationQueue operationQueue;
-    private final RxBleDeviceProvider rxBleDeviceProvider;
     final Scheduler bluetoothInteractionScheduler;
     private final RxBleAdapterWrapper rxBleAdapterWrapper;
     private final ServerComponent.ServerComponentFinalizer serverComponentFinalizer;
     private final Observable<RxBleAdapterStateObservable.BleAdapterState> rxBleAdapterStateObservable;
     private final Lazy<ServerStateObservable> lazyServerStateObservable;
-    private final BluetoothManager bluetoothManager;
-
-    private BluetoothGattServer gattServer;
-    private final PublishSubject<Set<BluetoothDevice>> bluetoothDeviceChangedSubject;
+    private final ClientOperationQueue clientOperationQueue;
 
     @Inject
     public RxBleServerImpl(
             final ClientOperationQueue operationQueue,
-            final RxBleDeviceProvider rxBleDeviceProvider,
             @Named(ClientComponent.NamedSchedulers.BLUETOOTH_INTERACTION) final Scheduler bluetoothInteractionScheduler,
             final RxBleAdapterWrapper rxBleAdapterWrapper,
             final Observable<RxBleAdapterStateObservable.BleAdapterState> rxBleAdapterStateObservable,
             final ServerComponent.ServerComponentFinalizer serverComponentFinalizer,
             final Lazy<ServerStateObservable> lazyServerStateObservable,
-            final BluetoothManager bluetoothManager
+            final ClientOperationQueue clientOperationQueue
     ) {
         this.operationQueue = operationQueue;
-        this.rxBleDeviceProvider = rxBleDeviceProvider;
         this.bluetoothInteractionScheduler = bluetoothInteractionScheduler;
         this.rxBleAdapterWrapper = rxBleAdapterWrapper;
         this.rxBleAdapterStateObservable = rxBleAdapterStateObservable;
         this.serverComponentFinalizer = serverComponentFinalizer;
         this.lazyServerStateObservable = lazyServerStateObservable;
-        this.bluetoothManager = bluetoothManager;
-        this.gattServer = null;
-        this.bluetoothDeviceChangedSubject = PublishSubject.create();
+        this.clientOperationQueue = clientOperationQueue;
+
     }
 
     public Observable<Set<BluetoothDevice>> getConnectedDevices() {
-        return this.bluetoothDeviceChangedSubject;
-    }
-
-    public boolean openGattServer(Context context) {
-        if (this.gattServer != null) {
-            return false;
-        }
-        //this.gattServer = bluetoothManager.openGattServer(context, gattServerCallback); TODO
-        return this.gattServer != null;
-    }
-
-    public void closeGattServer() {
-        this.gattServer.clearServices();
-        this.gattServer.close();
+        return null;
     }
 
     @Override
@@ -86,13 +60,6 @@ public class RxBleServerImpl extends RxBleServer {
         serverComponentFinalizer.onFinalize();
         super.finalize();
     }
-
-    @Override
-    public RxBleDevice getBleDevice(@NonNull String macAddress) {
-        guardBluetoothAdapterAvailable();
-        return rxBleDeviceProvider.getBleDevice(macAddress);
-    }
-
 
     @Override
     public Observable<RxBleBase.State> observeStateChanges() {
@@ -109,6 +76,16 @@ public class RxBleServerImpl extends RxBleServer {
         } else {
             return State.READY;
         }
+    }
+
+    @Override
+    public Observable<RxBleServerConnection> openServer() {
+        return null; //TODO:
+    }
+
+    @Override
+    public void closeServer() {
+
     }
 
     private void guardBluetoothAdapterAvailable() {

@@ -13,7 +13,7 @@ import android.os.Build;
 import androidx.annotation.Nullable;
 import androidx.annotation.RestrictTo;
 
-import com.polidea.rxandroidble2.internal.DeviceComponent;
+import com.polidea.rxandroidble2.internal.connection.ServerConnectionComponent;
 import com.polidea.rxandroidble2.internal.scan.BackgroundScannerImpl;
 import com.polidea.rxandroidble2.internal.serialization.ClientOperationQueue;
 import com.polidea.rxandroidble2.internal.serialization.ClientOperationQueueImpl;
@@ -34,9 +34,11 @@ import io.reactivex.Scheduler;
 import io.reactivex.plugins.RxJavaPlugins;
 import io.reactivex.schedulers.Schedulers;
 
-@ClientScope
+@ServerScope
 @Component(modules = {ServerComponent.ServerModule.class})
 public interface ServerComponent extends RxBleComponent {
+
+    String SERVER_CONTEXT = "server-context";
 
     @Component.Builder
     interface Builder {
@@ -46,12 +48,18 @@ public interface ServerComponent extends RxBleComponent {
         Builder applicationContext(Context context);
     }
 
-    @Module(subcomponents = DeviceComponent.class)
+    @Module(subcomponents = {ServerConnectionComponent.class})
     abstract class ServerModule {
 
         @Provides
         static BluetoothManager provideBluetoothManager(Context context) {
             return (BluetoothManager) context.getSystemService(Context.BLUETOOTH_SERVICE);
+        }
+
+        @Provides
+        @Named(SERVER_CONTEXT)
+        static Context provideContext(Context context) {
+            return context;
         }
 
         @Provides
@@ -78,29 +86,22 @@ public interface ServerComponent extends RxBleComponent {
         }
 
         @Provides
-        @Named(NamedExecutors.CONNECTION_QUEUE)
-        @ClientScope
-        static ExecutorService provideConnectionQueueExecutorService() {
-            return Executors.newCachedThreadPool();
-        }
-
-        @Provides
         @Named(NamedExecutors.BLUETOOTH_INTERACTION)
-        @ClientScope
+        @ServerScope
         static ExecutorService provideBluetoothInteractionExecutorService() {
             return Executors.newSingleThreadExecutor();
         }
 
         @Provides
         @Named(NamedSchedulers.BLUETOOTH_INTERACTION)
-        @ClientScope
+        @ServerScope
         static Scheduler provideBluetoothInteractionScheduler(@Named(NamedExecutors.BLUETOOTH_INTERACTION) ExecutorService service) {
             return Schedulers.from(service);
         }
 
         @Provides
         @Named(NamedSchedulers.BLUETOOTH_CALLBACKS)
-        @ClientScope
+        @ServerScope
         static Scheduler provideBluetoothCallbacksScheduler() {
             return RxJavaPlugins.createSingleScheduler(new RxBleThreadFactory());
         }
@@ -108,15 +109,13 @@ public interface ServerComponent extends RxBleComponent {
         @Provides
         static ServerComponent.ServerComponentFinalizer provideFinalizationCloseable(
                 @Named(NamedExecutors.BLUETOOTH_INTERACTION) final ExecutorService interactionExecutorService,
-                @Named(NamedSchedulers.BLUETOOTH_CALLBACKS) final Scheduler callbacksScheduler,
-                @Named(NamedExecutors.CONNECTION_QUEUE) final ExecutorService connectionQueueExecutorService
+                @Named(NamedSchedulers.BLUETOOTH_CALLBACKS) final Scheduler callbacksScheduler
         ) {
             return new ServerComponent.ServerComponentFinalizer() {
                 @Override
                 public void onFinalize() {
                     interactionExecutorService.shutdown();
                     callbacksScheduler.shutdown();
-                    connectionQueueExecutorService.shutdown();
                 }
             };
         }
@@ -169,11 +168,11 @@ public interface ServerComponent extends RxBleComponent {
         abstract BackgroundScanner bindBackgroundScanner(BackgroundScannerImpl backgroundScannerImpl);
 
         @Binds
-        @ClientScope
+        @ServerScope
         abstract RxBleServer bindRxBleServer(RxBleServerImpl rxBleServer);
 
         @Binds
-        @ClientScope
+        @ServerScope
         abstract ClientOperationQueue bindClientOperationQueue(ClientOperationQueueImpl clientOperationQueue);
 
         @Binds
