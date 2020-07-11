@@ -18,7 +18,6 @@ import com.polidea.rxandroidble2.internal.scan.BackgroundScannerImpl;
 import com.polidea.rxandroidble2.internal.serialization.ClientOperationQueue;
 import com.polidea.rxandroidble2.internal.serialization.ClientOperationQueueImpl;
 import com.polidea.rxandroidble2.internal.serialization.RxBleThreadFactory;
-import com.polidea.rxandroidble2.internal.server.GattServerSessionBuilderImpl;
 import com.polidea.rxandroidble2.scan.BackgroundScanner;
 
 import java.util.concurrent.ExecutorService;
@@ -180,11 +179,6 @@ public interface ServerComponent extends RxBleComponent {
         @Binds
         @Named(NamedSchedulers.TIMEOUT)
         abstract Scheduler bindTimeoutScheduler(@Named(NamedSchedulers.COMPUTATION) Scheduler computationScheduler);
-
-        @Binds
-        @ClientScope
-        abstract RxBleServer.GattServerSessionBuilder bindGattServerSession(GattServerSessionBuilderImpl serverSession);
-
     }
 
     RxBleServer rxBleServer();
