@@ -13,7 +13,7 @@ import io.reactivex.Scheduler;
 /**
  * Represents a custom operation that will be enqueued for future execution within the client instance.
  */
-public interface RxBleCustomOperation<T> {
+public interface RxBleCustomOperation<T, V, C> {
 
     /**
      * Return an observable that implement a custom operation using low-level Android BLE API.
@@ -37,13 +37,13 @@ public interface RxBleCustomOperation<T> {
      * or {@code onError(Throwable)}. Otherwise, the internal queue orchestrator will wait forever for
      * your {@link Observable} to complete and the it will not continue to process queued operations.
      *
-     * @param bluetoothGatt     The Android API GATT instance
-     * @param rxBleGattCallback The internal Rx ready bluetooth gatt callback to be notified of GATT operations
+     * @param bluetoothGatt     The Android API GATT instance (client or server)
+     * @param rxBleCallback The internal Rx ready bluetooth gatt callback to be notified of GATT operations
      * @param scheduler         The ClientOperationQueue scheduler used to asObservable operation
      * @throws Throwable Any exception that your custom operation might throw
      */
     @NonNull
-    Observable<T> asObservable(BluetoothGatt bluetoothGatt,
-                               RxBleGattCallback rxBleGattCallback,
+    Observable<T> asObservable(V bluetoothGatt,
+                               C rxBleCallback,
                                Scheduler scheduler) throws Throwable;
 }
