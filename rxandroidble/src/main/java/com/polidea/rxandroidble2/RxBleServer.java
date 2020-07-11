@@ -2,7 +2,6 @@ package com.polidea.rxandroidble2;
 
 import android.content.Context;
 
-import io.reactivex.Observable;
 import io.reactivex.annotations.NonNull;
 
 public abstract class RxBleServer extends RxBleBase {
@@ -24,14 +23,4 @@ public abstract class RxBleServer extends RxBleBase {
      * @throws UnsupportedOperationException if called on system without Bluetooth capabilities
      */
     public abstract RxBleDevice getBleDevice(@androidx.annotation.NonNull String macAddress);
-
-    public interface GattServerSessionBuilder {
-        GattServerSessionBuilder setBytesObservable(Observable<Byte[]> bytesObservable);
-
-        GattServerSessionBuilder setResponseNeeded(boolean responseNeeded);
-
-        GattServerSessionBuilder setRequestId(int requestId);
-
-        Observable<byte[]> build();
-    }
 }
