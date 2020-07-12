@@ -1,6 +1,8 @@
 package com.polidea.rxandroidble2.internal.connection;
 
 import android.bluetooth.BluetoothDevice;
+import android.bluetooth.BluetoothGattServer;
+import android.bluetooth.BluetoothManager;
 import android.content.Context;
 import android.util.Pair;
 
@@ -19,20 +21,28 @@ public class ServerConnectorImpl implements ServerConnector {
     private final RxBleGattServerCallback rxBleGattServerCallback;
     private final BluetoothGattServerProvider gattServerProvider;
     private final Context context;
+    private final BluetoothManager bluetoothManager;
 
     @Inject
     public ServerConnectorImpl(
             final RxBleGattServerCallback rxBleGattServerCallback,
             final @Named(ServerComponent.SERVER_CONTEXT) Context context,
-            final BluetoothGattServerProvider gattServerProvider
+            final BluetoothGattServerProvider gattServerProvider,
+            final BluetoothManager bluetoothManager
     ) {
         this.rxBleGattServerCallback = rxBleGattServerCallback;
         this.context = context;
         this.gattServerProvider = gattServerProvider;
+        this.bluetoothManager = bluetoothManager;
     }
 
     @Override
     public Observable<RxBleServerConnection> subscribeToConnections() {
+        BluetoothGattServer server = bluetoothManager.openGattServer(
+                context,
+                rxBleGattServerCallback.getBluetoothGattServerCallback()
+        );
+        gattServerProvider.updateBluetoothGatt(server);
         return rxBleGattServerCallback.getOnConnectionStateChange()
                 .map(new Function<Pair<BluetoothDevice, RxBleConnection.RxBleConnectionState>, RxBleServerConnection>() {
                     @Override
