@@ -35,7 +35,7 @@ import io.reactivex.functions.Function;
 public class RxBleGattCallback {
 
     private final Scheduler callbackScheduler;
-    final BluetoothGattProvider<BluetoothGatt> bluetoothGattProvider;
+    final BluetoothGattProvider bluetoothGattProvider;
     final DisconnectionRouter disconnectionRouter;
     final NativeCallbackDispatcher nativeCallbackDispatcher;
     final PublishRelay<RxBleConnectionState> connectionStatePublishRelay = PublishRelay.create();
@@ -58,7 +58,7 @@ public class RxBleGattCallback {
 
     @Inject
     public RxBleGattCallback(@Named(ClientComponent.NamedSchedulers.BLUETOOTH_CALLBACKS) Scheduler callbackScheduler,
-                             BluetoothGattProvider<BluetoothGatt> bluetoothGattProvider,
+                             BluetoothGattProvider bluetoothGattProvider,
                              DisconnectionRouter disconnectionRouter,
                              NativeCallbackDispatcher nativeCallbackDispatcher) {
         this.callbackScheduler = callbackScheduler;

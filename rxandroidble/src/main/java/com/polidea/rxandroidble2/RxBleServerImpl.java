@@ -84,7 +84,7 @@ public class RxBleServerImpl extends RxBleServer {
 
     @Override
     public Observable<RxBleServerConnection> openServer() {
-        return null; //TODO:
+        return serverConnector.subscribeToConnections(); //TODO:
     }
 
     @Override
