@@ -8,6 +8,7 @@ import androidx.annotation.NonNull;
 
 import com.jakewharton.rxrelay2.PublishRelay;
 import com.polidea.rxandroidble2.RxBleConnection;
+import com.polidea.rxandroidble2.internal.connection.ServerConnectionScope;
 import com.polidea.rxandroidble2.internal.util.ByteAssociation;
 
 import java.io.ByteArrayOutputStream;
@@ -19,6 +20,7 @@ import io.reactivex.Observable;
 /**
  * BLE connection handle for a single devices connected to the GATT server
  */
+@ServerConnectionScope
 public interface RxBleServerConnection {
     @NonNull
     RxBleGattServerCallback.Output<ByteAssociation<UUID>> getReadCharacteristicOutput();
