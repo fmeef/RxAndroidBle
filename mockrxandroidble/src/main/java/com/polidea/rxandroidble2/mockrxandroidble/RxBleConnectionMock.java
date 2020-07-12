@@ -1,11 +1,11 @@
 package com.polidea.rxandroidble2.mockrxandroidble;
 
 import android.bluetooth.BluetoothGatt;
-import android.bluetooth.BluetoothGattCallback;
 import android.bluetooth.BluetoothGattCharacteristic;
 import android.bluetooth.BluetoothGattDescriptor;
-import androidx.annotation.NonNull;
 import android.util.Log;
+
+import androidx.annotation.NonNull;
 
 import com.polidea.rxandroidble2.ConnectionParameters;
 import com.polidea.rxandroidble2.NotificationSetupMode;
