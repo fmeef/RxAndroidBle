@@ -1,7 +1,6 @@
 package com.polidea.rxandroidble2.internal.connection;
 
 import android.bluetooth.BluetoothDevice;
-import android.bluetooth.BluetoothGattServer;
 import android.content.Context;
 import android.util.Pair;
 
@@ -17,21 +16,14 @@ import io.reactivex.functions.Function;
 
 public class ServerConnectorImpl implements ServerConnector {
     private final RxBleGattServerCallback rxBleGattServerCallback;
-    private final BluetoothGattProvider<BluetoothGattServer> bluetoothGattProvider;
-    private final ServerConnectionComponent.Builder connectionComponentBuilder;
     private final Context context;
 
     @Inject
     public ServerConnectorImpl(
             final RxBleGattServerCallback rxBleGattServerCallback,
-            final BluetoothGattProvider<BluetoothGattServer> bluetoothGattProvider,
-            final ServerConnectionComponent.Builder connectionComponentBuilder,
             final @Named(ServerComponent.SERVER_CONTEXT) Context context
-
     ) {
         this.rxBleGattServerCallback = rxBleGattServerCallback;
-        this.bluetoothGattProvider = bluetoothGattProvider;
-        this.connectionComponentBuilder = connectionComponentBuilder;
         this.context = context;
     }
 
@@ -43,7 +35,7 @@ public class ServerConnectorImpl implements ServerConnector {
                     public RxBleServerConnection apply(
                             Pair<BluetoothDevice, RxBleConnection.RxBleConnectionState> bluetoothDeviceRxBleConnectionStatePair
                     ) throws Exception {
-                        return null; //TODO:
+                        return rxBleGattServerCallback.getRxBleServerConnection(bluetoothDeviceRxBleConnectionStatePair.first);
                     }
                 });
     }

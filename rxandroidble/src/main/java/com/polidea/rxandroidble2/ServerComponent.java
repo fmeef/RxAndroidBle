@@ -13,7 +13,11 @@ import android.os.Build;
 import androidx.annotation.Nullable;
 import androidx.annotation.RestrictTo;
 
-import com.polidea.rxandroidble2.internal.connection.ServerConnectionComponent;
+import com.polidea.rxandroidble2.internal.DeviceComponent;
+import com.polidea.rxandroidble2.internal.connection.ServerConnector;
+import com.polidea.rxandroidble2.internal.connection.ServerConnectorImpl;
+import com.polidea.rxandroidble2.internal.operations.OperationsProvider;
+import com.polidea.rxandroidble2.internal.operations.OperationsProviderImpl;
 import com.polidea.rxandroidble2.internal.scan.BackgroundScannerImpl;
 import com.polidea.rxandroidble2.internal.serialization.ClientOperationQueue;
 import com.polidea.rxandroidble2.internal.serialization.ClientOperationQueueImpl;
@@ -48,7 +52,7 @@ public interface ServerComponent extends RxBleComponent {
         Builder applicationContext(Context context);
     }
 
-    @Module(subcomponents = {ServerConnectionComponent.class})
+    @Module(subcomponents = {DeviceComponent.class, ServerConnectionComponent.class})
     abstract class ServerModule {
 
         @Provides
@@ -174,6 +178,13 @@ public interface ServerComponent extends RxBleComponent {
         @Binds
         @ServerScope
         abstract ClientOperationQueue bindClientOperationQueue(ClientOperationQueueImpl clientOperationQueue);
+
+        @Binds
+        @ServerScope
+        abstract ServerConnector bindServerConnector(ServerConnectorImpl serverConnector);
+
+        @Binds
+        abstract OperationsProvider bindRxBleOperationsProvider(OperationsProviderImpl operationsProvider);
 
         @Binds
         @Named(NamedSchedulers.TIMEOUT)
