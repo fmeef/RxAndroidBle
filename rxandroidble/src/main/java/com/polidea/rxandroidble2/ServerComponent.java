@@ -7,7 +7,6 @@ import android.bluetooth.BluetoothManager;
 import android.content.ContentResolver;
 import android.content.Context;
 import android.content.pm.PackageManager;
-import android.location.LocationManager;
 import android.os.Build;
 
 import androidx.annotation.Nullable;
@@ -16,13 +15,7 @@ import androidx.annotation.RestrictTo;
 import com.polidea.rxandroidble2.internal.DeviceComponent;
 import com.polidea.rxandroidble2.internal.connection.ServerConnector;
 import com.polidea.rxandroidble2.internal.connection.ServerConnectorImpl;
-import com.polidea.rxandroidble2.internal.operations.OperationsProvider;
-import com.polidea.rxandroidble2.internal.operations.OperationsProviderImpl;
-import com.polidea.rxandroidble2.internal.scan.BackgroundScannerImpl;
-import com.polidea.rxandroidble2.internal.serialization.ClientOperationQueue;
-import com.polidea.rxandroidble2.internal.serialization.ClientOperationQueueImpl;
 import com.polidea.rxandroidble2.internal.serialization.RxBleThreadFactory;
-import com.polidea.rxandroidble2.scan.BackgroundScanner;
 
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -40,9 +33,49 @@ import io.reactivex.schedulers.Schedulers;
 
 @ServerScope
 @Component(modules = {ServerComponent.ServerModule.class})
-public interface ServerComponent extends RxBleComponent {
+public interface ServerComponent {
 
     String SERVER_CONTEXT = "server-context";
+
+    class NamedExecutors {
+
+        public static final String BLUETOOTH_INTERACTION = "executor_bluetooth_interaction_server";
+        private NamedExecutors() {
+
+        }
+    }
+
+    class NamedSchedulers {
+
+        public static final String COMPUTATION = "computation_server";
+        public static final String TIMEOUT = "timeout_server";
+        public static final String BLUETOOTH_INTERACTION = "bluetooth_interaction_server";
+        public static final String BLUETOOTH_CALLBACKS = "bluetooth_callbacks_server";
+        private NamedSchedulers() {
+
+        }
+    }
+
+    class PlatformConstants {
+
+        public static final String INT_TARGET_SDK = "target-sdk";
+        public static final String INT_DEVICE_SDK = "device-sdk";
+        public static final String BOOL_IS_ANDROID_WEAR = "android-wear";
+        private PlatformConstants() {
+
+        }
+    }
+
+    class BluetoothConstants {
+
+        public static final String ENABLE_NOTIFICATION_VALUE = "enable-notification-value";
+        public static final String ENABLE_INDICATION_VALUE = "enable-indication-value";
+        public static final String DISABLE_NOTIFICATION_VALUE = "disable-notification-value";
+
+        private BluetoothConstants() {
+
+        }
+    }
 
     @Component.Builder
     interface Builder {
@@ -125,11 +158,6 @@ public interface ServerComponent extends RxBleComponent {
         }
 
         @Provides
-        static LocationManager provideLocationManager(Context context) {
-            return (LocationManager) context.getSystemService(Context.LOCATION_SERVICE);
-        }
-
-        @Provides
         @Named(PlatformConstants.INT_TARGET_SDK)
         static int provideTargetSdk(Context context) {
             try {
@@ -169,22 +197,12 @@ public interface ServerComponent extends RxBleComponent {
         abstract Observable<RxBleAdapterStateObservable.BleAdapterState> bindStateObs(RxBleAdapterStateObservable stateObservable);
 
         @Binds
-        abstract BackgroundScanner bindBackgroundScanner(BackgroundScannerImpl backgroundScannerImpl);
-
-        @Binds
         @ServerScope
         abstract RxBleServer bindRxBleServer(RxBleServerImpl rxBleServer);
 
         @Binds
         @ServerScope
-        abstract ClientOperationQueue bindClientOperationQueue(ClientOperationQueueImpl clientOperationQueue);
-
-        @Binds
-        @ServerScope
         abstract ServerConnector bindServerConnector(ServerConnectorImpl serverConnector);
-
-        @Binds
-        abstract OperationsProvider bindRxBleOperationsProvider(OperationsProviderImpl operationsProvider);
 
         @Binds
         @Named(NamedSchedulers.TIMEOUT)
