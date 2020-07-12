@@ -14,13 +14,13 @@ import android.util.Pair;
 import com.jakewharton.rxrelay2.PublishRelay;
 import com.polidea.rxandroidble2.RxBleConnection;
 import com.polidea.rxandroidble2.ServerComponent;
+import com.polidea.rxandroidble2.ServerConnectionComponent;
+import com.polidea.rxandroidble2.ServerScope;
 import com.polidea.rxandroidble2.exceptions.BleGattServerCharacteristicException;
 import com.polidea.rxandroidble2.exceptions.BleGattServerDescriptorException;
 import com.polidea.rxandroidble2.exceptions.BleGattServerException;
 import com.polidea.rxandroidble2.exceptions.BleGattServerOperationType;
 import com.polidea.rxandroidble2.internal.RxBleLog;
-import com.polidea.rxandroidble2.internal.connection.ConnectionScope;
-import com.polidea.rxandroidble2.internal.connection.ServerConnectionComponent;
 import com.polidea.rxandroidble2.internal.util.ByteAssociation;
 
 import java.io.ByteArrayOutputStream;
@@ -32,7 +32,7 @@ import bleshadow.javax.inject.Named;
 import io.reactivex.Observable;
 import io.reactivex.Scheduler;
 
-@ConnectionScope
+@ServerScope
 public class RxBleGattServerCallback {
     final Scheduler callbackScheduler;
     //TODO: make this per device
@@ -56,6 +56,8 @@ public class RxBleGattServerCallback {
             if (newState == BluetoothProfile.STATE_DISCONNECTED) {
                 deviceConnectionInfoMap.remove(device);
                 deviceConnectionInfoMap.remove(device);
+            } else {
+                deviceConnectionInfoMap.put(device, connectionInfo);
             }
 
             connectionStatePublishRelay.accept(new Pair<BluetoothDevice, RxBleConnection.RxBleConnectionState>(
@@ -269,7 +271,7 @@ public class RxBleGattServerCallback {
         RxBleServerConnection connectionInfo = deviceConnectionInfoMap.get(device);
 
         if (connectionInfo == null) {
-            connectionInfo =  connectionComponentBuilder.build().rxBleServerConnection();
+            connectionInfo =  connectionComponentBuilder.build().serverConnection();
             deviceConnectionInfoMap.put(device, connectionInfo);
         }
         return connectionInfo;
@@ -364,6 +366,10 @@ public class RxBleGattServerCallback {
 
     public BluetoothGattServerCallback getBluetoothGattServerCallback() {
         return gattServerCallback;
+    }
+
+    public RxBleServerConnection getRxBleServerConnection(BluetoothDevice device) {
+        return deviceConnectionInfoMap.get(device);
     }
 
     public static class Output<T> {

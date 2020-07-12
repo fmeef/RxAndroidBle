@@ -10,7 +10,6 @@ import com.jakewharton.rxrelay2.PublishRelay;
 import com.polidea.rxandroidble2.ClientComponent;
 import com.polidea.rxandroidble2.RxBleConnection;
 import com.polidea.rxandroidble2.exceptions.BleGattServerException;
-import com.polidea.rxandroidble2.internal.operations.OperationsProvider;
 import com.polidea.rxandroidble2.internal.util.ByteAssociation;
 
 import java.io.ByteArrayOutputStream;
@@ -27,7 +26,6 @@ import io.reactivex.Scheduler;
 import io.reactivex.functions.Function;
 
 public class RxBleServerConnectionImpl implements RxBleServerConnection {
-    private final OperationsProvider operationsProvider;
     private final Scheduler callbackScheduler;
 
     private final Function<BleGattServerException, Observable<?>> errorMapper = new Function<BleGattServerException, Observable<?>>() {
@@ -39,10 +37,8 @@ public class RxBleServerConnectionImpl implements RxBleServerConnection {
 
     @Inject
     public RxBleServerConnectionImpl(
-        OperationsProvider operationsProvider,
         @Named(ClientComponent.NamedSchedulers.BLUETOOTH_CALLBACKS) Scheduler callbackScheduler
     ) {
-        this.operationsProvider = operationsProvider;
         this.callbackScheduler = callbackScheduler;
     }
 
