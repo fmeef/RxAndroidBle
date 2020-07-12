@@ -6,6 +6,7 @@ import android.util.Pair;
 
 import com.polidea.rxandroidble2.RxBleConnection;
 import com.polidea.rxandroidble2.ServerComponent;
+import com.polidea.rxandroidble2.internal.server.BluetoothGattServerProvider;
 import com.polidea.rxandroidble2.internal.server.RxBleGattServerCallback;
 import com.polidea.rxandroidble2.internal.server.RxBleServerConnection;
 
@@ -16,15 +17,18 @@ import io.reactivex.functions.Function;
 
 public class ServerConnectorImpl implements ServerConnector {
     private final RxBleGattServerCallback rxBleGattServerCallback;
+    private final BluetoothGattServerProvider gattServerProvider;
     private final Context context;
 
     @Inject
     public ServerConnectorImpl(
             final RxBleGattServerCallback rxBleGattServerCallback,
-            final @Named(ServerComponent.SERVER_CONTEXT) Context context
+            final @Named(ServerComponent.SERVER_CONTEXT) Context context,
+            final BluetoothGattServerProvider gattServerProvider
     ) {
         this.rxBleGattServerCallback = rxBleGattServerCallback;
         this.context = context;
+        this.gattServerProvider = gattServerProvider;
     }
 
     @Override
@@ -39,6 +43,5 @@ public class ServerConnectorImpl implements ServerConnector {
                     }
                 });
     }
-
 
 }
