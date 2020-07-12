@@ -4,7 +4,6 @@ import android.bluetooth.BluetoothDevice;
 
 import com.polidea.rxandroidble2.exceptions.BleScanException;
 import com.polidea.rxandroidble2.internal.connection.ServerConnector;
-import com.polidea.rxandroidble2.internal.serialization.ClientOperationQueue;
 import com.polidea.rxandroidble2.internal.server.RxBleServerConnection;
 import com.polidea.rxandroidble2.internal.util.RxBleAdapterWrapper;
 import com.polidea.rxandroidble2.internal.util.ServerStateObservable;
@@ -24,33 +23,27 @@ import io.reactivex.functions.Predicate;
 public class RxBleServerImpl extends RxBleServer {
     @Deprecated
     public static final String TAG = "RxBleCglient";
-    final ClientOperationQueue operationQueue;
     final Scheduler bluetoothInteractionScheduler;
     private final RxBleAdapterWrapper rxBleAdapterWrapper;
     private final ServerComponent.ServerComponentFinalizer serverComponentFinalizer;
     private final Observable<RxBleAdapterStateObservable.BleAdapterState> rxBleAdapterStateObservable;
     private final Lazy<ServerStateObservable> lazyServerStateObservable;
-    private final ClientOperationQueue clientOperationQueue;
     private final ServerConnector serverConnector;
 
     @Inject
     public RxBleServerImpl(
-            final ClientOperationQueue operationQueue,
-            @Named(ClientComponent.NamedSchedulers.BLUETOOTH_INTERACTION) final Scheduler bluetoothInteractionScheduler,
+            @Named(ServerComponent.NamedSchedulers.BLUETOOTH_INTERACTION) final Scheduler bluetoothInteractionScheduler,
             final RxBleAdapterWrapper rxBleAdapterWrapper,
             final Observable<RxBleAdapterStateObservable.BleAdapterState> rxBleAdapterStateObservable,
             final ServerComponent.ServerComponentFinalizer serverComponentFinalizer,
             final Lazy<ServerStateObservable> lazyServerStateObservable,
-            final ClientOperationQueue clientOperationQueue,
             final ServerConnector serverConnector
     ) {
-        this.operationQueue = operationQueue;
         this.bluetoothInteractionScheduler = bluetoothInteractionScheduler;
         this.rxBleAdapterWrapper = rxBleAdapterWrapper;
         this.rxBleAdapterStateObservable = rxBleAdapterStateObservable;
         this.serverComponentFinalizer = serverComponentFinalizer;
         this.lazyServerStateObservable = lazyServerStateObservable;
-        this.clientOperationQueue = clientOperationQueue;
         this.serverConnector = serverConnector;
 
     }

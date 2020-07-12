@@ -4,7 +4,6 @@ import android.bluetooth.BluetoothDevice;
 
 import com.jakewharton.rxrelay2.BehaviorRelay;
 import com.polidea.rxandroidble2.ClientComponent;
-import com.polidea.rxandroidble2.RxBleComponent.NamedSchedulers;
 import com.polidea.rxandroidble2.RxBleConnection;
 import com.polidea.rxandroidble2.RxBleDevice;
 import com.polidea.rxandroidble2.internal.connection.ConnectionComponent;
@@ -47,7 +46,7 @@ public abstract class DeviceModule {
 
     @Provides
     @Named(DISCONNECT_TIMEOUT)
-    static TimeoutConfiguration providesDisconnectTimeoutConf(@Named(NamedSchedulers.TIMEOUT) Scheduler timeoutScheduler) {
+    static TimeoutConfiguration providesDisconnectTimeoutConf(@Named(ClientComponent.NamedSchedulers.TIMEOUT) Scheduler timeoutScheduler) {
         return new TimeoutConfiguration(DEFAULT_DISCONNECT_TIMEOUT, TimeUnit.SECONDS, timeoutScheduler);
     }
 

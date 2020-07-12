@@ -7,8 +7,8 @@ import android.bluetooth.BluetoothGattDescriptor;
 import androidx.annotation.NonNull;
 
 import com.jakewharton.rxrelay2.PublishRelay;
-import com.polidea.rxandroidble2.ClientComponent;
 import com.polidea.rxandroidble2.RxBleConnection;
+import com.polidea.rxandroidble2.ServerComponent;
 import com.polidea.rxandroidble2.exceptions.BleGattServerException;
 import com.polidea.rxandroidble2.internal.util.ByteAssociation;
 
@@ -37,7 +37,7 @@ public class RxBleServerConnectionImpl implements RxBleServerConnection {
 
     @Inject
     public RxBleServerConnectionImpl(
-        @Named(ClientComponent.NamedSchedulers.BLUETOOTH_CALLBACKS) Scheduler callbackScheduler
+        @Named(ServerComponent.NamedSchedulers.BLUETOOTH_CALLBACKS) Scheduler callbackScheduler
     ) {
         this.callbackScheduler = callbackScheduler;
     }

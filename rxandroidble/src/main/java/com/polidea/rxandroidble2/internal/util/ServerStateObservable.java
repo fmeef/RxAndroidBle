@@ -3,9 +3,9 @@ package com.polidea.rxandroidble2.internal.util;
 
 import androidx.annotation.NonNull;
 
-import com.polidea.rxandroidble2.ClientComponent;
 import com.polidea.rxandroidble2.RxBleAdapterStateObservable;
 import com.polidea.rxandroidble2.RxBleBase;
+import com.polidea.rxandroidble2.ServerComponent;
 
 import bleshadow.javax.inject.Inject;
 import bleshadow.javax.inject.Named;
@@ -31,7 +31,7 @@ public class ServerStateObservable extends Observable<RxBleBase.State> {
     protected ServerStateObservable(
             final RxBleAdapterWrapper rxBleAdapterWrapper,
             final Observable<RxBleAdapterStateObservable.BleAdapterState> bleAdapterStateObservable,
-            @Named(ClientComponent.NamedSchedulers.TIMEOUT) final Scheduler timerScheduler
+            @Named(ServerComponent.NamedSchedulers.TIMEOUT) final Scheduler timerScheduler
     ) {
         this.rxBleAdapterWrapper = rxBleAdapterWrapper;
         this.bleAdapterStateObservable = bleAdapterStateObservable;
