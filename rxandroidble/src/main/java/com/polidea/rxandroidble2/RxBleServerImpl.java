@@ -59,7 +59,7 @@ public class RxBleServerImpl extends RxBleServer {
     }
 
     @Override
-    public Observable<RxBleBase.State> observeStateChanges() {
+    public Observable<RxBleServer.State> observeStateChanges() {
         return lazyServerStateObservable.get();
     }
 
