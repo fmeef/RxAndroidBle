@@ -4,7 +4,7 @@ package com.polidea.rxandroidble2.internal.util;
 import androidx.annotation.NonNull;
 
 import com.polidea.rxandroidble2.RxBleAdapterStateObservable;
-import com.polidea.rxandroidble2.RxBleBase;
+import com.polidea.rxandroidble2.RxBleServer;
 import com.polidea.rxandroidble2.ServerComponent;
 
 import bleshadow.javax.inject.Inject;
@@ -19,9 +19,9 @@ import io.reactivex.functions.Function;
  * The Observable class which emits changes to the Server State. These can be useful for evaluating if particular functionality
  * of the library has a chance to work properly.
  * <p>
- * For more info check {@link RxBleBase.State}
+ * For more info check {@link RxBleServer.State}
  */
-public class ServerStateObservable extends Observable<RxBleBase.State> {
+public class ServerStateObservable extends Observable<RxBleServer.State> {
 
     final RxBleAdapterWrapper rxBleAdapterWrapper;
     final Observable<RxBleAdapterStateObservable.BleAdapterState> bleAdapterStateObservable;
@@ -39,7 +39,7 @@ public class ServerStateObservable extends Observable<RxBleBase.State> {
     }
 
     @NonNull
-    static Observable<RxBleBase.State> checkAdapterAndServicesState(
+    static Observable<RxBleServer.State> checkAdapterAndServicesState(
             RxBleAdapterWrapper rxBleAdapterWrapper,
             Observable<RxBleAdapterStateObservable.BleAdapterState> rxBleAdapterStateObservable
 
@@ -52,21 +52,21 @@ public class ServerStateObservable extends Observable<RxBleBase.State> {
                          * we only check if it is STATE_ON or not
                          */
                         : RxBleAdapterStateObservable.BleAdapterState.STATE_OFF)
-                .switchMap(new Function<RxBleAdapterStateObservable.BleAdapterState, Observable<RxBleBase.State>>() {
+                .switchMap(new Function<RxBleAdapterStateObservable.BleAdapterState, Observable<RxBleServer.State>>() {
                     @Override
-                    public Observable<RxBleBase.State> apply(
+                    public Observable<RxBleServer.State> apply(
                             RxBleAdapterStateObservable.BleAdapterState bleAdapterState) {
                         if (bleAdapterState != RxBleAdapterStateObservable.BleAdapterState.STATE_ON) {
-                            return Observable.just(RxBleBase.State.BLUETOOTH_NOT_ENABLED);
+                            return Observable.just(RxBleServer.State.BLUETOOTH_NOT_ENABLED);
                         } else {
-                            return Observable.just(RxBleBase.State.READY);
+                            return Observable.just(RxBleServer.State.READY);
                         }
                     }
                 });
     }
 
     @Override
-    protected void subscribeActual(Observer<? super RxBleBase.State> observer) {
+    protected void subscribeActual(Observer<? super RxBleServer.State> observer) {
         if (!rxBleAdapterWrapper.hasBluetoothAdapter()) {
             observer.onSubscribe(Disposables.empty());
             observer.onComplete();
