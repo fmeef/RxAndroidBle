@@ -21,6 +21,7 @@ import com.polidea.rxandroidble2.exceptions.BleGattServerDescriptorException;
 import com.polidea.rxandroidble2.exceptions.BleGattServerException;
 import com.polidea.rxandroidble2.exceptions.BleGattServerOperationType;
 import com.polidea.rxandroidble2.internal.RxBleLog;
+import com.polidea.rxandroidble2.internal.serialization.ServerOperationQueue;
 import com.polidea.rxandroidble2.internal.util.ByteAssociation;
 
 import java.io.ByteArrayOutputStream;
@@ -35,6 +36,7 @@ import io.reactivex.Scheduler;
 @ServerScope
 public class RxBleGattServerCallback {
     final Scheduler callbackScheduler;
+    final ServerOperationQueue serverOperationQueue;
     //TODO: make this per device
     final PublishRelay<Pair<BluetoothDevice, RxBleConnection.RxBleConnectionState>> connectionStatePublishRelay = PublishRelay.create();
     final Map<BluetoothDevice, RxBleServerConnection> deviceConnectionInfoMap = new HashMap<>();
@@ -280,10 +282,12 @@ public class RxBleGattServerCallback {
     @Inject
     public RxBleGattServerCallback(
             @Named(ServerComponent.NamedSchedulers.BLUETOOTH_CALLBACKS) Scheduler callbackScheduler,
-            ServerConnectionComponent.Builder connectionComponentBuilder
+            ServerConnectionComponent.Builder connectionComponentBuilder,
+            ServerOperationQueue serverOperationQueue
     ) {
         this.callbackScheduler = callbackScheduler;
         this.connectionComponentBuilder = connectionComponentBuilder;
+        this.serverOperationQueue = serverOperationQueue;
     }
 
     static RxBleConnection.RxBleConnectionState mapConnectionStateToRxBleConnectionStatus(int newState) {
