@@ -16,6 +16,8 @@ import com.polidea.rxandroidble2.internal.DeviceComponent;
 import com.polidea.rxandroidble2.internal.connection.ServerConnector;
 import com.polidea.rxandroidble2.internal.connection.ServerConnectorImpl;
 import com.polidea.rxandroidble2.internal.serialization.RxBleThreadFactory;
+import com.polidea.rxandroidble2.internal.serialization.ServerOperationQueue;
+import com.polidea.rxandroidble2.internal.serialization.ServerOperationQueueImpl;
 
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -199,6 +201,10 @@ public interface ServerComponent {
         @Binds
         @ServerScope
         abstract RxBleServer bindRxBleServer(RxBleServerImpl rxBleServer);
+
+        @Binds
+        @ServerScope
+        abstract ServerOperationQueue bindServerOperationQueue(ServerOperationQueueImpl operationQueue);
 
         @Binds
         @ServerScope
