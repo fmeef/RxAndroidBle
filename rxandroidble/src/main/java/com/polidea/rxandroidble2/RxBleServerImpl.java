@@ -4,6 +4,7 @@ import android.bluetooth.BluetoothDevice;
 
 import com.polidea.rxandroidble2.exceptions.BleScanException;
 import com.polidea.rxandroidble2.internal.connection.ServerConnector;
+import com.polidea.rxandroidble2.internal.serialization.ServerOperationQueue;
 import com.polidea.rxandroidble2.internal.server.RxBleServerConnection;
 import com.polidea.rxandroidble2.internal.util.RxBleAdapterWrapper;
 import com.polidea.rxandroidble2.internal.util.ServerStateObservable;
@@ -29,6 +30,7 @@ public class RxBleServerImpl extends RxBleServer {
     private final Observable<RxBleAdapterStateObservable.BleAdapterState> rxBleAdapterStateObservable;
     private final Lazy<ServerStateObservable> lazyServerStateObservable;
     private final ServerConnector serverConnector;
+    private final ServerOperationQueue operationQueue;
 
     @Inject
     public RxBleServerImpl(
@@ -37,7 +39,8 @@ public class RxBleServerImpl extends RxBleServer {
             final Observable<RxBleAdapterStateObservable.BleAdapterState> rxBleAdapterStateObservable,
             final ServerComponent.ServerComponentFinalizer serverComponentFinalizer,
             final Lazy<ServerStateObservable> lazyServerStateObservable,
-            final ServerConnector serverConnector
+            final ServerConnector serverConnector,
+            final ServerOperationQueue operationQueue
     ) {
         this.bluetoothInteractionScheduler = bluetoothInteractionScheduler;
         this.rxBleAdapterWrapper = rxBleAdapterWrapper;
@@ -45,7 +48,7 @@ public class RxBleServerImpl extends RxBleServer {
         this.serverComponentFinalizer = serverComponentFinalizer;
         this.lazyServerStateObservable = lazyServerStateObservable;
         this.serverConnector = serverConnector;
-
+        this.operationQueue = operationQueue;
     }
 
     public Observable<Set<BluetoothDevice>> getConnectedDevices() {
