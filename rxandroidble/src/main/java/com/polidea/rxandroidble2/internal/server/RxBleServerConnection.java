@@ -45,6 +45,13 @@ public interface RxBleServerConnection {
     Output<Integer> getChangedMtuOutput();
 
     Output<byte[]> openLongWriteOutput(BluetoothGattCharacteristic characteristic);
+    Output<byte[]> openLongWriteOutput(BluetoothGattDescriptor descriptor);
+
+    Observable<byte[]> closeLongWriteOutput(BluetoothGattCharacteristic characteristic);
+    Observable<byte[]> closeLongWriteOutput(BluetoothGattDescriptor descriptor);
+
+    Observable<byte[]> getLongWriteObservable(BluetoothGattCharacteristic characteristic);
+    Observable<byte[]> getLongWriteObservable(BluetoothGattDescriptor descriptor);
 
     void resetDescriptorMap();
 
@@ -61,7 +68,6 @@ public interface RxBleServerConnection {
     Observable<ByteAssociation<BluetoothGattDescriptor>> getOnDescriptorWriteRequest(BluetoothDevice device);
 
     Observable<BluetoothDevice> getOnNotification(BluetoothDevice device);
-
 
     class Output<T> {
 
