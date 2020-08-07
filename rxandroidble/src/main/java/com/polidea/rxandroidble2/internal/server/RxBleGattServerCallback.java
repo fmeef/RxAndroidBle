@@ -9,7 +9,6 @@ import android.bluetooth.BluetoothGattServerCallback;
 import android.bluetooth.BluetoothGattService;
 import android.bluetooth.BluetoothProfile;
 import android.content.res.Resources;
-import android.util.Log;
 import android.util.Pair;
 
 import com.jakewharton.rxrelay2.PublishRelay;
