@@ -16,8 +16,6 @@ import com.polidea.rxandroidble2.internal.operations.server.ServerOperationsProv
 import com.polidea.rxandroidble2.internal.serialization.ServerOperationQueue;
 import com.polidea.rxandroidble2.internal.util.ByteAssociation;
 
-import java.util.HashMap;
-import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 
@@ -32,6 +30,10 @@ public class RxBleServerConnectionImpl implements RxBleServerConnection {
     private final ServerOperationsProvider operationsProvider;
     private final ServerOperationQueue operationQueue;
     private final BluetoothDevice device;
+    private final MultiIndex<Integer, BluetoothGattCharacteristic, Pair<LongWriteClosableOutput<byte[]>, Observable<byte[]>>>
+    characteristicMultiIndex = new MultiIndexImpl<>();
+    private final MultiIndex<Integer, BluetoothGattDescriptor, Pair<LongWriteClosableOutput<byte[]>, Observable<byte[]>>>
+    descriptorMultiIndex = new MultiIndexImpl<>();
 
     private final Function<BleGattServerException, Observable<?>> errorMapper = new Function<BleGattServerException, Observable<?>>() {
         @Override
@@ -68,11 +70,6 @@ public class RxBleServerConnectionImpl implements RxBleServerConnection {
             new Output<>();
     private final Output<Integer> changedMtuOutput =
             new Output<>();
-    private final Map<BluetoothGattCharacteristic, Pair<LongWriteClosableOutput<byte[]>, Observable<byte[]>>>
-            characteristicLongWriteMap = new HashMap<>();
-    private final Map<BluetoothGattDescriptor, Pair<LongWriteClosableOutput<byte[]>, Observable<byte[]>>>
-            descriptorLongWriteMapMap = new HashMap<>();
-
     @NonNull
     public Output<ByteAssociation<UUID>> getReadCharacteristicOutput() {
         return readCharacteristicOutput;
@@ -108,19 +105,20 @@ public class RxBleServerConnectionImpl implements RxBleServerConnection {
         return changedMtuOutput;
     }
 
-    public Output<byte[]> openLongWriteOutput(BluetoothGattCharacteristic characteristic) {
-        if (!characteristicLongWriteMap.containsKey(characteristic)) {
+    public Output<byte[]> openLongWriteOutput(Integer requestid, BluetoothGattCharacteristic characteristic) {
+        if (!characteristicMultiIndex.containsKey(requestid)) {
             LongWriteClosableOutput<byte[]> output = new LongWriteClosableOutput<>();
             ServerLongWriteOperation operation
                     = operationsProvider.provideLongWriteOperation(output.valueRelay, device);
             Observable<byte[]> operationResult = operationQueue.queue(operation);
             Pair<LongWriteClosableOutput<byte[]>, Observable<byte[]>> mapresult
                     = new Pair<>(output, operationResult);
-            characteristicLongWriteMap.put(characteristic, mapresult);
+            characteristicMultiIndex.put(requestid, mapresult);
+            characteristicMultiIndex.putMulti(characteristic, mapresult);
             return output;
         } else {
             Pair<LongWriteClosableOutput<byte[]>, Observable<byte[]>> r
-                    = characteristicLongWriteMap.get(characteristic);
+                    = characteristicMultiIndex.get(requestid);
             if (r != null) {
                 return r.first;
             } else {
@@ -129,19 +127,20 @@ public class RxBleServerConnectionImpl implements RxBleServerConnection {
         }
     }
 
-    public Output<byte[]> openLongWriteOutput(BluetoothGattDescriptor descriptor) {
-        if (!descriptorLongWriteMapMap.containsKey(descriptor)) {
+    public Output<byte[]> openLongWriteOutput(Integer requestid, BluetoothGattDescriptor descriptor) {
+        if (!descriptorMultiIndex.containsKey(requestid)) {
             LongWriteClosableOutput<byte[]> output = new LongWriteClosableOutput<>();
             ServerLongWriteOperation operation
                     = operationsProvider.provideLongWriteOperation(output.valueRelay, device);
             Observable<byte[]> operationResult =  operationQueue.queue(operation);
             Pair<LongWriteClosableOutput<byte[]>, Observable<byte[]>> mapresult
                     = new Pair<>(output, operationResult);
-            descriptorLongWriteMapMap.put(descriptor, mapresult);
+            descriptorMultiIndex.put(requestid, mapresult);
+            descriptorMultiIndex.putMulti(descriptor, mapresult);
             return output;
         } else {
             Pair<LongWriteClosableOutput<byte[]>, Observable<byte[]>> r
-            = descriptorLongWriteMapMap.get(descriptor);
+            = descriptorMultiIndex.get(requestid);
             if (r != null) {
                 return r.first;
             } else {
@@ -150,32 +149,20 @@ public class RxBleServerConnectionImpl implements RxBleServerConnection {
         }
     }
 
-    public Observable<byte[]> closeLongWriteOutput(BluetoothGattCharacteristic characteristic) {
+    public Observable<byte[]> closeLongWriteOutput(Integer requestid) {
         Pair<LongWriteClosableOutput<byte[]>, Observable<byte[]>> output
-                = characteristicLongWriteMap.get(characteristic);
+                = characteristicMultiIndex.get(requestid);
         if (output != null) {
             output.first.valueRelay.onComplete();
-            characteristicLongWriteMap.remove(characteristic);
+            characteristicMultiIndex.remove(requestid);
             return output.second;
         }
         return null;
     }
 
-    public Observable<byte[]> closeLongWriteOutput(BluetoothGattDescriptor descriptor) {
+    public Observable<byte[]> getLongWriteObservable(Integer requestid) {
         Pair<LongWriteClosableOutput<byte[]>, Observable<byte[]>> output
-                = descriptorLongWriteMapMap.get(descriptor);
-        if (output != null) {
-            output.first.valueRelay.onComplete();
-            descriptorLongWriteMapMap.remove(descriptor);
-            return output.second;
-        } else {
-            return  null;
-        }
-    }
-
-    public Observable<byte[]> getLongWriteObservable(BluetoothGattCharacteristic characteristic) {
-        Pair<LongWriteClosableOutput<byte[]>, Observable<byte[]>> output
-                = characteristicLongWriteMap.get(characteristic);
+                = characteristicMultiIndex.get(requestid);
         if (output != null) {
             return output.second;
         } else {
@@ -183,22 +170,12 @@ public class RxBleServerConnectionImpl implements RxBleServerConnection {
         }
     }
 
-    public Observable<byte[]> getLongWriteObservable(BluetoothGattDescriptor descriptor) {
-        Pair<LongWriteClosableOutput<byte[]>, Observable<byte[]>> output
-                = descriptorLongWriteMapMap.get(descriptor);
-        if (output != null) {
-            return output.second;
-        } else {
-            return  null;
-        }
-    }
-
     public void resetDescriptorMap() {
-        descriptorLongWriteMapMap.clear();
+        descriptorMultiIndex.clear();
     }
 
     public void resetCharacteristicMap() {
-        characteristicLongWriteMap.clear();
+        characteristicMultiIndex.clear();
     }
 
 
