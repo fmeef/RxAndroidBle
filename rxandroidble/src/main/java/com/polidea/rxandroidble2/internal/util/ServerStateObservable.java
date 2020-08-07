@@ -5,13 +5,10 @@ import androidx.annotation.NonNull;
 
 import com.polidea.rxandroidble2.RxBleAdapterStateObservable;
 import com.polidea.rxandroidble2.RxBleServer;
-import com.polidea.rxandroidble2.ServerComponent;
 
 import bleshadow.javax.inject.Inject;
-import bleshadow.javax.inject.Named;
 import io.reactivex.Observable;
 import io.reactivex.Observer;
-import io.reactivex.Scheduler;
 import io.reactivex.disposables.Disposables;
 import io.reactivex.functions.Function;
 
@@ -25,17 +22,14 @@ public class ServerStateObservable extends Observable<RxBleServer.State> {
 
     final RxBleAdapterWrapper rxBleAdapterWrapper;
     final Observable<RxBleAdapterStateObservable.BleAdapterState> bleAdapterStateObservable;
-    private final Scheduler timerScheduler;
 
     @Inject
     protected ServerStateObservable(
             final RxBleAdapterWrapper rxBleAdapterWrapper,
-            final Observable<RxBleAdapterStateObservable.BleAdapterState> bleAdapterStateObservable,
-            @Named(ServerComponent.NamedSchedulers.TIMEOUT) final Scheduler timerScheduler
+            final Observable<RxBleAdapterStateObservable.BleAdapterState> bleAdapterStateObservable
     ) {
         this.rxBleAdapterWrapper = rxBleAdapterWrapper;
         this.bleAdapterStateObservable = bleAdapterStateObservable;
-        this.timerScheduler = timerScheduler;
     }
 
     @NonNull

@@ -4,7 +4,6 @@ import android.bluetooth.BluetoothDevice;
 
 import com.polidea.rxandroidble2.exceptions.BleScanException;
 import com.polidea.rxandroidble2.internal.connection.ServerConnector;
-import com.polidea.rxandroidble2.internal.serialization.ServerOperationQueue;
 import com.polidea.rxandroidble2.internal.server.RxBleServerConnection;
 import com.polidea.rxandroidble2.internal.util.RxBleAdapterWrapper;
 import com.polidea.rxandroidble2.internal.util.ServerStateObservable;
@@ -13,42 +12,31 @@ import java.util.Set;
 
 import bleshadow.dagger.Lazy;
 import bleshadow.javax.inject.Inject;
-import bleshadow.javax.inject.Named;
 import io.reactivex.Maybe;
 import io.reactivex.MaybeSource;
 import io.reactivex.Observable;
-import io.reactivex.Scheduler;
 import io.reactivex.functions.Function;
 import io.reactivex.functions.Predicate;
 
 public class RxBleServerImpl extends RxBleServer {
     @Deprecated
     public static final String TAG = "RxBleCglient";
-    final Scheduler bluetoothInteractionScheduler;
     private final RxBleAdapterWrapper rxBleAdapterWrapper;
-    private final ServerComponent.ServerComponentFinalizer serverComponentFinalizer;
     private final Observable<RxBleAdapterStateObservable.BleAdapterState> rxBleAdapterStateObservable;
     private final Lazy<ServerStateObservable> lazyServerStateObservable;
     private final ServerConnector serverConnector;
-    private final ServerOperationQueue operationQueue;
 
     @Inject
     public RxBleServerImpl(
-            @Named(ServerComponent.NamedSchedulers.BLUETOOTH_INTERACTION) final Scheduler bluetoothInteractionScheduler,
             final RxBleAdapterWrapper rxBleAdapterWrapper,
             final Observable<RxBleAdapterStateObservable.BleAdapterState> rxBleAdapterStateObservable,
-            final ServerComponent.ServerComponentFinalizer serverComponentFinalizer,
             final Lazy<ServerStateObservable> lazyServerStateObservable,
-            final ServerConnector serverConnector,
-            final ServerOperationQueue operationQueue
+            final ServerConnector serverConnector
     ) {
-        this.bluetoothInteractionScheduler = bluetoothInteractionScheduler;
         this.rxBleAdapterWrapper = rxBleAdapterWrapper;
         this.rxBleAdapterStateObservable = rxBleAdapterStateObservable;
-        this.serverComponentFinalizer = serverComponentFinalizer;
         this.lazyServerStateObservable = lazyServerStateObservable;
         this.serverConnector = serverConnector;
-        this.operationQueue = operationQueue;
     }
 
     public Observable<Set<BluetoothDevice>> getConnectedDevices() {
@@ -57,7 +45,7 @@ public class RxBleServerImpl extends RxBleServer {
 
     @Override
     protected void finalize() throws Throwable {
-        serverComponentFinalizer.onFinalize();
+        //TODO: finalize using ServerComponentFinalizer
         super.finalize();
     }
 
