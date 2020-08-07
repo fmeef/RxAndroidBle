@@ -8,12 +8,11 @@ import androidx.annotation.NonNull;
 
 import com.jakewharton.rxrelay2.PublishRelay;
 import com.polidea.rxandroidble2.RxBleConnection;
-import com.polidea.rxandroidble2.ServerComponent;
+import com.polidea.rxandroidble2.ServerConnectionComponent;
 import com.polidea.rxandroidble2.exceptions.BleGattServerException;
+import com.polidea.rxandroidble2.internal.operations.server.ServerOperationsProvider;
 import com.polidea.rxandroidble2.internal.util.ByteAssociation;
 
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
@@ -27,6 +26,8 @@ import io.reactivex.functions.Function;
 
 public class RxBleServerConnectionImpl implements RxBleServerConnection {
     private final Scheduler callbackScheduler;
+    private final ServerOperationsProvider operationsProvider;
+    private final BluetoothDevice device;
 
     private final Function<BleGattServerException, Observable<?>> errorMapper = new Function<BleGattServerException, Observable<?>>() {
         @Override
@@ -37,48 +38,52 @@ public class RxBleServerConnectionImpl implements RxBleServerConnection {
 
     @Inject
     public RxBleServerConnectionImpl(
-        @Named(ServerComponent.NamedSchedulers.BLUETOOTH_CALLBACKS) Scheduler callbackScheduler
+        @Named(ServerConnectionComponent.NamedSchedulers.BLUETOOTH_CALLBACKS) Scheduler callbackScheduler,
+        ServerOperationsProvider operationsProvider,
+        BluetoothDevice device
     ) {
         this.callbackScheduler = callbackScheduler;
+        this.operationsProvider = operationsProvider;
+        this.device = device;
     }
 
 
-    private final RxBleGattServerCallback.Output<ByteAssociation<UUID>> readCharacteristicOutput =
-            new RxBleGattServerCallback.Output<>();
-    private final RxBleGattServerCallback.Output<ByteAssociation<UUID>> writeCharacteristicOutput =
-            new RxBleGattServerCallback.Output<>();
-    private final RxBleGattServerCallback.Output<ByteAssociation<BluetoothGattDescriptor>> readDescriptorOutput =
-            new RxBleGattServerCallback.Output<>();
-    private final RxBleGattServerCallback.Output<ByteAssociation<BluetoothGattDescriptor>> writeDescriptorOutput =
-            new RxBleGattServerCallback.Output<>();
+    private final Output<ByteAssociation<UUID>> readCharacteristicOutput =
+            new Output<>();
+    private final Output<ByteAssociation<UUID>> writeCharacteristicOutput =
+            new Output<>();
+    private final Output<ByteAssociation<BluetoothGattDescriptor>> readDescriptorOutput =
+            new Output<>();
+    private final Output<ByteAssociation<BluetoothGattDescriptor>> writeDescriptorOutput =
+            new Output<>();
     private final PublishRelay<RxBleConnection.RxBleConnectionState> connectionStatePublishRelay =
             PublishRelay.create();
-    private final RxBleGattServerCallback.Output<BluetoothDevice> notificationPublishRelay =
-            new RxBleGattServerCallback.Output<>();
-    private final RxBleGattServerCallback.Output<Integer> changedMtuOutput =
-            new RxBleGattServerCallback.Output<>();
-    private final Map<BluetoothGattCharacteristic, ByteArrayOutputStream> characteristicByteArrayOutputStreamMap =
+    private final Output<BluetoothDevice> notificationPublishRelay =
+            new Output<>();
+    private final Output<Integer> changedMtuOutput =
+            new Output<>();
+    private final Map<BluetoothGattCharacteristic, LongWriteClosableOutput<byte[]>> characteristicLongWriteMap =
             new HashMap<>();
-    private final Map<BluetoothGattDescriptor, ByteArrayOutputStream> descriptorByteArrayOutputStreamMap =
+    private final Map<BluetoothGattDescriptor, LongWriteClosableOutput<byte[]>> descriptorLongWriteMapMap =
             new HashMap<>();
 
     @NonNull
-    public RxBleGattServerCallback.Output<ByteAssociation<UUID>> getReadCharacteristicOutput() {
+    public Output<ByteAssociation<UUID>> getReadCharacteristicOutput() {
         return readCharacteristicOutput;
     }
 
     @NonNull
-    public RxBleGattServerCallback.Output<ByteAssociation<UUID>> getWriteCharacteristicOutput() {
+    public Output<ByteAssociation<UUID>> getWriteCharacteristicOutput() {
         return writeCharacteristicOutput;
     }
 
     @NonNull
-    public RxBleGattServerCallback.Output<ByteAssociation<BluetoothGattDescriptor>> getReadDescriptorOutput() {
+    public Output<ByteAssociation<BluetoothGattDescriptor>> getReadDescriptorOutput() {
         return readDescriptorOutput;
     }
 
     @NonNull
-    public RxBleGattServerCallback.Output<ByteAssociation<BluetoothGattDescriptor>> getWriteDescriptorOutput() {
+    public Output<ByteAssociation<BluetoothGattDescriptor>> getWriteDescriptorOutput() {
         return writeDescriptorOutput;
     }
 
@@ -88,72 +93,36 @@ public class RxBleServerConnectionImpl implements RxBleServerConnection {
     }
 
     @NonNull
-    public RxBleGattServerCallback.Output<BluetoothDevice> getNotificationPublishRelay() {
+    public Output<BluetoothDevice> getNotificationPublishRelay() {
         return notificationPublishRelay;
     }
 
     @NonNull
-    public RxBleGattServerCallback.Output<Integer> getChangedMtuOutput() {
+    public Output<Integer> getChangedMtuOutput() {
         return changedMtuOutput;
     }
 
-    public boolean writeCharacteristicBytes(BluetoothGattCharacteristic characteristic, byte[] bytes) {
-        try {
-            ByteArrayOutputStream os = characteristicByteArrayOutputStreamMap.get(characteristic);
-            if (os == null) {
-                return false;
-            }
-            os.write(bytes);
-        } catch (IOException e) {
-            return false;
-        }
-        return true;
-    }
-
-    public boolean writeDescriptorBytes(BluetoothGattDescriptor descriptor, byte[] bytes) {
-        try {
-            ByteArrayOutputStream os = descriptorByteArrayOutputStreamMap.get(descriptor);
-            if (os == null) {
-                return false;
-            }
-            os.write(bytes);
-        } catch (IOException e) {
-            return false;
-        }
-        return true;
-    }
-
-    @NonNull
-    public ByteArrayOutputStream getDescriptorLongWriteStream(BluetoothGattDescriptor descriptor) {
-        ByteArrayOutputStream os = descriptorByteArrayOutputStreamMap.get(descriptor);
-        if (os == null) {
-            os = new ByteArrayOutputStream();
-            descriptorByteArrayOutputStreamMap.put(descriptor, os);
+    public Output<byte[]> openLongWriteOutput(BluetoothGattCharacteristic characteristic) {
+        if (!characteristicLongWriteMap.containsKey(characteristic)) {
+            LongWriteClosableOutput<byte[]> output = new LongWriteClosableOutput<>();
+            characteristicLongWriteMap.put(characteristic, output);
+            operationsProvider.provideLongWriteOperation(output.valueRelay, device);
+            return output;
         }
 
-        return os;
-    }
-
-    @NonNull
-    public Map<BluetoothGattCharacteristic, ByteArrayOutputStream> getCharacteristicLongWriteStreamMap() {
-        return characteristicByteArrayOutputStreamMap;
-    }
-
-    @NonNull
-    public Map<BluetoothGattDescriptor, ByteArrayOutputStream> getDescriptorByteArrayOutputStreamMap() {
-        return descriptorByteArrayOutputStreamMap;
+        return null;
     }
 
     public void resetDescriptorMap() {
-        descriptorByteArrayOutputStreamMap.clear();
+        descriptorLongWriteMapMap.clear();
     }
 
     public void resetCharacteristicMap() {
-        characteristicByteArrayOutputStreamMap.clear();
+        characteristicLongWriteMap.clear();
     }
 
 
-    private <T> Observable<T> withDisconnectionHandling(RxBleGattServerCallback.Output<T> output) {
+    private <T> Observable<T> withDisconnectionHandling(Output<T> output) {
         //noinspection unchecked
         return Observable.merge(
                 output.valueRelay,
@@ -193,5 +162,4 @@ public class RxBleServerConnectionImpl implements RxBleServerConnection {
         return withDisconnectionHandling(getNotificationPublishRelay())
                 .delay(0, TimeUnit.SECONDS, callbackScheduler);
     }
-
 }

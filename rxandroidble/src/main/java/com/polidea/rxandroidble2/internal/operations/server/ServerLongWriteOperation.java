@@ -1,9 +1,11 @@
 package com.polidea.rxandroidble2.internal.operations.server;
 
+import android.bluetooth.BluetoothDevice;
 import android.os.DeadObjectException;
 
-import com.polidea.rxandroidble2.ServerComponent;
-import com.polidea.rxandroidble2.exceptions.BleException;
+import com.polidea.rxandroidble2.ServerConnectionComponent;
+import com.polidea.rxandroidble2.exceptions.BleGattServerException;
+import com.polidea.rxandroidble2.exceptions.BleGattServerOperationType;
 import com.polidea.rxandroidble2.internal.QueueOperation;
 import com.polidea.rxandroidble2.internal.serialization.QueueReleaseInterface;
 import com.polidea.rxandroidble2.internal.util.QueueReleasingEmitterWrapper;
@@ -21,14 +23,17 @@ import io.reactivex.functions.BiFunction;
 public class ServerLongWriteOperation extends QueueOperation<byte[]> {
     private final Scheduler bluetoothInteractionScheduler;
     private final Observable<byte[]> inputBytesObservable;
+    private final BluetoothDevice endpointDevice;
 
 
     public ServerLongWriteOperation(
-            @Named(ServerComponent.NamedSchedulers.BLUETOOTH_INTERACTION) Scheduler bluetoothInteractionScheduler,
-            Observable<byte[]> inputBytesObservable
+            @Named(ServerConnectionComponent.NamedSchedulers.BLUETOOTH_INTERACTION) Scheduler bluetoothInteractionScheduler,
+            Observable<byte[]> inputBytesObservable,
+            BluetoothDevice endpointDevice
             ) {
         this.bluetoothInteractionScheduler = bluetoothInteractionScheduler;
         this.inputBytesObservable = inputBytesObservable;
+        this.endpointDevice = endpointDevice;
     }
 
     @Override
@@ -68,7 +73,7 @@ public class ServerLongWriteOperation extends QueueOperation<byte[]> {
     }
 
     @Override
-    protected BleException provideException(DeadObjectException deadObjectException) {
-        return null;
+    protected BleGattServerException provideException(DeadObjectException deadObjectException) {
+        return new BleGattServerException(-1, endpointDevice, BleGattServerOperationType.CHARACTERISTIC_LONG_WRITE_REQUEST);
     }
 }

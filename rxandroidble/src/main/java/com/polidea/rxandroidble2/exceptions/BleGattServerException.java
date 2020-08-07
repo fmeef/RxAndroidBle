@@ -14,7 +14,6 @@ public class BleGattServerException extends BleException {
     private final BleGattServerOperationType bleGattOperationType;
     private final BluetoothDevice device;
 
-    @Deprecated
     public BleGattServerException(int status, BluetoothDevice device, BleGattServerOperationType bleGattOperationType) {
         super(createMessage(null, status, bleGattOperationType));
         this.status = status;
