@@ -35,8 +35,6 @@ public class RxBleGattServerCallback {
     final Map<BluetoothDevice, RxBleServerConnection> deviceConnectionInfoMap = new HashMap<>();
     final ServerConnectionComponent.Builder connectionComponentBuilder;
 
-
-
     private final BluetoothGattServerCallback gattServerCallback = new BluetoothGattServerCallback() {
         @Override
         public void onConnectionStateChange(final BluetoothDevice device, int status, int newState) {
@@ -103,7 +101,7 @@ public class RxBleGattServerCallback {
             RxBleServerConnection connectionInfo = getOrCreateConnectionInfo(device);
 
             if (preparedWrite) {
-                RxBleServerConnection.Output<byte[]> longWriteOuput = connectionInfo.openLongWriteOutput(characteristic);
+                RxBleServerConnection.Output<byte[]> longWriteOuput = connectionInfo.openLongWriteOutput(requestId, characteristic);
                 if (longWriteOuput == null) {
                     throw new BleGattServerException(-1, device, BleGattServerOperationType.CHARACTERISTIC_LONG_WRITE_REQUEST);
                 }
@@ -155,7 +153,7 @@ public class RxBleGattServerCallback {
             RxBleServerConnection connectionInfo = getOrCreateConnectionInfo(device);
 
             if (preparedWrite) {
-                RxBleServerConnection.Output<byte[]> longWriteOutput = connectionInfo.openLongWriteOutput(descriptor);
+                RxBleServerConnection.Output<byte[]> longWriteOutput = connectionInfo.openLongWriteOutput(requestId, descriptor);
                 if (longWriteOutput == null) {
                     throw new BleGattServerException(-1, device, BleGattServerOperationType.DESCRIPTOR_LONG_WRITE_REQUEST);
                 }
@@ -178,47 +176,11 @@ public class RxBleGattServerCallback {
             if (execute) {
                 RxBleServerConnection connectionInfo = getOrCreateConnectionInfo(device);
 
-                //TODO: handle requests by id
-                /*
+                connectionInfo.closeLongWriteOutput(requestId);
 
-                for (Map.Entry<BluetoothGattCharacteristic, ByteArrayOutputStream>  entry
-                        : connectionInfo.getCharacteristicLongWriteStreamMap().entrySet()) {
-                    ByteArrayOutputStream outputStream = entry.getValue();
-                    BluetoothGattCharacteristic characteristic = entry.getKey();
-                    if (connectionInfo.getWriteCharacteristicOutput().hasObservers() && !propagateErrorIfOccurred(
-                            connectionInfo.getWriteCharacteristicOutput(),
-                            device,
-                            -1,
-                            BleGattServerOperationType.CHARACTERISTIC_LONG_WRITE_REQUEST
-                        )) {
-                        connectionInfo.getWriteCharacteristicOutput().valueRelay.accept(
-                                new ByteAssociation<>(characteristic.getUuid(), outputStream.toByteArray())
-                        );
-                    }
-                }
-
-                for (Map.Entry<BluetoothGattDescriptor, ByteArrayOutputStream> entry
-                        : connectionInfo.getDescriptorByteArrayOutputStreamMap().entrySet()) {
-                    ByteArrayOutputStream outputStream = entry.getValue();
-                    BluetoothGattDescriptor descriptor = entry.getKey();
-
-                    if (connectionInfo.getWriteDescriptorOutput().hasObservers() && !propagateErrorIfOccurred(
-                            connectionInfo.getWriteDescriptorOutput(),
-                            device,
-                            -1,
-                            BleGattServerOperationType.DESCRIPTOR_LONG_WRITE_REQUEST
-                    )) {
-                        connectionInfo.getWriteDescriptorOutput().valueRelay.accept(
-                                new ByteAssociation<>(descriptor, outputStream.toByteArray())
-                        );
-                    }
-                }
-*/
                 connectionInfo.resetCharacteristicMap();
                 connectionInfo.resetDescriptorMap();
             }
-
-            //TODO: implement long writes
         }
 
         @Override
