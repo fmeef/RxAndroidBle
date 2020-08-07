@@ -104,12 +104,11 @@ public class RxBleGattServerCallback {
             RxBleServerConnection connectionInfo = getOrCreateConnectionInfo(device);
 
             if (preparedWrite) {
-                /*
-                if (!connectionInfo.writeCharacteristicBytes(characteristic, value)) {
+                RxBleServerConnection.Output<byte[]> longWriteOuput = connectionInfo.openLongWriteOutput(characteristic);
+                if (longWriteOuput == null) {
                     throw new BleGattServerException(-1, device, BleGattServerOperationType.CHARACTERISTIC_LONG_WRITE_REQUEST);
                 }
-                 */
-                Log.v("debug", "skipped");
+                longWriteOuput.valueRelay.accept(value);
             } else if (connectionInfo.getWriteCharacteristicOutput().hasObservers() && !propagateErrorIfOccurred(
                         connectionInfo.getWriteCharacteristicOutput(),
                         device,
@@ -157,13 +156,11 @@ public class RxBleGattServerCallback {
             RxBleServerConnection connectionInfo = getOrCreateConnectionInfo(device);
 
             if (preparedWrite) {
-                /*
-                if (!connectionInfo.writeDescriptorBytes(descriptor, value)) {
-                    throw new BleGattServerException(-1, device,
-                            BleGattServerOperationType.CHARACTERISTIC_LONG_WRITE_REQUEST);
+                RxBleServerConnection.Output<byte[]> longWriteOutput = connectionInfo.openLongWriteOutput(descriptor);
+                if (longWriteOutput == null) {
+                    throw new BleGattServerException(-1, device, BleGattServerOperationType.DESCRIPTOR_LONG_WRITE_REQUEST);
                 }
-                 */
-                Log.v("debug", "skipped");
+                longWriteOutput.valueRelay.accept(value); //TODO: offset?
             } else if (connectionInfo.getWriteDescriptorOutput().hasObservers() && !propagateErrorIfOccurred(
                     connectionInfo.getWriteDescriptorOutput(),
                     device,
@@ -181,7 +178,10 @@ public class RxBleGattServerCallback {
             super.onExecuteWrite(device, requestId, execute);
             if (execute) {
                 RxBleServerConnection connectionInfo = getOrCreateConnectionInfo(device);
-/*
+
+                //TODO: handle requests by id
+                /*
+
                 for (Map.Entry<BluetoothGattCharacteristic, ByteArrayOutputStream>  entry
                         : connectionInfo.getCharacteristicLongWriteStreamMap().entrySet()) {
                     ByteArrayOutputStream outputStream = entry.getValue();
