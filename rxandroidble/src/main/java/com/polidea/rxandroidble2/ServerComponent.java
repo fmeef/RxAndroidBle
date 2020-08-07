@@ -15,12 +15,6 @@ import androidx.annotation.RestrictTo;
 import com.polidea.rxandroidble2.internal.DeviceComponent;
 import com.polidea.rxandroidble2.internal.connection.ServerConnector;
 import com.polidea.rxandroidble2.internal.connection.ServerConnectorImpl;
-import com.polidea.rxandroidble2.internal.serialization.RxBleThreadFactory;
-import com.polidea.rxandroidble2.internal.serialization.ServerOperationQueue;
-import com.polidea.rxandroidble2.internal.serialization.ServerOperationQueueImpl;
-
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 
 import bleshadow.dagger.Binds;
 import bleshadow.dagger.BindsInstance;
@@ -29,34 +23,12 @@ import bleshadow.dagger.Module;
 import bleshadow.dagger.Provides;
 import bleshadow.javax.inject.Named;
 import io.reactivex.Observable;
-import io.reactivex.Scheduler;
-import io.reactivex.plugins.RxJavaPlugins;
-import io.reactivex.schedulers.Schedulers;
 
 @ServerScope
 @Component(modules = {ServerComponent.ServerModule.class})
 public interface ServerComponent {
 
     String SERVER_CONTEXT = "server-context";
-
-    class NamedExecutors {
-
-        public static final String BLUETOOTH_INTERACTION = "executor_bluetooth_interaction_server";
-        private NamedExecutors() {
-
-        }
-    }
-
-    class NamedSchedulers {
-
-        public static final String COMPUTATION = "computation_server";
-        public static final String TIMEOUT = "timeout_server";
-        public static final String BLUETOOTH_INTERACTION = "bluetooth_interaction_server";
-        public static final String BLUETOOTH_CALLBACKS = "bluetooth_callbacks_server";
-        private NamedSchedulers() {
-
-        }
-    }
 
     class PlatformConstants {
 
@@ -108,12 +80,6 @@ public interface ServerComponent {
         }
 
         @Provides
-        @Named(NamedSchedulers.COMPUTATION)
-        static Scheduler provideComputationScheduler() {
-            return Schedulers.computation();
-        }
-
-        @Provides
         @Named(PlatformConstants.INT_DEVICE_SDK)
         static int provideDeviceSdk() {
             return Build.VERSION.SDK_INT;
@@ -122,41 +88,6 @@ public interface ServerComponent {
         @Provides
         static ContentResolver provideContentResolver(Context context) {
             return context.getContentResolver();
-        }
-
-        @Provides
-        @Named(NamedExecutors.BLUETOOTH_INTERACTION)
-        @ServerScope
-        static ExecutorService provideBluetoothInteractionExecutorService() {
-            return Executors.newSingleThreadExecutor();
-        }
-
-        @Provides
-        @Named(NamedSchedulers.BLUETOOTH_INTERACTION)
-        @ServerScope
-        static Scheduler provideBluetoothInteractionScheduler(@Named(NamedExecutors.BLUETOOTH_INTERACTION) ExecutorService service) {
-            return Schedulers.from(service);
-        }
-
-        @Provides
-        @Named(NamedSchedulers.BLUETOOTH_CALLBACKS)
-        @ServerScope
-        static Scheduler provideBluetoothCallbacksScheduler() {
-            return RxJavaPlugins.createSingleScheduler(new RxBleThreadFactory());
-        }
-
-        @Provides
-        static ServerComponent.ServerComponentFinalizer provideFinalizationCloseable(
-                @Named(NamedExecutors.BLUETOOTH_INTERACTION) final ExecutorService interactionExecutorService,
-                @Named(NamedSchedulers.BLUETOOTH_CALLBACKS) final Scheduler callbacksScheduler
-        ) {
-            return new ServerComponent.ServerComponentFinalizer() {
-                @Override
-                public void onFinalize() {
-                    interactionExecutorService.shutdown();
-                    callbacksScheduler.shutdown();
-                }
-            };
         }
 
         @Provides
@@ -204,15 +135,7 @@ public interface ServerComponent {
 
         @Binds
         @ServerScope
-        abstract ServerOperationQueue bindServerOperationQueue(ServerOperationQueueImpl operationQueue);
-
-        @Binds
-        @ServerScope
         abstract ServerConnector bindServerConnector(ServerConnectorImpl serverConnector);
-
-        @Binds
-        @Named(NamedSchedulers.TIMEOUT)
-        abstract Scheduler bindTimeoutScheduler(@Named(NamedSchedulers.COMPUTATION) Scheduler computationScheduler);
     }
 
     RxBleServer rxBleServer();

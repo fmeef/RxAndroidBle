@@ -8,14 +8,15 @@ import androidx.annotation.NonNull;
 
 import com.jakewharton.rxrelay2.PublishRelay;
 import com.polidea.rxandroidble2.RxBleConnection;
+import com.polidea.rxandroidble2.exceptions.BleGattServerException;
 import com.polidea.rxandroidble2.internal.connection.ServerConnectionScope;
 import com.polidea.rxandroidble2.internal.util.ByteAssociation;
 
-import java.io.ByteArrayOutputStream;
-import java.util.Map;
 import java.util.UUID;
 
 import io.reactivex.Observable;
+import io.reactivex.subjects.PublishSubject;
+import io.reactivex.subjects.Subject;
 
 /**
  * BLE connection handle for a single devices connected to the GATT server
@@ -23,38 +24,27 @@ import io.reactivex.Observable;
 @ServerConnectionScope
 public interface RxBleServerConnection {
     @NonNull
-    RxBleGattServerCallback.Output<ByteAssociation<UUID>> getReadCharacteristicOutput();
+    Output<ByteAssociation<UUID>> getReadCharacteristicOutput();
 
     @NonNull
-    RxBleGattServerCallback.Output<ByteAssociation<UUID>> getWriteCharacteristicOutput();
+    Output<ByteAssociation<UUID>> getWriteCharacteristicOutput();
 
     @NonNull
-    RxBleGattServerCallback.Output<ByteAssociation<BluetoothGattDescriptor>> getReadDescriptorOutput();
+    Output<ByteAssociation<BluetoothGattDescriptor>> getReadDescriptorOutput();
 
     @NonNull
-    RxBleGattServerCallback.Output<ByteAssociation<BluetoothGattDescriptor>> getWriteDescriptorOutput();
+    Output<ByteAssociation<BluetoothGattDescriptor>> getWriteDescriptorOutput();
 
     @NonNull
     PublishRelay<RxBleConnection.RxBleConnectionState> getConnectionStatePublishRelay();
 
     @NonNull
-    RxBleGattServerCallback.Output<BluetoothDevice> getNotificationPublishRelay();
+    Output<BluetoothDevice> getNotificationPublishRelay();
 
     @NonNull
-    RxBleGattServerCallback.Output<Integer> getChangedMtuOutput();
+    Output<Integer> getChangedMtuOutput();
 
-    boolean writeCharacteristicBytes(BluetoothGattCharacteristic characteristic, byte[] bytes);
-
-    boolean writeDescriptorBytes(BluetoothGattDescriptor descriptor, byte[] bytes);
-
-    @NonNull
-    ByteArrayOutputStream getDescriptorLongWriteStream(BluetoothGattDescriptor descriptor);
-
-    @NonNull
-    Map<BluetoothGattCharacteristic, ByteArrayOutputStream> getCharacteristicLongWriteStreamMap();
-
-    @NonNull
-    Map<BluetoothGattDescriptor, ByteArrayOutputStream> getDescriptorByteArrayOutputStreamMap();
+    Output<byte[]> openLongWriteOutput(BluetoothGattCharacteristic characteristic);
 
     void resetDescriptorMap();
 
@@ -71,4 +61,34 @@ public interface RxBleServerConnection {
     Observable<ByteAssociation<BluetoothGattDescriptor>> getOnDescriptorWriteRequest(BluetoothDevice device);
 
     Observable<BluetoothDevice> getOnNotification(BluetoothDevice device);
+
+
+    class Output<T> {
+
+        final PublishRelay<T> valueRelay;
+        final PublishRelay<BleGattServerException> errorRelay;
+
+        Output() {
+            this.valueRelay = PublishRelay.create();
+            this.errorRelay = PublishRelay.create();
+        }
+
+        boolean hasObservers() {
+            return valueRelay.hasObservers() || errorRelay.hasObservers();
+        }
+    }
+
+    class LongWriteClosableOutput<T> extends Output<T> {
+
+        final Subject<T> valueRelay;
+
+        LongWriteClosableOutput() {
+            super();
+            this.valueRelay = PublishSubject.create();
+        }
+
+        public void finalize() {
+            this.valueRelay.onComplete();
+        }
+    }
 }
