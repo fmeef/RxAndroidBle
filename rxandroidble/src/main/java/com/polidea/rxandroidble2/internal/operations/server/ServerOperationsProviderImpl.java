@@ -35,4 +35,22 @@ public class ServerOperationsProviderImpl implements ServerOperationsProvider {
                 device
         );
     }
+
+    public ServerReplyOperation provideReplyOperation(
+            BluetoothDevice device,
+            int requestID,
+            int status,
+            int offset,
+            byte[] value
+            ) {
+        return new ServerReplyOperation(
+                gattServerScheduler,
+                bluetoothGattServer,
+                device,
+                requestID,
+                status,
+                offset,
+                value
+        );
+    }
 }

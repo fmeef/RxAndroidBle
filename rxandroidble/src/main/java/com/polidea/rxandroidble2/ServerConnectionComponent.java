@@ -114,8 +114,6 @@ public interface ServerConnectionComponent {
         @Binds
         @ServerConnectionScope
         abstract ServerOperationQueue bindServerOperationQueue(ServerOperationQueueImpl operationQueue);
-
-
     }
 
 
