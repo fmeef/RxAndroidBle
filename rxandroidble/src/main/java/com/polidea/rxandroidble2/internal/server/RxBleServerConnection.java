@@ -8,9 +8,9 @@ import androidx.annotation.NonNull;
 
 import com.jakewharton.rxrelay2.PublishRelay;
 import com.polidea.rxandroidble2.RxBleConnection;
+import com.polidea.rxandroidble2.ServerConnectionScope;
 import com.polidea.rxandroidble2.exceptions.BleGattServerException;
-import com.polidea.rxandroidble2.internal.connection.ServerConnectionScope;
-import com.polidea.rxandroidble2.internal.util.ByteAssociation;
+import com.polidea.rxandroidble2.internal.util.TransactionAssociation;
 
 import java.util.UUID;
 
@@ -24,16 +24,16 @@ import io.reactivex.subjects.Subject;
 @ServerConnectionScope
 public interface RxBleServerConnection {
     @NonNull
-    Output<ByteAssociation<UUID>> getReadCharacteristicOutput();
+    Output<TransactionAssociation<UUID>> getReadCharacteristicOutput();
 
     @NonNull
-    Output<ByteAssociation<UUID>> getWriteCharacteristicOutput();
+    Output<TransactionAssociation<UUID>> getWriteCharacteristicOutput();
 
     @NonNull
-    Output<ByteAssociation<BluetoothGattDescriptor>> getReadDescriptorOutput();
+    Output<TransactionAssociation<BluetoothGattDescriptor>> getReadDescriptorOutput();
 
     @NonNull
-    Output<ByteAssociation<BluetoothGattDescriptor>> getWriteDescriptorOutput();
+    Output<TransactionAssociation<BluetoothGattDescriptor>> getWriteDescriptorOutput();
 
     @NonNull
     PublishRelay<RxBleConnection.RxBleConnectionState> getConnectionStatePublishRelay();
@@ -57,13 +57,13 @@ public interface RxBleServerConnection {
 
     Observable<Integer> getOnMtuChanged(BluetoothDevice device);
 
-    Observable<ByteAssociation<UUID>> getOnCharacteristicReadRequest(BluetoothDevice device);
+    Observable<TransactionAssociation<UUID>> getOnCharacteristicReadRequest(BluetoothDevice device);
 
-    Observable<ByteAssociation<UUID>> getOnCharacteristicWriteRequest(BluetoothDevice device);
+    Observable<TransactionAssociation<UUID>> getOnCharacteristicWriteRequest(BluetoothDevice device);
 
-    Observable<ByteAssociation<BluetoothGattDescriptor>> getOnDescriptorReadRequest(BluetoothDevice device);
+    Observable<TransactionAssociation<BluetoothGattDescriptor>> getOnDescriptorReadRequest(BluetoothDevice device);
 
-    Observable<ByteAssociation<BluetoothGattDescriptor>> getOnDescriptorWriteRequest(BluetoothDevice device);
+    Observable<TransactionAssociation<BluetoothGattDescriptor>> getOnDescriptorWriteRequest(BluetoothDevice device);
 
     Observable<BluetoothDevice> getOnNotification(BluetoothDevice device);
 

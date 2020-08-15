@@ -1,6 +1,6 @@
 package com.polidea.rxandroidble2.internal.serialization;
 
-import com.polidea.rxandroidble2.ServerConnectionComponent;
+import com.polidea.rxandroidble2.ServerComponent;
 import com.polidea.rxandroidble2.internal.operations.Operation;
 
 import bleshadow.javax.inject.Inject;
@@ -12,7 +12,7 @@ public class ServerOperationQueueImpl extends OperationQueueBase implements Serv
 
     @Inject
     public ServerOperationQueueImpl(
-            @Named(ServerConnectionComponent.NamedSchedulers.BLUETOOTH_INTERACTION) final Scheduler callbackScheduler
+            @Named(ServerComponent.NamedSchedulers.BLUETOOTH_INTERACTION) final Scheduler callbackScheduler
     ) {
         super(callbackScheduler);
     }

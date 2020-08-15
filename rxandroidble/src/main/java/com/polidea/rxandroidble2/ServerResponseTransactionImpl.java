@@ -8,9 +8,9 @@ import com.polidea.rxandroidble2.internal.operations.server.ServerOperationsProv
 import com.polidea.rxandroidble2.internal.serialization.ServerOperationQueue;
 
 import bleshadow.javax.inject.Inject;
-import bleshadow.javax.inject.Named;
 import io.reactivex.Observable;
 
+@ServerTransactionScope
 public class ServerResponseTransactionImpl implements ServerResponseTransaction, Comparable<ServerResponseTransaction> {
     private final ServerOperationQueue operationQueue;
     private final ServerOperationsProvider operationsProvider;
@@ -23,17 +23,14 @@ public class ServerResponseTransactionImpl implements ServerResponseTransaction,
     public ServerResponseTransactionImpl(
             ServerOperationQueue operationQueue,
             ServerOperationsProvider operationsProvider,
-            byte[] value,
-            @Named(ServerTransactionComponent.TransactionParameters.PARAM_REQUESTID) Integer requestID,
-            @Named(ServerTransactionComponent.TransactionParameters.PARAM_OFFSET) Integer offset,
-            BluetoothDevice remoteDevice
+            ServerTransactionComponent.TransactionConfig config
     ) {
         this.operationQueue = operationQueue;
         this.operationsProvider = operationsProvider;
-        this.value = value;
-        this.requestID = requestID;
-        this.offset = offset;
-        this.remoteDevice = remoteDevice;
+        this.value = config.value;
+        this.requestID = config.requestID;
+        this.offset = config.offset;
+        this.remoteDevice = config.device;
     }
 
     @Override

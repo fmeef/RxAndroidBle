@@ -4,8 +4,10 @@ import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothGattServer;
 import android.os.DeadObjectException;
 
-import com.polidea.rxandroidble2.ServerConnectionComponent;
+import com.polidea.rxandroidble2.ServerComponent;
 import com.polidea.rxandroidble2.exceptions.BleException;
+import com.polidea.rxandroidble2.exceptions.BleGattServerException;
+import com.polidea.rxandroidble2.exceptions.BleGattServerOperationType;
 import com.polidea.rxandroidble2.internal.QueueOperation;
 import com.polidea.rxandroidble2.internal.serialization.QueueReleaseInterface;
 import com.polidea.rxandroidble2.internal.util.QueueReleasingEmitterWrapper;
@@ -27,7 +29,7 @@ public class ServerReplyOperation extends QueueOperation<Boolean> {
     private final BluetoothDevice device;
 
     public ServerReplyOperation(
-            @Named(ServerConnectionComponent.NamedSchedulers.BLUETOOTH_INTERACTION) Scheduler bluetoothInteractionScheduler,
+            @Named(ServerComponent.NamedSchedulers.BLUETOOTH_INTERACTION) Scheduler bluetoothInteractionScheduler,
             BluetoothGattServer bluetoothGattServer,
             BluetoothDevice device,
             int requestID,
@@ -61,6 +63,6 @@ public class ServerReplyOperation extends QueueOperation<Boolean> {
 
     @Override
     protected BleException provideException(DeadObjectException deadObjectException) {
-        return null;
+        return new BleGattServerException(bluetoothGattServer, device, BleGattServerOperationType.REPLY);
     }
 }

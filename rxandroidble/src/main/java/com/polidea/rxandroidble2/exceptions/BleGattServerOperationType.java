@@ -21,6 +21,8 @@ public class BleGattServerOperationType {
             new BleGattServerOperationType("NOTIFICATION_SENT");
     public static final BleGattServerOperationType ON_MTU_CHANGED =
             new BleGattServerOperationType("ON_MTU_CHANGED");
+    public static final BleGattServerOperationType REPLY =
+            new BleGattServerOperationType("REPLY");
 
     private final String description;
 
