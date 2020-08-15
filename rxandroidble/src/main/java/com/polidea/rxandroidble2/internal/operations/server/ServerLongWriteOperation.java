@@ -3,7 +3,7 @@ package com.polidea.rxandroidble2.internal.operations.server;
 import android.bluetooth.BluetoothDevice;
 import android.os.DeadObjectException;
 
-import com.polidea.rxandroidble2.ServerConnectionComponent;
+import com.polidea.rxandroidble2.ServerComponent;
 import com.polidea.rxandroidble2.exceptions.BleGattServerException;
 import com.polidea.rxandroidble2.exceptions.BleGattServerOperationType;
 import com.polidea.rxandroidble2.internal.QueueOperation;
@@ -27,7 +27,7 @@ public class ServerLongWriteOperation extends QueueOperation<byte[]> {
 
 
     public ServerLongWriteOperation(
-            @Named(ServerConnectionComponent.NamedSchedulers.BLUETOOTH_INTERACTION) Scheduler bluetoothInteractionScheduler,
+            @Named(ServerComponent.NamedSchedulers.BLUETOOTH_INTERACTION) Scheduler bluetoothInteractionScheduler,
             Observable<byte[]> inputBytesObservable,
             BluetoothDevice endpointDevice
             ) {

@@ -9,12 +9,12 @@ import androidx.annotation.NonNull;
 
 import com.jakewharton.rxrelay2.PublishRelay;
 import com.polidea.rxandroidble2.RxBleConnection;
-import com.polidea.rxandroidble2.ServerConnectionComponent;
+import com.polidea.rxandroidble2.ServerComponent;
 import com.polidea.rxandroidble2.exceptions.BleGattServerException;
 import com.polidea.rxandroidble2.internal.operations.server.ServerLongWriteOperation;
 import com.polidea.rxandroidble2.internal.operations.server.ServerOperationsProvider;
 import com.polidea.rxandroidble2.internal.serialization.ServerOperationQueue;
-import com.polidea.rxandroidble2.internal.util.ByteAssociation;
+import com.polidea.rxandroidble2.internal.util.TransactionAssociation;
 
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
@@ -44,7 +44,7 @@ public class RxBleServerConnectionImpl implements RxBleServerConnection {
 
     @Inject
     public RxBleServerConnectionImpl(
-        @Named(ServerConnectionComponent.NamedSchedulers.BLUETOOTH_CALLBACKS) Scheduler callbackScheduler,
+        @Named(ServerComponent.NamedSchedulers.BLUETOOTH_CONNECTION) Scheduler callbackScheduler,
         ServerOperationsProvider operationsProvider,
         ServerOperationQueue operationQueue,
         BluetoothDevice device
@@ -56,13 +56,13 @@ public class RxBleServerConnectionImpl implements RxBleServerConnection {
     }
 
 
-    private final Output<ByteAssociation<UUID>> readCharacteristicOutput =
+    private final Output<TransactionAssociation<UUID>> readCharacteristicOutput =
             new Output<>();
-    private final Output<ByteAssociation<UUID>> writeCharacteristicOutput =
+    private final Output<TransactionAssociation<UUID>> writeCharacteristicOutput =
             new Output<>();
-    private final Output<ByteAssociation<BluetoothGattDescriptor>> readDescriptorOutput =
+    private final Output<TransactionAssociation<BluetoothGattDescriptor>> readDescriptorOutput =
             new Output<>();
-    private final Output<ByteAssociation<BluetoothGattDescriptor>> writeDescriptorOutput =
+    private final Output<TransactionAssociation<BluetoothGattDescriptor>> writeDescriptorOutput =
             new Output<>();
     private final PublishRelay<RxBleConnection.RxBleConnectionState> connectionStatePublishRelay =
             PublishRelay.create();
@@ -71,22 +71,22 @@ public class RxBleServerConnectionImpl implements RxBleServerConnection {
     private final Output<Integer> changedMtuOutput =
             new Output<>();
     @NonNull
-    public Output<ByteAssociation<UUID>> getReadCharacteristicOutput() {
+    public Output<TransactionAssociation<UUID>> getReadCharacteristicOutput() {
         return readCharacteristicOutput;
     }
 
     @NonNull
-    public Output<ByteAssociation<UUID>> getWriteCharacteristicOutput() {
+    public Output<TransactionAssociation<UUID>> getWriteCharacteristicOutput() {
         return writeCharacteristicOutput;
     }
 
     @NonNull
-    public Output<ByteAssociation<BluetoothGattDescriptor>> getReadDescriptorOutput() {
+    public Output<TransactionAssociation<BluetoothGattDescriptor>> getReadDescriptorOutput() {
         return readDescriptorOutput;
     }
 
     @NonNull
-    public Output<ByteAssociation<BluetoothGattDescriptor>> getWriteDescriptorOutput() {
+    public Output<TransactionAssociation<BluetoothGattDescriptor>> getWriteDescriptorOutput() {
         return writeDescriptorOutput;
     }
 
@@ -195,22 +195,22 @@ public class RxBleServerConnectionImpl implements RxBleServerConnection {
 
 
 
-    public Observable<ByteAssociation<UUID>> getOnCharacteristicReadRequest(BluetoothDevice device) {
+    public Observable<TransactionAssociation<UUID>> getOnCharacteristicReadRequest(BluetoothDevice device) {
         return withDisconnectionHandling(getReadCharacteristicOutput())
                 .delay(0, TimeUnit.SECONDS, callbackScheduler);
     }
 
-    public Observable<ByteAssociation<UUID>> getOnCharacteristicWriteRequest(BluetoothDevice device) {
+    public Observable<TransactionAssociation<UUID>> getOnCharacteristicWriteRequest(BluetoothDevice device) {
         return withDisconnectionHandling(getWriteCharacteristicOutput())
                 .delay(0, TimeUnit.SECONDS, callbackScheduler);
     }
 
-    public Observable<ByteAssociation<BluetoothGattDescriptor>> getOnDescriptorReadRequest(BluetoothDevice device) {
+    public Observable<TransactionAssociation<BluetoothGattDescriptor>> getOnDescriptorReadRequest(BluetoothDevice device) {
         return withDisconnectionHandling(getReadDescriptorOutput())
                 .delay(0, TimeUnit.SECONDS, callbackScheduler);
     }
 
-    public Observable<ByteAssociation<BluetoothGattDescriptor>> getOnDescriptorWriteRequest(BluetoothDevice device) {
+    public Observable<TransactionAssociation<BluetoothGattDescriptor>> getOnDescriptorWriteRequest(BluetoothDevice device) {
         return withDisconnectionHandling(getWriteDescriptorOutput())
                 .delay(0, TimeUnit.SECONDS, callbackScheduler);
     }

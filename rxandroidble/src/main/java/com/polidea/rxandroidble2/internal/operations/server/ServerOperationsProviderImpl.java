@@ -3,7 +3,7 @@ package com.polidea.rxandroidble2.internal.operations.server;
 import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothGattServer;
 
-import com.polidea.rxandroidble2.ServerConnectionComponent;
+import com.polidea.rxandroidble2.ServerComponent;
 import com.polidea.rxandroidble2.internal.server.RxBleGattServerCallback;
 
 import bleshadow.javax.inject.Inject;
@@ -19,7 +19,7 @@ public class ServerOperationsProviderImpl implements ServerOperationsProvider {
     @Inject
     ServerOperationsProviderImpl(
             RxBleGattServerCallback rxBleGattServerCallback,
-            @Named(ServerConnectionComponent.NamedSchedulers.BLUETOOTH_INTERACTION) Scheduler gattServerScheduler,
+            @Named(ServerComponent.NamedSchedulers.BLUETOOTH_INTERACTION) Scheduler gattServerScheduler,
             BluetoothGattServer bluetoothGattServer
     ) {
         this.gattServerScheduler = gattServerScheduler;

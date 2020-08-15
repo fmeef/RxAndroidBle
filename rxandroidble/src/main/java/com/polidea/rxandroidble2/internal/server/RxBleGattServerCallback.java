@@ -13,20 +13,29 @@ import android.util.Pair;
 
 import com.jakewharton.rxrelay2.PublishRelay;
 import com.polidea.rxandroidble2.RxBleConnection;
+import com.polidea.rxandroidble2.ServerComponent;
 import com.polidea.rxandroidble2.ServerConnectionComponent;
+import com.polidea.rxandroidble2.ServerResponseTransaction;
 import com.polidea.rxandroidble2.ServerScope;
+import com.polidea.rxandroidble2.ServerTransactionFactory;
 import com.polidea.rxandroidble2.exceptions.BleGattServerCharacteristicException;
 import com.polidea.rxandroidble2.exceptions.BleGattServerDescriptorException;
 import com.polidea.rxandroidble2.exceptions.BleGattServerException;
 import com.polidea.rxandroidble2.exceptions.BleGattServerOperationType;
 import com.polidea.rxandroidble2.internal.RxBleLog;
-import com.polidea.rxandroidble2.internal.util.ByteAssociation;
+import com.polidea.rxandroidble2.internal.util.TransactionAssociation;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.UUID;
 
 import bleshadow.javax.inject.Inject;
+import bleshadow.javax.inject.Named;
 import io.reactivex.Observable;
+import io.reactivex.Scheduler;
+import io.reactivex.disposables.CompositeDisposable;
+import io.reactivex.disposables.Disposable;
+import io.reactivex.functions.Function;
 
 @ServerScope
 public class RxBleGattServerCallback {
@@ -34,6 +43,9 @@ public class RxBleGattServerCallback {
     final PublishRelay<Pair<BluetoothDevice, RxBleConnection.RxBleConnectionState>> connectionStatePublishRelay = PublishRelay.create();
     final Map<BluetoothDevice, RxBleServerConnection> deviceConnectionInfoMap = new HashMap<>();
     final ServerConnectionComponent.Builder connectionComponentBuilder;
+    final ServerTransactionFactory serverTransactionFactory;
+    final Scheduler callbackScheduler;
+    final CompositeDisposable compositeDisposable = new CompositeDisposable();
 
     private final BluetoothGattServerCallback gattServerCallback = new BluetoothGattServerCallback() {
         @Override
@@ -69,7 +81,7 @@ public class RxBleGattServerCallback {
         public void onCharacteristicReadRequest(BluetoothDevice device,
                                                 int requestId,
                                                 int offset,
-                                                BluetoothGattCharacteristic characteristic) {
+                                                final BluetoothGattCharacteristic characteristic) {
             super.onCharacteristicReadRequest(device, requestId, offset, characteristic);
 
             RxBleServerConnection connectionInfo = getOrCreateConnectionInfo(device);
@@ -81,9 +93,24 @@ public class RxBleGattServerCallback {
                     -1,
                     BleGattServerOperationType.CHARACTERISTIC_READ_REQUEST
             )) {
-                connectionInfo.getReadCharacteristicOutput().valueRelay.accept(
-                        new ByteAssociation<>(characteristic.getUuid(), characteristic.getValue())
-                );
+
+                Disposable disposable = serverTransactionFactory.prepareCharacteristicTransaction(
+                        characteristic.getValue(),
+                        requestId,
+                        offset,
+                        device
+                ).map(new Function<ServerResponseTransaction, TransactionAssociation<UUID>>() {
+                            @Override
+                            public TransactionAssociation<UUID> apply(
+                                    ServerResponseTransaction serverResponseTransaction
+                            ) throws Exception {
+                                return new TransactionAssociation<>(characteristic.getUuid(), serverResponseTransaction);
+                            }
+                        })
+                        .subscribeOn(callbackScheduler)
+                        .subscribe(connectionInfo.getReadCharacteristicOutput().valueRelay);
+
+                compositeDisposable.add(disposable);
             }
 
         }
@@ -91,7 +118,7 @@ public class RxBleGattServerCallback {
         @Override
         public void onCharacteristicWriteRequest(BluetoothDevice device,
                                                  int requestId,
-                                                 BluetoothGattCharacteristic characteristic,
+                                                 final BluetoothGattCharacteristic characteristic,
                                                  boolean preparedWrite,
                                                  boolean responseNeeded,
                                                  int offset,
@@ -112,9 +139,20 @@ public class RxBleGattServerCallback {
                         -1,
                         BleGattServerOperationType.CHARACTERISTIC_WRITE_REQUEST
             )) {
-                connectionInfo.getWriteCharacteristicOutput().valueRelay.accept(
-                        new ByteAssociation<>(characteristic.getUuid(), characteristic.getValue())
-                );
+                Disposable disposable = serverTransactionFactory.prepareCharacteristicTransaction(
+                        value,
+                        requestId,
+                        offset,
+                        device
+                ).map(new Function<ServerResponseTransaction, TransactionAssociation<UUID>>() {
+                    @Override
+                    public TransactionAssociation<UUID> apply(ServerResponseTransaction serverResponseTransaction) throws Exception {
+                        return new TransactionAssociation<>(characteristic.getUuid(), serverResponseTransaction);
+                    }
+                })
+                        .subscribeOn(callbackScheduler)
+                        .subscribe(connectionInfo.getWriteCharacteristicOutput().valueRelay);
+                compositeDisposable.add(disposable);
             }
         }
 
@@ -122,7 +160,7 @@ public class RxBleGattServerCallback {
         public void onDescriptorReadRequest(BluetoothDevice device,
                                             int requestId,
                                             int offset,
-                                            BluetoothGattDescriptor descriptor) {
+                                            final BluetoothGattDescriptor descriptor) {
             super.onDescriptorReadRequest(device, requestId, offset, descriptor);
 
             RxBleServerConnection connectionInfo = getOrCreateConnectionInfo(device);
@@ -133,9 +171,22 @@ public class RxBleGattServerCallback {
                     -1,
                     BleGattServerOperationType.DESCRIPTOR_READ_REQUEST
             )) {
-                connectionInfo.getReadDescriptorOutput().valueRelay.accept(
-                        new ByteAssociation<>(descriptor, descriptor.getValue())
-                );
+                Disposable disposable = serverTransactionFactory.prepareCharacteristicTransaction(
+                        descriptor.getValue(),
+                        requestId,
+                        offset,
+                        device
+                )
+                        .map(new Function<ServerResponseTransaction, TransactionAssociation<BluetoothGattDescriptor>>() {
+                            @Override
+                            public TransactionAssociation<BluetoothGattDescriptor> apply(
+                                    ServerResponseTransaction serverResponseTransaction) throws Exception {
+                                return new TransactionAssociation<>(descriptor, serverResponseTransaction);
+                            }
+                        })
+                        .subscribeOn(callbackScheduler)
+                        .subscribe(connectionInfo.getReadDescriptorOutput().valueRelay);
+                compositeDisposable.add(disposable);
             }
 
         }
@@ -143,7 +194,7 @@ public class RxBleGattServerCallback {
         @Override
         public void onDescriptorWriteRequest(BluetoothDevice device,
                                              int requestId,
-                                             BluetoothGattDescriptor descriptor,
+                                             final BluetoothGattDescriptor descriptor,
                                              boolean preparedWrite,
                                              boolean responseNeeded,
                                              int offset,
@@ -164,9 +215,22 @@ public class RxBleGattServerCallback {
                     -1,
                     BleGattServerOperationType.DESCRIPTOR_WRITE_REQUEST
             )) {
-                connectionInfo.getWriteDescriptorOutput().valueRelay.accept(
-                        new ByteAssociation<>(descriptor, descriptor.getValue())
-                );
+                Disposable disposable = serverTransactionFactory.prepareCharacteristicTransaction(
+                        value,
+                        requestId,
+                        offset,
+                        device
+                )
+                        .map(new Function<ServerResponseTransaction, TransactionAssociation<BluetoothGattDescriptor>>() {
+                            @Override
+                            public TransactionAssociation<BluetoothGattDescriptor> apply(
+                                    ServerResponseTransaction serverResponseTransaction) throws Exception {
+                                return new TransactionAssociation<>(descriptor, serverResponseTransaction);
+                            }
+                        })
+                        .subscribeOn(callbackScheduler)
+                        .subscribe(connectionInfo.getWriteDescriptorOutput().valueRelay);
+                compositeDisposable.add(disposable);
             }
         }
 
@@ -242,9 +306,13 @@ public class RxBleGattServerCallback {
 
     @Inject
     public RxBleGattServerCallback(
-            ServerConnectionComponent.Builder connectionComponentBuilder
+            ServerConnectionComponent.Builder connectionComponentBuilder,
+            ServerTransactionFactory serverTransactionFactory,
+            @Named(ServerComponent.NamedSchedulers.BLUETOOTH_CALLBACK) Scheduler callbackScheduler
     ) {
         this.connectionComponentBuilder = connectionComponentBuilder;
+        this.serverTransactionFactory = serverTransactionFactory;
+        this.callbackScheduler = callbackScheduler;
     }
 
     static RxBleConnection.RxBleConnectionState mapConnectionStateToRxBleConnectionStatus(int newState) {
