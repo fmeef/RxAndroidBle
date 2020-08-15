@@ -3,6 +3,7 @@ package com.polidea.rxandroidble2;
 import android.annotation.SuppressLint;
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothGattDescriptor;
+import android.bluetooth.BluetoothGattServer;
 import android.bluetooth.BluetoothManager;
 import android.content.ContentResolver;
 import android.content.Context;
@@ -15,6 +16,15 @@ import androidx.annotation.RestrictTo;
 import com.polidea.rxandroidble2.internal.DeviceComponent;
 import com.polidea.rxandroidble2.internal.connection.ServerConnector;
 import com.polidea.rxandroidble2.internal.connection.ServerConnectorImpl;
+import com.polidea.rxandroidble2.internal.operations.server.ServerOperationsProvider;
+import com.polidea.rxandroidble2.internal.operations.server.ServerOperationsProviderImpl;
+import com.polidea.rxandroidble2.internal.serialization.RxBleThreadFactory;
+import com.polidea.rxandroidble2.internal.serialization.ServerOperationQueue;
+import com.polidea.rxandroidble2.internal.serialization.ServerOperationQueueImpl;
+import com.polidea.rxandroidble2.internal.server.BluetoothGattServerProvider;
+
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 import bleshadow.dagger.Binds;
 import bleshadow.dagger.BindsInstance;
@@ -23,12 +33,32 @@ import bleshadow.dagger.Module;
 import bleshadow.dagger.Provides;
 import bleshadow.javax.inject.Named;
 import io.reactivex.Observable;
+import io.reactivex.Scheduler;
+import io.reactivex.plugins.RxJavaPlugins;
+import io.reactivex.schedulers.Schedulers;
 
 @ServerScope
 @Component(modules = {ServerComponent.ServerModule.class})
 public interface ServerComponent {
 
     String SERVER_CONTEXT = "server-context";
+
+    class NamedSchedulers {
+        public static final String BLUETOOTH_CALLBACK = "bluetooth_callback";
+        public static final String BLUETOOTH_INTERACTION = "bluetooth_interaction_server";
+        public static final String BLUETOOTH_CONNECTION = "bluetooth_connection";
+        private NamedSchedulers() {
+
+        }
+    }
+
+    class NamedExecutors {
+
+        public static final String BLUETOOTH_INTERACTION = "executor_bluetooth_interaction_server";
+        private NamedExecutors() {
+
+        }
+    }
 
     class PlatformConstants {
 
@@ -59,7 +89,7 @@ public interface ServerComponent {
         Builder applicationContext(Context context);
     }
 
-    @Module(subcomponents = {DeviceComponent.class, ServerConnectionComponent.class})
+    @Module(subcomponents = {DeviceComponent.class, ServerConnectionComponent.class, ServerTransactionComponent.class})
     abstract class ServerModule {
 
         @Provides
@@ -126,8 +156,44 @@ public interface ServerComponent {
             return BluetoothGattDescriptor.DISABLE_NOTIFICATION_VALUE;
         }
 
+        @Provides
+        @Named(NamedSchedulers.BLUETOOTH_CALLBACK)
+        @ServerScope
+        static Scheduler provideBluetoothCallbacksScheduler() {
+            return RxJavaPlugins.createSingleScheduler(new RxBleThreadFactory());
+        }
+
+
+        @Provides
+        @Named(NamedSchedulers.BLUETOOTH_INTERACTION)
+        static Scheduler provideBluetoothInteractionScheduler(
+                @Named(NamedExecutors.BLUETOOTH_INTERACTION) ExecutorService service) {
+            return Schedulers.from(service);
+        }
+
+        @Provides
+        @Named(NamedSchedulers.BLUETOOTH_CONNECTION)
+        static Scheduler provideBluetoothConnectionScheduler() {
+            return RxJavaPlugins.createSingleScheduler(new RxBleThreadFactory());
+        }
+
+
+        @Provides
+        @Named(ServerComponent.NamedExecutors.BLUETOOTH_INTERACTION)
+        static ExecutorService provideBluetoothInteractionExecutorService() {
+            return Executors.newSingleThreadExecutor();
+        }
+
+        @Provides
+        static BluetoothGattServer provideBluetoothGattServer(BluetoothGattServerProvider bluetoothGattServerProvider) {
+            return bluetoothGattServerProvider.getBluetoothGatt();
+        }
+
         @Binds
         abstract Observable<RxBleAdapterStateObservable.BleAdapterState> bindStateObs(RxBleAdapterStateObservable stateObservable);
+
+        @Binds
+        abstract ServerOperationsProvider bindServerOperationsProvider(ServerOperationsProviderImpl serverOperationsProvider);
 
         @Binds
         @ServerScope
@@ -136,6 +202,13 @@ public interface ServerComponent {
         @Binds
         @ServerScope
         abstract ServerConnector bindServerConnector(ServerConnectorImpl serverConnector);
+
+
+        @Binds
+        abstract ServerOperationQueue bindServerOperationQueue(ServerOperationQueueImpl operationQueue);
+
+        @Binds
+        abstract ServerTransactionFactory bindServerTransactionFactory(ServerTransactionFactoryImpl transactionFactory);
     }
 
     RxBleServer rxBleServer();

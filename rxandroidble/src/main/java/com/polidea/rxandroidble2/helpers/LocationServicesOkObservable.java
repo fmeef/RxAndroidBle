@@ -1,15 +1,16 @@
 package com.polidea.rxandroidble2.helpers;
 
 import android.content.Context;
+
 import androidx.annotation.NonNull;
 
 import com.polidea.rxandroidble2.ClientComponent;
-import com.polidea.rxandroidble2.DaggerClientComponent;
 
 import java.util.UUID;
 
 import bleshadow.javax.inject.Inject;
 import bleshadow.javax.inject.Named;
+import com.polidea.rxandroidble2.DaggerClientComponent;
 import io.reactivex.Observable;
 import io.reactivex.Observer;
 
