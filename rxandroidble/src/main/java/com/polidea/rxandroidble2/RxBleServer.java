@@ -84,7 +84,7 @@ public abstract class RxBleServer {
                 .rxBleServer();
     }
 
-    public abstract Observable<RxBleServerConnection> openServer();
+    public abstract Observable<RxBleServerConnection> openServer(ServerConfig config);
 
     public abstract void closeServer();
 }
