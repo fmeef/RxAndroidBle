@@ -7,7 +7,6 @@ import android.bluetooth.BluetoothGattDescriptor;
 import androidx.annotation.NonNull;
 
 import com.jakewharton.rxrelay2.PublishRelay;
-import com.polidea.rxandroidble2.RxBleConnection;
 import com.polidea.rxandroidble2.ServerConnectionScope;
 import com.polidea.rxandroidble2.exceptions.BleGattServerException;
 import com.polidea.rxandroidble2.internal.util.TransactionAssociation;
@@ -34,9 +33,6 @@ public interface RxBleServerConnection {
 
     @NonNull
     Output<TransactionAssociation<BluetoothGattDescriptor>> getWriteDescriptorOutput();
-
-    @NonNull
-    PublishRelay<RxBleConnection.RxBleConnectionState> getConnectionStatePublishRelay();
 
     @NonNull
     Output<BluetoothDevice> getNotificationPublishRelay();
