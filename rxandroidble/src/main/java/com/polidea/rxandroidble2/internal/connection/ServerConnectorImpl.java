@@ -17,6 +17,7 @@ import com.polidea.rxandroidble2.internal.server.BluetoothGattServerProvider;
 import com.polidea.rxandroidble2.internal.server.RxBleGattServerCallback;
 import com.polidea.rxandroidble2.internal.server.RxBleServerConnection;
 
+import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
 
@@ -31,6 +32,7 @@ public class ServerConnectorImpl implements ServerConnector {
     private final BluetoothGattServerProvider gattServerProvider;
     private final Context context;
     private final BluetoothManager bluetoothManager;
+    private final Map<BluetoothDevice, RxBleServerConnection> connectionMap = new HashMap<>();
 
     @Inject
     public ServerConnectorImpl(
@@ -80,6 +82,11 @@ public class ServerConnectorImpl implements ServerConnector {
     }
 
     @Override
+    public RxBleServerConnection getConnection(BluetoothDevice device) {
+        return connectionMap.get(device);
+    }
+
+    @Override
     public Observable<RxBleServerConnection> subscribeToConnections(ServerConfig config) {
         if (gattServerProvider.getBluetoothGatt() == null) {
             BluetoothGattServer bluetoothGattServer = bluetoothManager.openGattServer(
@@ -97,7 +104,10 @@ public class ServerConnectorImpl implements ServerConnector {
                     public RxBleServerConnection apply(
                             Pair<BluetoothDevice, RxBleConnection.RxBleConnectionState> bluetoothDeviceRxBleConnectionStatePair
                     ) throws Exception {
-                        return rxBleGattServerCallback.getRxBleServerConnection(bluetoothDeviceRxBleConnectionStatePair.first);
+                        RxBleServerConnection connection
+                                = rxBleGattServerCallback.getRxBleServerConnection(bluetoothDeviceRxBleConnectionStatePair.first);
+                        connectionMap.put(connection.getDevice(), connection);
+                        return connection;
                     }
                 });
     }
