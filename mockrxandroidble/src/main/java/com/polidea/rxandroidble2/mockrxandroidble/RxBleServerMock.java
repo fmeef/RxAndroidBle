@@ -1,5 +1,7 @@
 package com.polidea.rxandroidble2.mockrxandroidble;
 
+import android.bluetooth.BluetoothDevice;
+
 import com.polidea.rxandroidble2.RxBleServer;
 import com.polidea.rxandroidble2.ServerConfig;
 import com.polidea.rxandroidble2.internal.server.RxBleServerConnection;
@@ -26,5 +28,10 @@ public class RxBleServerMock extends RxBleServer {
     @Override
     public void closeServer() {
 
+    }
+
+    @Override
+    public RxBleServerConnection getConnection(BluetoothDevice device) {
+        return null;
     }
 }

@@ -40,6 +40,9 @@ public interface RxBleServerConnection {
     @NonNull
     Output<Integer> getChangedMtuOutput();
 
+    @NonNull
+    BluetoothDevice getDevice();
+
     Output<byte[]> openLongWriteOutput(Integer requestid, BluetoothGattCharacteristic characteristic);
     Output<byte[]> openLongWriteOutput(Integer requestid, BluetoothGattDescriptor descriptor);
 

@@ -101,6 +101,11 @@ public class RxBleServerConnectionImpl implements RxBleServerConnection {
     }
 
     @NonNull
+    public BluetoothDevice getDevice() {
+        return device;
+    }
+
+    @NonNull
     public Output<Integer> getChangedMtuOutput() {
         return changedMtuOutput;
     }
