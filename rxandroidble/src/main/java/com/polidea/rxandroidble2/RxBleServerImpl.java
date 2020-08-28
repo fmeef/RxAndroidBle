@@ -67,6 +67,11 @@ public class RxBleServerImpl extends RxBleServer {
     }
 
     @Override
+    public RxBleServerConnection getConnection(BluetoothDevice device) {
+        return serverConnector.getConnection(device);
+    }
+
+    @Override
     public Observable<RxBleServerConnection> openServer(ServerConfig config) {
         return serverConnector.subscribeToConnections(config); //TODO:
     }
