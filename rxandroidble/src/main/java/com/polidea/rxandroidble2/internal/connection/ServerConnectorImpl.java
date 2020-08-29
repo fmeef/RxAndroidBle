@@ -106,7 +106,11 @@ public class ServerConnectorImpl implements ServerConnector {
                     ) throws Exception {
                         RxBleServerConnection connection
                                 = rxBleGattServerCallback.getRxBleServerConnection(bluetoothDeviceRxBleConnectionStatePair.first);
-                        connectionMap.put(connection.getDevice(), connection);
+                        if (connection != null) {
+                            connectionMap.put(bluetoothDeviceRxBleConnectionStatePair.first, connection);
+                        } else {
+                            connectionMap.remove(bluetoothDeviceRxBleConnectionStatePair.first);
+                        }
                         return connection;
                     }
                 });
