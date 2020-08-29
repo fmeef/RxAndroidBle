@@ -60,7 +60,6 @@ public class RxBleGattServerCallback {
 
             if (newState == BluetoothProfile.STATE_DISCONNECTED) {
                 deviceConnectionInfoMap.remove(device);
-                deviceConnectionInfoMap.remove(device);
             } else {
                 deviceConnectionInfoMap.put(device, connectionInfo);
             }
