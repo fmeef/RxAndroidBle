@@ -298,7 +298,10 @@ public class RxBleGattServerCallback {
         RxBleServerConnection connectionInfo = deviceConnectionInfoMap.get(device);
 
         if (connectionInfo == null) {
-            connectionInfo =  connectionComponentBuilder.build().serverConnection();
+            connectionInfo =  connectionComponentBuilder
+                    .bluetoothDevice(device)
+                    .build()
+                    .serverConnection();
             deviceConnectionInfoMap.put(device, connectionInfo);
         }
         return connectionInfo;
