@@ -13,6 +13,8 @@ import com.polidea.rxandroidble2.RxBleConnection;
 import com.polidea.rxandroidble2.ServerComponent;
 import com.polidea.rxandroidble2.ServerConfig;
 import com.polidea.rxandroidble2.ServerScope;
+import com.polidea.rxandroidble2.exceptions.BleGattServerException;
+import com.polidea.rxandroidble2.exceptions.BleGattServerOperationType;
 import com.polidea.rxandroidble2.internal.server.BluetoothGattServerProvider;
 import com.polidea.rxandroidble2.internal.server.RxBleGattServerCallback;
 import com.polidea.rxandroidble2.internal.server.RxBleServerConnection;
@@ -25,6 +27,7 @@ import bleshadow.javax.inject.Inject;
 import bleshadow.javax.inject.Named;
 import io.reactivex.Observable;
 import io.reactivex.functions.Function;
+import io.reactivex.functions.Predicate;
 
 @ServerScope
 public class ServerConnectorImpl implements ServerConnector {
@@ -99,6 +102,20 @@ public class ServerConnectorImpl implements ServerConnector {
         initializeServer(config);
 
         return rxBleGattServerCallback.getOnConnectionStateChange()
+                .filter(new Predicate<Pair<BluetoothDevice, RxBleConnection.RxBleConnectionState>>() {
+                    @Override
+                    public boolean test(
+                            Pair<BluetoothDevice, RxBleConnection.RxBleConnectionState> bluetoothDeviceRxBleConnectionStatePair
+                    ) throws Exception {
+                        if (bluetoothDeviceRxBleConnectionStatePair.second == RxBleConnection.RxBleConnectionState.CONNECTED
+                                || bluetoothDeviceRxBleConnectionStatePair.second == RxBleConnection.RxBleConnectionState.CONNECTING)  {
+                            return true;
+                        } else {
+                            connectionMap.remove(bluetoothDeviceRxBleConnectionStatePair.first);
+                            return false;
+                        }
+                    }
+                })
                 .map(new Function<Pair<BluetoothDevice, RxBleConnection.RxBleConnectionState>, RxBleServerConnection>() {
                     @Override
                     public RxBleServerConnection apply(
@@ -106,12 +123,17 @@ public class ServerConnectorImpl implements ServerConnector {
                     ) throws Exception {
                         RxBleServerConnection connection
                                 = rxBleGattServerCallback.getRxBleServerConnection(bluetoothDeviceRxBleConnectionStatePair.first);
-                        if (connection != null) {
-                            connectionMap.put(bluetoothDeviceRxBleConnectionStatePair.first, connection);
-                        } else {
-                            connectionMap.remove(bluetoothDeviceRxBleConnectionStatePair.first);
+
+                        if (connection == null) {
+                            throw new BleGattServerException(
+                                    gattServerProvider.getBluetoothGatt(),
+                                    bluetoothDeviceRxBleConnectionStatePair.first,
+                                    BleGattServerOperationType.CONNECTION_STATE
+                                    );
                         }
+                        connectionMap.put(bluetoothDeviceRxBleConnectionStatePair.first, connection);
                         return connection;
+
                     }
                 });
     }
