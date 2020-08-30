@@ -10,6 +10,7 @@ import androidx.annotation.NonNull;
 import com.jakewharton.rxrelay2.PublishRelay;
 import com.polidea.rxandroidble2.RxBleConnection;
 import com.polidea.rxandroidble2.ServerComponent;
+import com.polidea.rxandroidble2.exceptions.BleDisconnectedException;
 import com.polidea.rxandroidble2.exceptions.BleGattServerException;
 import com.polidea.rxandroidble2.internal.operations.server.ServerLongWriteOperation;
 import com.polidea.rxandroidble2.internal.operations.server.ServerOperationsProvider;
@@ -30,6 +31,7 @@ public class RxBleServerConnectionImpl implements RxBleServerConnection {
     private final ServerOperationsProvider operationsProvider;
     private final ServerOperationQueue operationQueue;
     private final BluetoothDevice device;
+    private final ServerDisconnectionRouter disconnectionRouter;
     private final MultiIndex<Integer, BluetoothGattCharacteristic, Pair<LongWriteClosableOutput<byte[]>, Observable<byte[]>>>
     characteristicMultiIndex = new MultiIndexImpl<>();
     private final MultiIndex<Integer, BluetoothGattDescriptor, Pair<LongWriteClosableOutput<byte[]>, Observable<byte[]>>>
@@ -47,12 +49,15 @@ public class RxBleServerConnectionImpl implements RxBleServerConnection {
         @Named(ServerComponent.NamedSchedulers.BLUETOOTH_CONNECTION) Scheduler callbackScheduler,
         ServerOperationsProvider operationsProvider,
         ServerOperationQueue operationQueue,
-        BluetoothDevice device
+        BluetoothDevice device,
+        ServerDisconnectionRouter disconnectionRouter
+
     ) {
         this.callbackScheduler = callbackScheduler;
         this.operationsProvider = operationsProvider;
         this.device = device;
         this.operationQueue = operationQueue;
+        this.disconnectionRouter = disconnectionRouter;
     }
 
 
@@ -187,6 +192,7 @@ public class RxBleServerConnectionImpl implements RxBleServerConnection {
     private <T> Observable<T> withDisconnectionHandling(Output<T> output) {
         //noinspection unchecked
         return Observable.merge(
+                disconnectionRouter.<T>asErrorOnlyObservable(),
                 output.valueRelay,
                 (Observable<T>) output.errorRelay.flatMap(errorMapper)
         );
@@ -198,7 +204,19 @@ public class RxBleServerConnectionImpl implements RxBleServerConnection {
                 .delay(0, TimeUnit.SECONDS, callbackScheduler);
     }
 
+    @Override
+    public ServerDisconnectionRouter getDisconnectionRouter() {
+        return disconnectionRouter;
+    }
 
+    /**
+     * @return Observable that never emits onNext.
+     * @throws BleDisconnectedException emitted in case of a disconnect that is a part of the normal flow
+     * @throws BleGattServerException         emitted in case of connection was interrupted unexpectedly.
+     */
+    public <T> Observable<T> observeDisconnect() {
+        return disconnectionRouter.asErrorOnlyObservable();
+    }
 
     public Observable<TransactionAssociation<UUID>> getOnCharacteristicReadRequest(BluetoothDevice device) {
         return withDisconnectionHandling(getReadCharacteristicOutput())

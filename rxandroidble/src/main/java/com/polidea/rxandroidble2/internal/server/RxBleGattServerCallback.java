@@ -18,6 +18,7 @@ import com.polidea.rxandroidble2.ServerConnectionComponent;
 import com.polidea.rxandroidble2.ServerResponseTransaction;
 import com.polidea.rxandroidble2.ServerScope;
 import com.polidea.rxandroidble2.ServerTransactionFactory;
+import com.polidea.rxandroidble2.exceptions.BleDisconnectedException;
 import com.polidea.rxandroidble2.exceptions.BleGattServerCharacteristicException;
 import com.polidea.rxandroidble2.exceptions.BleGattServerDescriptorException;
 import com.polidea.rxandroidble2.exceptions.BleGattServerException;
@@ -52,20 +53,30 @@ public class RxBleGattServerCallback {
         public void onConnectionStateChange(final BluetoothDevice device, int status, int newState) {
             super.onConnectionStateChange(device, status, newState);
 
-            if (status != BluetoothGatt.GATT_SUCCESS) {
-                RxBleLog.e("GattServer state change failed %i", status);
-                //TODO: route connect failures
+            if (device == null) {
+                return;
             }
             RxBleServerConnection connectionInfo = getOrCreateConnectionInfo(device);
 
-            if (newState == BluetoothProfile.STATE_DISCONNECTED) {
+            if (newState == BluetoothProfile.STATE_DISCONNECTED
+                    || newState == BluetoothProfile.STATE_DISCONNECTING) {
+                connectionInfo.getDisconnectionRouter().onDisconnectedException(
+                        new BleDisconnectedException(device.getAddress(), status)
+                );
                 deviceConnectionInfoMap.remove(device);
             } else {
+                if (status != BluetoothGatt.GATT_SUCCESS) {
+                    RxBleLog.e("GattServer state change failed %i", status);
+                    //TODO: is this the same as client
+                    connectionInfo.getDisconnectionRouter().onGattConnectionStateException(
+                            new BleGattServerException(status, device, BleGattServerOperationType.CONNECTION_STATE)
+                    );
+                }
                 deviceConnectionInfoMap.put(device, connectionInfo);
             }
 
             connectionStatePublishRelay.accept(new Pair<BluetoothDevice, RxBleConnection.RxBleConnectionState>(
-                    device,
+                    connectionInfo.getDevice(),
                     mapConnectionStateToRxBleConnectionStatus(newState)
             ));
         }
@@ -400,7 +411,7 @@ public class RxBleGattServerCallback {
     }
 
     public RxBleServerConnection getRxBleServerConnection(BluetoothDevice device) {
-        return deviceConnectionInfoMap.get(device);
+        return getOrCreateConnectionInfo(device);
     }
 
 }
