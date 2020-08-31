@@ -81,6 +81,7 @@ public class ServerConnectorImpl implements ServerConnector {
         for (Map.Entry<UUID, BluetoothGattService> entry : config.getServices().entrySet()) {
             server.addService(entry.getValue());
         }
+
         return true;
     }
 
