@@ -75,22 +75,27 @@ public class RxBleServerConnectionImpl implements RxBleServerConnection {
             new Output<>();
     private final Output<Integer> changedMtuOutput =
             new Output<>();
+
     @NonNull
+    @Override
     public Output<TransactionAssociation<UUID>> getReadCharacteristicOutput() {
         return readCharacteristicOutput;
     }
 
     @NonNull
+    @Override
     public Output<TransactionAssociation<UUID>> getWriteCharacteristicOutput() {
         return writeCharacteristicOutput;
     }
 
     @NonNull
+    @Override
     public Output<TransactionAssociation<BluetoothGattDescriptor>> getReadDescriptorOutput() {
         return readDescriptorOutput;
     }
 
     @NonNull
+    @Override
     public Output<TransactionAssociation<BluetoothGattDescriptor>> getWriteDescriptorOutput() {
         return writeDescriptorOutput;
     }
@@ -101,20 +106,24 @@ public class RxBleServerConnectionImpl implements RxBleServerConnection {
     }
 
     @NonNull
+    @Override
     public Output<BluetoothDevice> getNotificationPublishRelay() {
         return notificationPublishRelay;
     }
 
     @NonNull
+    @Override
     public BluetoothDevice getDevice() {
         return device;
     }
 
     @NonNull
+    @Override
     public Output<Integer> getChangedMtuOutput() {
         return changedMtuOutput;
     }
 
+    @Override
     public Output<byte[]> openLongWriteOutput(Integer requestid, BluetoothGattCharacteristic characteristic) {
         if (!characteristicMultiIndex.containsKey(requestid)) {
             LongWriteClosableOutput<byte[]> output = new LongWriteClosableOutput<>();
@@ -137,6 +146,7 @@ public class RxBleServerConnectionImpl implements RxBleServerConnection {
         }
     }
 
+    @Override
     public Output<byte[]> openLongWriteOutput(Integer requestid, BluetoothGattDescriptor descriptor) {
         if (!descriptorMultiIndex.containsKey(requestid)) {
             LongWriteClosableOutput<byte[]> output = new LongWriteClosableOutput<>();
@@ -159,6 +169,7 @@ public class RxBleServerConnectionImpl implements RxBleServerConnection {
         }
     }
 
+    @Override
     public Observable<byte[]> closeLongWriteOutput(Integer requestid) {
         Pair<LongWriteClosableOutput<byte[]>, Observable<byte[]>> output
                 = characteristicMultiIndex.get(requestid);
@@ -170,6 +181,7 @@ public class RxBleServerConnectionImpl implements RxBleServerConnection {
         return null;
     }
 
+    @Override
     public Observable<byte[]> getLongWriteObservable(Integer requestid) {
         Pair<LongWriteClosableOutput<byte[]>, Observable<byte[]>> output
                 = characteristicMultiIndex.get(requestid);
@@ -180,10 +192,12 @@ public class RxBleServerConnectionImpl implements RxBleServerConnection {
         }
     }
 
+    @Override
     public void resetDescriptorMap() {
         descriptorMultiIndex.clear();
     }
 
+    @Override
     public void resetCharacteristicMap() {
         characteristicMultiIndex.clear();
     }
@@ -198,7 +212,8 @@ public class RxBleServerConnectionImpl implements RxBleServerConnection {
         );
     }
 
-    public Observable<Integer> getOnMtuChanged(BluetoothDevice device) {
+    @Override
+    public Observable<Integer> getOnMtuChanged() {
 
         return withDisconnectionHandling(getChangedMtuOutput())
                 .delay(0, TimeUnit.SECONDS, callbackScheduler);
@@ -218,27 +233,32 @@ public class RxBleServerConnectionImpl implements RxBleServerConnection {
         return disconnectionRouter.asErrorOnlyObservable();
     }
 
-    public Observable<TransactionAssociation<UUID>> getOnCharacteristicReadRequest(BluetoothDevice device) {
+    @Override
+    public Observable<TransactionAssociation<UUID>> getOnCharacteristicReadRequest() {
         return withDisconnectionHandling(getReadCharacteristicOutput())
                 .delay(0, TimeUnit.SECONDS, callbackScheduler);
     }
 
-    public Observable<TransactionAssociation<UUID>> getOnCharacteristicWriteRequest(BluetoothDevice device) {
+    @Override
+    public Observable<TransactionAssociation<UUID>> getOnCharacteristicWriteRequest() {
         return withDisconnectionHandling(getWriteCharacteristicOutput())
                 .delay(0, TimeUnit.SECONDS, callbackScheduler);
     }
 
-    public Observable<TransactionAssociation<BluetoothGattDescriptor>> getOnDescriptorReadRequest(BluetoothDevice device) {
+    @Override
+    public Observable<TransactionAssociation<BluetoothGattDescriptor>> getOnDescriptorReadRequest() {
         return withDisconnectionHandling(getReadDescriptorOutput())
                 .delay(0, TimeUnit.SECONDS, callbackScheduler);
     }
 
-    public Observable<TransactionAssociation<BluetoothGattDescriptor>> getOnDescriptorWriteRequest(BluetoothDevice device) {
+    @Override
+    public Observable<TransactionAssociation<BluetoothGattDescriptor>> getOnDescriptorWriteRequest() {
         return withDisconnectionHandling(getWriteDescriptorOutput())
                 .delay(0, TimeUnit.SECONDS, callbackScheduler);
     }
 
-    public Observable<BluetoothDevice> getOnNotification(BluetoothDevice device) {
+    @Override
+    public Observable<BluetoothDevice> getOnNotification() {
         return withDisconnectionHandling(getNotificationPublishRelay())
                 .delay(0, TimeUnit.SECONDS, callbackScheduler);
     }
