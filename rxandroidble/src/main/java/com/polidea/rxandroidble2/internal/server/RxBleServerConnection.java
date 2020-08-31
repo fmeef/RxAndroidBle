@@ -57,17 +57,17 @@ public interface RxBleServerConnection {
 
     void resetCharacteristicMap();
 
-    Observable<Integer> getOnMtuChanged(BluetoothDevice device);
+    Observable<Integer> getOnMtuChanged();
 
-    Observable<TransactionAssociation<UUID>> getOnCharacteristicReadRequest(BluetoothDevice device);
+    Observable<TransactionAssociation<UUID>> getOnCharacteristicReadRequest();
 
-    Observable<TransactionAssociation<UUID>> getOnCharacteristicWriteRequest(BluetoothDevice device);
+    Observable<TransactionAssociation<UUID>> getOnCharacteristicWriteRequest();
 
-    Observable<TransactionAssociation<BluetoothGattDescriptor>> getOnDescriptorReadRequest(BluetoothDevice device);
+    Observable<TransactionAssociation<BluetoothGattDescriptor>> getOnDescriptorReadRequest();
 
-    Observable<TransactionAssociation<BluetoothGattDescriptor>> getOnDescriptorWriteRequest(BluetoothDevice device);
+    Observable<TransactionAssociation<BluetoothGattDescriptor>> getOnDescriptorWriteRequest();
 
-    Observable<BluetoothDevice> getOnNotification(BluetoothDevice device);
+    Observable<BluetoothDevice> getOnNotification();
 
     class Output<T> {
 
