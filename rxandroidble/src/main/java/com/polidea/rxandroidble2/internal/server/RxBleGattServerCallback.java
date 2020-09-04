@@ -19,8 +19,6 @@ import com.polidea.rxandroidble2.ServerResponseTransaction;
 import com.polidea.rxandroidble2.ServerScope;
 import com.polidea.rxandroidble2.ServerTransactionFactory;
 import com.polidea.rxandroidble2.exceptions.BleDisconnectedException;
-import com.polidea.rxandroidble2.exceptions.BleGattServerCharacteristicException;
-import com.polidea.rxandroidble2.exceptions.BleGattServerDescriptorException;
 import com.polidea.rxandroidble2.exceptions.BleGattServerException;
 import com.polidea.rxandroidble2.exceptions.BleGattServerOperationType;
 import com.polidea.rxandroidble2.internal.RxBleLog;
@@ -97,12 +95,7 @@ public class RxBleGattServerCallback {
             RxBleServerConnection connectionInfo = getOrCreateConnectionInfo(device);
 
 
-            if (connectionInfo.getReadCharacteristicOutput().hasObservers() && !propagateErrorIfOccurred(
-                    connectionInfo.getReadCharacteristicOutput(),
-                    device,
-                    -1,
-                    BleGattServerOperationType.CHARACTERISTIC_READ_REQUEST
-            )) {
+            if (connectionInfo.getReadCharacteristicOutput().hasObservers()) {
 
                 Disposable disposable = serverTransactionFactory.prepareCharacteristicTransaction(
                         characteristic.getValue(),
@@ -143,12 +136,7 @@ public class RxBleGattServerCallback {
                     throw new BleGattServerException(-1, device, BleGattServerOperationType.CHARACTERISTIC_LONG_WRITE_REQUEST);
                 }
                 longWriteOuput.valueRelay.accept(value);
-            } else if (connectionInfo.getWriteCharacteristicOutput().hasObservers() && !propagateErrorIfOccurred(
-                        connectionInfo.getWriteCharacteristicOutput(),
-                        device,
-                        -1,
-                        BleGattServerOperationType.CHARACTERISTIC_WRITE_REQUEST
-            )) {
+            } else if (connectionInfo.getWriteCharacteristicOutput().hasObservers()) {
                 Disposable disposable = serverTransactionFactory.prepareCharacteristicTransaction(
                         value,
                         requestId,
@@ -175,12 +163,7 @@ public class RxBleGattServerCallback {
 
             RxBleServerConnection connectionInfo = getOrCreateConnectionInfo(device);
 
-            if (connectionInfo.getReadDescriptorOutput().hasObservers() && !propagateErrorIfOccurred(
-                    connectionInfo.getReadDescriptorOutput(),
-                    device,
-                    -1,
-                    BleGattServerOperationType.DESCRIPTOR_READ_REQUEST
-            )) {
+            if (connectionInfo.getReadDescriptorOutput().hasObservers()) {
                 Disposable disposable = serverTransactionFactory.prepareCharacteristicTransaction(
                         descriptor.getValue(),
                         requestId,
@@ -219,12 +202,7 @@ public class RxBleGattServerCallback {
                     throw new BleGattServerException(-1, device, BleGattServerOperationType.DESCRIPTOR_LONG_WRITE_REQUEST);
                 }
                 longWriteOutput.valueRelay.accept(value); //TODO: offset?
-            } else if (connectionInfo.getWriteDescriptorOutput().hasObservers() && !propagateErrorIfOccurred(
-                    connectionInfo.getWriteDescriptorOutput(),
-                    device,
-                    -1,
-                    BleGattServerOperationType.DESCRIPTOR_WRITE_REQUEST
-            )) {
+            } else if (connectionInfo.getWriteDescriptorOutput().hasObservers()) {
                 Disposable disposable = serverTransactionFactory.prepareCharacteristicTransaction(
                         value,
                         requestId,
@@ -263,12 +241,7 @@ public class RxBleGattServerCallback {
 
             RxBleServerConnection connectionInfo = getOrCreateConnectionInfo(device);
 
-            if (connectionInfo.getNotificationPublishRelay().hasObservers() && !propagateErrorIfOccurred(
-                    connectionInfo.getNotificationPublishRelay(),
-                    device,
-                    status,
-                    BleGattServerOperationType.NOTIFICATION_SENT
-            )) {
+            if (connectionInfo.getNotificationPublishRelay().hasObservers()) {
                 connectionInfo.getNotificationPublishRelay().valueRelay.accept(
                         device
                 );
@@ -282,13 +255,7 @@ public class RxBleGattServerCallback {
 
             RxBleServerConnection connectionInfo = getOrCreateConnectionInfo(device);
 
-            if (connectionInfo.getChangedMtuOutput().hasObservers()
-                    && !propagateErrorIfOccurred(
-                            connectionInfo.getChangedMtuOutput(),
-                            device,
-                            -1,
-                            BleGattServerOperationType.ON_MTU_CHANGED
-            )) {
+            if (connectionInfo.getChangedMtuOutput().hasObservers()) {
                 connectionInfo.getChangedMtuOutput().valueRelay.accept(mtu);
             }
         }
@@ -340,44 +307,6 @@ public class RxBleGattServerCallback {
             default:
                 return RxBleConnection.RxBleConnectionState.DISCONNECTED;
         }
-    }
-
-    static boolean propagateErrorIfOccurred(
-            RxBleServerConnection.Output<?> output,
-            BluetoothDevice device,
-            BluetoothGattCharacteristic characteristic,
-            int status,
-            BleGattServerOperationType operationType
-    ) {
-        return isException(status) && propagateStatusError(output, new BleGattServerCharacteristicException(
-                characteristic,
-                device,
-                status,
-                operationType
-        ));
-    }
-
-    static boolean propagateErrorIfOccurred(
-            RxBleServerConnection.Output<?> output,
-            BluetoothDevice device,
-            BluetoothGattDescriptor descriptor,
-            int status,
-            BleGattServerOperationType operationType
-    ) {
-        return isException(status) && propagateStatusError(output, new BleGattServerDescriptorException(
-                descriptor,
-                device,
-                status,
-                operationType
-        ));
-    }
-
-    static boolean propagateErrorIfOccurred(RxBleServerConnection.Output<?> output,
-                                            BluetoothDevice device,
-                                            int status,
-                                            BleGattServerOperationType operationType) {
-        return isException(status) && propagateStatusError(output,
-                new BleGattServerException(status, device, operationType));
     }
 
     private static boolean isException(int status) {
