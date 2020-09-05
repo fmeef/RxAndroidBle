@@ -22,7 +22,7 @@ import com.polidea.rxandroidble2.exceptions.BleDisconnectedException;
 import com.polidea.rxandroidble2.exceptions.BleGattServerException;
 import com.polidea.rxandroidble2.exceptions.BleGattServerOperationType;
 import com.polidea.rxandroidble2.internal.RxBleLog;
-import com.polidea.rxandroidble2.internal.util.TransactionAssociation;
+import com.polidea.rxandroidble2.internal.util.GattServerTransaction;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -102,12 +102,12 @@ public class RxBleGattServerCallback {
                         requestId,
                         offset,
                         device
-                ).map(new Function<ServerResponseTransaction, TransactionAssociation<UUID>>() {
+                ).map(new Function<ServerResponseTransaction, GattServerTransaction<UUID>>() {
                             @Override
-                            public TransactionAssociation<UUID> apply(
+                            public GattServerTransaction<UUID> apply(
                                     ServerResponseTransaction serverResponseTransaction
                             ) throws Exception {
-                                return new TransactionAssociation<>(characteristic.getUuid(), serverResponseTransaction);
+                                return new GattServerTransaction<>(characteristic.getUuid(), serverResponseTransaction);
                             }
                         })
                         .subscribeOn(callbackScheduler)
@@ -142,10 +142,10 @@ public class RxBleGattServerCallback {
                         requestId,
                         offset,
                         device
-                ).map(new Function<ServerResponseTransaction, TransactionAssociation<UUID>>() {
+                ).map(new Function<ServerResponseTransaction, GattServerTransaction<UUID>>() {
                     @Override
-                    public TransactionAssociation<UUID> apply(ServerResponseTransaction serverResponseTransaction) throws Exception {
-                        return new TransactionAssociation<>(characteristic.getUuid(), serverResponseTransaction);
+                    public GattServerTransaction<UUID> apply(ServerResponseTransaction serverResponseTransaction) throws Exception {
+                        return new GattServerTransaction<>(characteristic.getUuid(), serverResponseTransaction);
                     }
                 })
                         .subscribeOn(callbackScheduler)
@@ -170,11 +170,11 @@ public class RxBleGattServerCallback {
                         offset,
                         device
                 )
-                        .map(new Function<ServerResponseTransaction, TransactionAssociation<BluetoothGattDescriptor>>() {
+                        .map(new Function<ServerResponseTransaction, GattServerTransaction<BluetoothGattDescriptor>>() {
                             @Override
-                            public TransactionAssociation<BluetoothGattDescriptor> apply(
+                            public GattServerTransaction<BluetoothGattDescriptor> apply(
                                     ServerResponseTransaction serverResponseTransaction) throws Exception {
-                                return new TransactionAssociation<>(descriptor, serverResponseTransaction);
+                                return new GattServerTransaction<>(descriptor, serverResponseTransaction);
                             }
                         })
                         .subscribeOn(callbackScheduler)
@@ -209,11 +209,11 @@ public class RxBleGattServerCallback {
                         offset,
                         device
                 )
-                        .map(new Function<ServerResponseTransaction, TransactionAssociation<BluetoothGattDescriptor>>() {
+                        .map(new Function<ServerResponseTransaction, GattServerTransaction<BluetoothGattDescriptor>>() {
                             @Override
-                            public TransactionAssociation<BluetoothGattDescriptor> apply(
+                            public GattServerTransaction<BluetoothGattDescriptor> apply(
                                     ServerResponseTransaction serverResponseTransaction) throws Exception {
-                                return new TransactionAssociation<>(descriptor, serverResponseTransaction);
+                                return new GattServerTransaction<>(descriptor, serverResponseTransaction);
                             }
                         })
                         .subscribeOn(callbackScheduler)

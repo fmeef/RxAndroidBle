@@ -17,7 +17,7 @@ public class ServerOperationsProviderImpl implements ServerOperationsProvider {
     private final Scheduler gattServerScheduler;
 
     @Inject
-    ServerOperationsProviderImpl(
+    public ServerOperationsProviderImpl(
             RxBleGattServerCallback rxBleGattServerCallback,
             @Named(ServerComponent.NamedSchedulers.BLUETOOTH_INTERACTION) Scheduler gattServerScheduler,
             BluetoothGattServer bluetoothGattServer

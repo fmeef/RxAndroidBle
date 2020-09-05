@@ -15,7 +15,7 @@ import com.polidea.rxandroidble2.exceptions.BleGattServerException;
 import com.polidea.rxandroidble2.internal.operations.server.ServerLongWriteOperation;
 import com.polidea.rxandroidble2.internal.operations.server.ServerOperationsProvider;
 import com.polidea.rxandroidble2.internal.serialization.ServerOperationQueue;
-import com.polidea.rxandroidble2.internal.util.TransactionAssociation;
+import com.polidea.rxandroidble2.internal.util.GattServerTransaction;
 
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
@@ -61,13 +61,13 @@ public class RxBleServerConnectionImpl implements RxBleServerConnection {
     }
 
 
-    private final Output<TransactionAssociation<UUID>> readCharacteristicOutput =
+    private final Output<GattServerTransaction<UUID>> readCharacteristicOutput =
             new Output<>();
-    private final Output<TransactionAssociation<UUID>> writeCharacteristicOutput =
+    private final Output<GattServerTransaction<UUID>> writeCharacteristicOutput =
             new Output<>();
-    private final Output<TransactionAssociation<BluetoothGattDescriptor>> readDescriptorOutput =
+    private final Output<GattServerTransaction<BluetoothGattDescriptor>> readDescriptorOutput =
             new Output<>();
-    private final Output<TransactionAssociation<BluetoothGattDescriptor>> writeDescriptorOutput =
+    private final Output<GattServerTransaction<BluetoothGattDescriptor>> writeDescriptorOutput =
             new Output<>();
     private final PublishRelay<RxBleConnection.RxBleConnectionState> connectionStatePublishRelay =
             PublishRelay.create();
@@ -78,25 +78,25 @@ public class RxBleServerConnectionImpl implements RxBleServerConnection {
 
     @NonNull
     @Override
-    public Output<TransactionAssociation<UUID>> getReadCharacteristicOutput() {
+    public Output<GattServerTransaction<UUID>> getReadCharacteristicOutput() {
         return readCharacteristicOutput;
     }
 
     @NonNull
     @Override
-    public Output<TransactionAssociation<UUID>> getWriteCharacteristicOutput() {
+    public Output<GattServerTransaction<UUID>> getWriteCharacteristicOutput() {
         return writeCharacteristicOutput;
     }
 
     @NonNull
     @Override
-    public Output<TransactionAssociation<BluetoothGattDescriptor>> getReadDescriptorOutput() {
+    public Output<GattServerTransaction<BluetoothGattDescriptor>> getReadDescriptorOutput() {
         return readDescriptorOutput;
     }
 
     @NonNull
     @Override
-    public Output<TransactionAssociation<BluetoothGattDescriptor>> getWriteDescriptorOutput() {
+    public Output<GattServerTransaction<BluetoothGattDescriptor>> getWriteDescriptorOutput() {
         return writeDescriptorOutput;
     }
 
@@ -234,25 +234,25 @@ public class RxBleServerConnectionImpl implements RxBleServerConnection {
     }
 
     @Override
-    public Observable<TransactionAssociation<UUID>> getOnCharacteristicReadRequest() {
+    public Observable<GattServerTransaction<UUID>> getOnCharacteristicReadRequest() {
         return withDisconnectionHandling(getReadCharacteristicOutput())
                 .delay(0, TimeUnit.SECONDS, callbackScheduler);
     }
 
     @Override
-    public Observable<TransactionAssociation<UUID>> getOnCharacteristicWriteRequest() {
+    public Observable<GattServerTransaction<UUID>> getOnCharacteristicWriteRequest() {
         return withDisconnectionHandling(getWriteCharacteristicOutput())
                 .delay(0, TimeUnit.SECONDS, callbackScheduler);
     }
 
     @Override
-    public Observable<TransactionAssociation<BluetoothGattDescriptor>> getOnDescriptorReadRequest() {
+    public Observable<GattServerTransaction<BluetoothGattDescriptor>> getOnDescriptorReadRequest() {
         return withDisconnectionHandling(getReadDescriptorOutput())
                 .delay(0, TimeUnit.SECONDS, callbackScheduler);
     }
 
     @Override
-    public Observable<TransactionAssociation<BluetoothGattDescriptor>> getOnDescriptorWriteRequest() {
+    public Observable<GattServerTransaction<BluetoothGattDescriptor>> getOnDescriptorWriteRequest() {
         return withDisconnectionHandling(getWriteDescriptorOutput())
                 .delay(0, TimeUnit.SECONDS, callbackScheduler);
     }
