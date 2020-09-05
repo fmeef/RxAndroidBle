@@ -3,7 +3,6 @@ package com.polidea.rxandroidble2.internal.server;
 import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothGattCharacteristic;
 import android.bluetooth.BluetoothGattDescriptor;
-import android.util.Pair;
 
 import androidx.annotation.NonNull;
 
@@ -24,6 +23,7 @@ import bleshadow.javax.inject.Inject;
 import bleshadow.javax.inject.Named;
 import io.reactivex.Observable;
 import io.reactivex.Scheduler;
+import io.reactivex.Single;
 import io.reactivex.functions.Function;
 
 public class RxBleServerConnectionImpl implements RxBleServerConnection {
@@ -32,9 +32,9 @@ public class RxBleServerConnectionImpl implements RxBleServerConnection {
     private final ServerOperationQueue operationQueue;
     private final BluetoothDevice device;
     private final ServerDisconnectionRouter disconnectionRouter;
-    private final MultiIndex<Integer, BluetoothGattCharacteristic, Pair<LongWriteClosableOutput<byte[]>, Observable<byte[]>>>
+    private final MultiIndex<Integer, BluetoothGattCharacteristic, LongWriteClosableOutput<byte[]>>
     characteristicMultiIndex = new MultiIndexImpl<>();
-    private final MultiIndex<Integer, BluetoothGattDescriptor, Pair<LongWriteClosableOutput<byte[]>, Observable<byte[]>>>
+    private final MultiIndex<Integer, BluetoothGattDescriptor, LongWriteClosableOutput<byte[]>>
     descriptorMultiIndex = new MultiIndexImpl<>();
 
     private final Function<BleGattServerException, Observable<?>> errorMapper = new Function<BleGattServerException, Observable<?>>() {
@@ -123,72 +123,80 @@ public class RxBleServerConnectionImpl implements RxBleServerConnection {
         return changedMtuOutput;
     }
 
+    @NonNull
     @Override
-    public Output<byte[]> openLongWriteOutput(Integer requestid, BluetoothGattCharacteristic characteristic) {
-        if (!characteristicMultiIndex.containsKey(requestid)) {
-            LongWriteClosableOutput<byte[]> output = new LongWriteClosableOutput<>();
+    public LongWriteClosableOutput<byte[]> openLongWriteCharacteristicOutput(
+            Integer requestid,
+            BluetoothGattCharacteristic characteristic
+    ) {
+        LongWriteClosableOutput<byte[]> output = characteristicMultiIndex.get(requestid);
+        if (output == null) {
+            output = new LongWriteClosableOutput<>();
             ServerLongWriteOperation operation
                     = operationsProvider.provideLongWriteOperation(output.valueRelay, device);
             Observable<byte[]> operationResult = operationQueue.queue(operation);
-            Pair<LongWriteClosableOutput<byte[]>, Observable<byte[]>> mapresult
-                    = new Pair<>(output, operationResult);
-            characteristicMultiIndex.put(requestid, mapresult);
-            characteristicMultiIndex.putMulti(characteristic, mapresult);
-            return output;
-        } else {
-            Pair<LongWriteClosableOutput<byte[]>, Observable<byte[]>> r
-                    = characteristicMultiIndex.get(requestid);
-            if (r != null) {
-                return r.first;
-            } else {
-                return null;
-            }
+            operationResult.firstOrError().subscribe(output.out);
+            characteristicMultiIndex.put(requestid, output);
+            characteristicMultiIndex.putMulti(characteristic, output);
         }
+        return output;
     }
 
+    @NonNull
     @Override
-    public Output<byte[]> openLongWriteOutput(Integer requestid, BluetoothGattDescriptor descriptor) {
-        if (!descriptorMultiIndex.containsKey(requestid)) {
-            LongWriteClosableOutput<byte[]> output = new LongWriteClosableOutput<>();
+    public LongWriteClosableOutput<byte[]> openLongWriteDescriptorOutput(Integer requestid, BluetoothGattDescriptor descriptor) {
+        LongWriteClosableOutput<byte[]> output = descriptorMultiIndex.get(requestid);
+        if (output == null) {
+            output = new LongWriteClosableOutput<>();
             ServerLongWriteOperation operation
                     = operationsProvider.provideLongWriteOperation(output.valueRelay, device);
             Observable<byte[]> operationResult =  operationQueue.queue(operation);
-            Pair<LongWriteClosableOutput<byte[]>, Observable<byte[]>> mapresult
-                    = new Pair<>(output, operationResult);
-            descriptorMultiIndex.put(requestid, mapresult);
-            descriptorMultiIndex.putMulti(descriptor, mapresult);
-            return output;
-        } else {
-            Pair<LongWriteClosableOutput<byte[]>, Observable<byte[]>> r
-            = descriptorMultiIndex.get(requestid);
-            if (r != null) {
-                return r.first;
-            } else {
-                return null;
-            }
+            operationResult.firstOrError().subscribe(output.out);
+            descriptorMultiIndex.put(requestid, output);
+            descriptorMultiIndex.putMulti(descriptor, output);
         }
+        return output;
     }
 
     @Override
-    public Observable<byte[]> closeLongWriteOutput(Integer requestid) {
-        Pair<LongWriteClosableOutput<byte[]>, Observable<byte[]>> output
-                = characteristicMultiIndex.get(requestid);
+    public Single<byte[]> closeLongWriteCharacteristicOutput(Integer requestid) {
+        LongWriteClosableOutput<byte[]> output = characteristicMultiIndex.get(requestid);
         if (output != null) {
-            output.first.valueRelay.onComplete();
+            output.valueRelay.onComplete();
             characteristicMultiIndex.remove(requestid);
-            return output.second;
+            return output.out.delay(0, TimeUnit.SECONDS, callbackScheduler);
         }
-        return null;
+        return Single.never();
     }
 
     @Override
-    public Observable<byte[]> getLongWriteObservable(Integer requestid) {
-        Pair<LongWriteClosableOutput<byte[]>, Observable<byte[]>> output
-                = characteristicMultiIndex.get(requestid);
+    public Single<byte[]> closeLongWriteDescriptorOutput(Integer requestid) {
+        LongWriteClosableOutput<byte[]> output = descriptorMultiIndex.get(requestid);
         if (output != null) {
-            return output.second;
+            output.valueRelay.onComplete();
+            characteristicMultiIndex.remove(requestid);
+            return output.out.delay(0, TimeUnit.SECONDS, callbackScheduler);
+        }
+        return Single.never();
+    }
+
+    @Override
+    public Single<byte[]> getLongWriteCharacteristicObservable(Integer requestid) {
+        LongWriteClosableOutput<byte[]> output = characteristicMultiIndex.get(requestid);
+        if (output != null) {
+            return output.out.delay(0, TimeUnit.SECONDS, callbackScheduler);
         } else {
-            return null;
+            return Single.never();
+        }
+    }
+
+    @Override
+    public Single<byte[]> getLongWriteDescriptorObservable(Integer requestid) {
+        LongWriteClosableOutput<byte[]> output = descriptorMultiIndex.get(requestid);
+        if (output != null) {
+            return output.out.delay(0, TimeUnit.SECONDS, callbackScheduler);
+        } else {
+            return Single.never();
         }
     }
 

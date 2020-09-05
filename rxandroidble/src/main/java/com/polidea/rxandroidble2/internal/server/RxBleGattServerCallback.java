@@ -131,7 +131,8 @@ public class RxBleGattServerCallback {
             RxBleServerConnection connectionInfo = getOrCreateConnectionInfo(device);
 
             if (preparedWrite) {
-                RxBleServerConnection.Output<byte[]> longWriteOuput = connectionInfo.openLongWriteOutput(requestId, characteristic);
+                RxBleServerConnection.Output<byte[]> longWriteOuput
+                        = connectionInfo.openLongWriteCharacteristicOutput(requestId, characteristic);
                 if (longWriteOuput == null) {
                     throw new BleGattServerException(-1, device, BleGattServerOperationType.CHARACTERISTIC_LONG_WRITE_REQUEST);
                 }
@@ -197,7 +198,7 @@ public class RxBleGattServerCallback {
             RxBleServerConnection connectionInfo = getOrCreateConnectionInfo(device);
 
             if (preparedWrite) {
-                RxBleServerConnection.Output<byte[]> longWriteOutput = connectionInfo.openLongWriteOutput(requestId, descriptor);
+                RxBleServerConnection.Output<byte[]> longWriteOutput = connectionInfo.openLongWriteDescriptorOutput(requestId, descriptor);
                 if (longWriteOutput == null) {
                     throw new BleGattServerException(-1, device, BleGattServerOperationType.DESCRIPTOR_LONG_WRITE_REQUEST);
                 }
@@ -228,7 +229,7 @@ public class RxBleGattServerCallback {
             if (execute) {
                 RxBleServerConnection connectionInfo = getOrCreateConnectionInfo(device);
 
-                connectionInfo.closeLongWriteOutput(requestId);
+                connectionInfo.closeLongWriteCharacteristicOutput(requestId);
 
                 connectionInfo.resetCharacteristicMap();
                 connectionInfo.resetDescriptorMap();
