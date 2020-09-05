@@ -36,7 +36,7 @@ public class ServerLongWriteOperationTest extends Specification {
         )
     }
 
-    def "output bytes are the same as standard array contatenation"() {
+    private def "output bytes are the same as standard array contatenation"() {
         when:
         def testSubscriber = objectUnderTest.run(mockQueueReleasingInterface).test()
         advanceTimeForWritesToComplete(repeat)
