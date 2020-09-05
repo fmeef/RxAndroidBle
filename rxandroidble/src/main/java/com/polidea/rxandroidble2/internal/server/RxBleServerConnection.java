@@ -14,7 +14,9 @@ import com.polidea.rxandroidble2.internal.util.GattServerTransaction;
 import java.util.UUID;
 
 import io.reactivex.Observable;
+import io.reactivex.Single;
 import io.reactivex.subjects.PublishSubject;
+import io.reactivex.subjects.SingleSubject;
 import io.reactivex.subjects.Subject;
 
 /**
@@ -46,12 +48,19 @@ public interface RxBleServerConnection {
     @NonNull
     ServerDisconnectionRouter getDisconnectionRouter();
 
-    Output<byte[]> openLongWriteOutput(Integer requestid, BluetoothGattCharacteristic characteristic);
-    Output<byte[]> openLongWriteOutput(Integer requestid, BluetoothGattDescriptor descriptor);
+    @NonNull
+    Output<byte[]> openLongWriteCharacteristicOutput(Integer requestid, BluetoothGattCharacteristic characteristic);
 
-    Observable<byte[]> closeLongWriteOutput(Integer requestid);
+    @NonNull
+    Output<byte[]> openLongWriteDescriptorOutput(Integer requestid, BluetoothGattDescriptor descriptor);
 
-    Observable<byte[]> getLongWriteObservable(Integer requestid);
+    Single<byte[]> closeLongWriteCharacteristicOutput(Integer requestid);
+
+    Single<byte[]> closeLongWriteDescriptorOutput(Integer requestid);
+
+    Single<byte[]> getLongWriteCharacteristicObservable(Integer requestid);
+
+    Single<byte[]> getLongWriteDescriptorObservable(Integer requestsid);
 
     void resetDescriptorMap();
 
@@ -87,10 +96,12 @@ public interface RxBleServerConnection {
    class LongWriteClosableOutput<T> extends Output<T> {
 
         final Subject<T> valueRelay;
+        final SingleSubject<T> out;
 
         public LongWriteClosableOutput() {
             super();
             this.valueRelay = PublishSubject.create();
+            this.out = SingleSubject.create();
         }
 
         public void finalize() {
