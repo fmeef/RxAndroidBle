@@ -9,7 +9,7 @@ import androidx.annotation.NonNull;
 import com.jakewharton.rxrelay2.PublishRelay;
 import com.polidea.rxandroidble2.ServerConnectionScope;
 import com.polidea.rxandroidble2.exceptions.BleGattServerException;
-import com.polidea.rxandroidble2.internal.util.TransactionAssociation;
+import com.polidea.rxandroidble2.internal.util.GattServerTransaction;
 
 import java.util.UUID;
 
@@ -23,16 +23,16 @@ import io.reactivex.subjects.Subject;
 @ServerConnectionScope
 public interface RxBleServerConnection {
     @NonNull
-    Output<TransactionAssociation<UUID>> getReadCharacteristicOutput();
+    Output<GattServerTransaction<UUID>> getReadCharacteristicOutput();
 
     @NonNull
-    Output<TransactionAssociation<UUID>> getWriteCharacteristicOutput();
+    Output<GattServerTransaction<UUID>> getWriteCharacteristicOutput();
 
     @NonNull
-    Output<TransactionAssociation<BluetoothGattDescriptor>> getReadDescriptorOutput();
+    Output<GattServerTransaction<BluetoothGattDescriptor>> getReadDescriptorOutput();
 
     @NonNull
-    Output<TransactionAssociation<BluetoothGattDescriptor>> getWriteDescriptorOutput();
+    Output<GattServerTransaction<BluetoothGattDescriptor>> getWriteDescriptorOutput();
 
     @NonNull
     Output<BluetoothDevice> getNotificationPublishRelay();
@@ -59,13 +59,13 @@ public interface RxBleServerConnection {
 
     Observable<Integer> getOnMtuChanged();
 
-    Observable<TransactionAssociation<UUID>> getOnCharacteristicReadRequest();
+    Observable<GattServerTransaction<UUID>> getOnCharacteristicReadRequest();
 
-    Observable<TransactionAssociation<UUID>> getOnCharacteristicWriteRequest();
+    Observable<GattServerTransaction<UUID>> getOnCharacteristicWriteRequest();
 
-    Observable<TransactionAssociation<BluetoothGattDescriptor>> getOnDescriptorReadRequest();
+    Observable<GattServerTransaction<BluetoothGattDescriptor>> getOnDescriptorReadRequest();
 
-    Observable<TransactionAssociation<BluetoothGattDescriptor>> getOnDescriptorWriteRequest();
+    Observable<GattServerTransaction<BluetoothGattDescriptor>> getOnDescriptorWriteRequest();
 
     Observable<BluetoothDevice> getOnNotification();
 
@@ -74,7 +74,7 @@ public interface RxBleServerConnection {
         final PublishRelay<T> valueRelay;
         final PublishRelay<BleGattServerException> errorRelay;
 
-        Output() {
+        public Output() {
             this.valueRelay = PublishRelay.create();
             this.errorRelay = PublishRelay.create();
         }
@@ -84,11 +84,11 @@ public interface RxBleServerConnection {
         }
     }
 
-    class LongWriteClosableOutput<T> extends Output<T> {
+   class LongWriteClosableOutput<T> extends Output<T> {
 
         final Subject<T> valueRelay;
 
-        LongWriteClosableOutput() {
+        public LongWriteClosableOutput() {
             super();
             this.valueRelay = PublishSubject.create();
         }

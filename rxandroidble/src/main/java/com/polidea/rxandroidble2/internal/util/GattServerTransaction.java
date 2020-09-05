@@ -1,5 +1,6 @@
 package com.polidea.rxandroidble2.internal.util;
 
+import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothGattCharacteristic;
 import android.bluetooth.BluetoothGattDescriptor;
 
@@ -9,22 +10,54 @@ import com.polidea.rxandroidble2.ServerResponseTransaction;
 
 import java.util.UUID;
 
-public class TransactionAssociation<T> {
+import io.reactivex.Observable;
+
+public class GattServerTransaction<T> implements ServerResponseTransaction {
 
     public final T first;
-    public final ServerResponseTransaction second;
+    private final ServerResponseTransaction second;
 
-    public TransactionAssociation(@NonNull T first, ServerResponseTransaction second) {
+    public GattServerTransaction(@NonNull T first, ServerResponseTransaction second) {
         this.first = first;
         this.second = second;
     }
 
     @Override
+    public int getRequestID() {
+        return second.getRequestID();
+    }
+
+    @Override
+    public int compareTo(ServerResponseTransaction o) {
+        return second.compareTo(o);
+    }
+
+    @Override
+    public Observable<Boolean> sendReply(int status, int offset, byte[] value) {
+        return second.sendReply(status, offset, value);
+    }
+
+    @Override
+    public byte[] getValue() {
+        return second.getValue();
+    }
+
+    @Override
+    public BluetoothDevice getRemoteDevice() {
+        return second.getRemoteDevice();
+    }
+
+    @Override
+    public int getOffset() {
+        return second.getOffset();
+    }
+
+    @Override
     public boolean equals(Object o) {
-        if (!(o instanceof TransactionAssociation)) {
+        if (!(o instanceof GattServerTransaction)) {
             return false;
         }
-        TransactionAssociation<?> ba = (TransactionAssociation<?>) o;
+        GattServerTransaction<?> ba = (GattServerTransaction<?>) o;
         return ba.second.compareTo(second) == 0 && ba.first.equals(first);
     }
 
@@ -51,7 +84,7 @@ public class TransactionAssociation<T> {
         return getClass().getSimpleName() + "[first=" + firstDescription + ", second=" + second + "]";
     }
 
-    public static <T> TransactionAssociation<T> create(T first, ServerResponseTransaction bytes) {
-        return new TransactionAssociation<>(first, bytes);
+    public static <T> GattServerTransaction<T> create(T first, ServerResponseTransaction bytes) {
+        return new GattServerTransaction<>(first, bytes);
     }
 }
