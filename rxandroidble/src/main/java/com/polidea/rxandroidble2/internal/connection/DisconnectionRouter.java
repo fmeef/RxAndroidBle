@@ -121,9 +121,9 @@ public class DisconnectionRouter implements DisconnectionRouterInput<BleGattExce
     }
 
     @Override
+    @SuppressWarnings("unchecked")
     public <T> Observable<T> asErrorOnlyObservable() {
         // [DS 11.03.2019] Not an elegant solution but it should decrease amount of allocations. Should not emit values —> safe to cast.
-        //noinspection unchecked
         return (Observable<T>) firstDisconnectionExceptionObs;
     }
 }
