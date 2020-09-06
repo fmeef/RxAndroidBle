@@ -4,37 +4,29 @@ import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothGattServer;
 
 import com.polidea.rxandroidble2.ServerComponent;
-import com.polidea.rxandroidble2.internal.server.RxBleGattServerCallback;
 
 import bleshadow.javax.inject.Inject;
 import bleshadow.javax.inject.Named;
 import io.reactivex.Observable;
 import io.reactivex.Scheduler;
 
-public class ServerOperationsProviderImpl implements ServerOperationsProvider {
-    private final RxBleGattServerCallback gattServerCallback;
+public class ServerConnectionOperationsProviderImpl implements ServerConnectionOperationsProvider {
+
     private final BluetoothGattServer bluetoothGattServer;
     private final Scheduler gattServerScheduler;
 
+
     @Inject
-    public ServerOperationsProviderImpl(
-            RxBleGattServerCallback rxBleGattServerCallback,
+    public ServerConnectionOperationsProviderImpl(
             @Named(ServerComponent.NamedSchedulers.BLUETOOTH_INTERACTION) Scheduler gattServerScheduler,
             BluetoothGattServer bluetoothGattServer
     ) {
         this.gattServerScheduler = gattServerScheduler;
-        this.gattServerCallback = rxBleGattServerCallback;
         this.bluetoothGattServer = bluetoothGattServer;
     }
 
 
-    public ServerLongWriteOperation provideLongWriteOperation(Observable<byte[]> bytes, BluetoothDevice device) {
-        return new ServerLongWriteOperation(
-                gattServerScheduler,
-                bytes,
-                device
-        );
-    }
+
 
     public ServerReplyOperation provideReplyOperation(
             BluetoothDevice device,
@@ -42,7 +34,7 @@ public class ServerOperationsProviderImpl implements ServerOperationsProvider {
             int status,
             int offset,
             byte[] value
-            ) {
+    ) {
         return new ServerReplyOperation(
                 gattServerScheduler,
                 bluetoothGattServer,
@@ -51,6 +43,14 @@ public class ServerOperationsProviderImpl implements ServerOperationsProvider {
                 status,
                 offset,
                 value
+        );
+    }
+
+    public ServerLongWriteOperation provideLongWriteOperation(Observable<byte[]> bytes, BluetoothDevice device) {
+        return new ServerLongWriteOperation(
+                gattServerScheduler,
+                bytes,
+                device
         );
     }
 }

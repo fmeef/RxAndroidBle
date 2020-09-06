@@ -15,6 +15,7 @@ import com.polidea.rxandroidble2.ServerConfig;
 import com.polidea.rxandroidble2.ServerScope;
 import com.polidea.rxandroidble2.exceptions.BleGattServerException;
 import com.polidea.rxandroidble2.exceptions.BleGattServerOperationType;
+import com.polidea.rxandroidble2.internal.RxBleLog;
 import com.polidea.rxandroidble2.internal.server.BluetoothGattServerProvider;
 import com.polidea.rxandroidble2.internal.server.RxBleGattServerCallback;
 import com.polidea.rxandroidble2.internal.server.RxBleServerConnection;
@@ -26,6 +27,7 @@ import java.util.UUID;
 import bleshadow.javax.inject.Inject;
 import bleshadow.javax.inject.Named;
 import io.reactivex.Observable;
+import io.reactivex.functions.Consumer;
 import io.reactivex.functions.Function;
 import io.reactivex.functions.Predicate;
 
@@ -103,6 +105,12 @@ public class ServerConnectorImpl implements ServerConnector {
         initializeServer(config);
 
         return rxBleGattServerCallback.getOnConnectionStateChange()
+                .doOnError(new Consumer<Throwable>() {
+                    @Override
+                    public void accept(Throwable error) throws Exception {
+                        RxBleLog.e("debug", "disconnect error");
+                    }
+                })
                 .filter(new Predicate<Pair<BluetoothDevice, RxBleConnection.RxBleConnectionState>>() {
                     @Override
                     public boolean test(
@@ -124,6 +132,7 @@ public class ServerConnectorImpl implements ServerConnector {
                     ) throws Exception {
                         RxBleServerConnection connection
                                 = rxBleGattServerCallback.getRxBleServerConnection(bluetoothDeviceRxBleConnectionStatePair.first);
+
 
                         if (connection == null) {
                             throw new BleGattServerException(

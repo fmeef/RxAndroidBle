@@ -16,8 +16,6 @@ import androidx.annotation.RestrictTo;
 import com.polidea.rxandroidble2.internal.DeviceComponent;
 import com.polidea.rxandroidble2.internal.connection.ServerConnector;
 import com.polidea.rxandroidble2.internal.connection.ServerConnectorImpl;
-import com.polidea.rxandroidble2.internal.operations.server.ServerOperationsProvider;
-import com.polidea.rxandroidble2.internal.operations.server.ServerOperationsProviderImpl;
 import com.polidea.rxandroidble2.internal.serialization.RxBleThreadFactory;
 import com.polidea.rxandroidble2.internal.serialization.ServerOperationQueue;
 import com.polidea.rxandroidble2.internal.serialization.ServerOperationQueueImpl;
@@ -89,7 +87,7 @@ public interface ServerComponent {
         Builder applicationContext(Context context);
     }
 
-    @Module(subcomponents = {DeviceComponent.class, ServerConnectionComponent.class, ServerTransactionComponent.class})
+    @Module(subcomponents = {DeviceComponent.class, ServerConnectionComponent.class})
     abstract class ServerModule {
 
         @Provides
@@ -193,9 +191,6 @@ public interface ServerComponent {
         abstract Observable<RxBleAdapterStateObservable.BleAdapterState> bindStateObs(RxBleAdapterStateObservable stateObservable);
 
         @Binds
-        abstract ServerOperationsProvider bindServerOperationsProvider(ServerOperationsProviderImpl serverOperationsProvider);
-
-        @Binds
         @ServerScope
         abstract RxBleServer bindRxBleServer(RxBleServerImpl rxBleServer);
 
@@ -206,9 +201,6 @@ public interface ServerComponent {
 
         @Binds
         abstract ServerOperationQueue bindServerOperationQueue(ServerOperationQueueImpl operationQueue);
-
-        @Binds
-        abstract ServerTransactionFactory bindServerTransactionFactory(ServerTransactionFactoryImpl transactionFactory);
     }
 
     RxBleServer rxBleServer();

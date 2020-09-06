@@ -5,9 +5,11 @@ import android.bluetooth.BluetoothGattCharacteristic
 import android.bluetooth.BluetoothGattDescriptor
 import android.bluetooth.BluetoothGattServer
 import com.polidea.rxandroidble2.DummyOperationQueue
-import com.polidea.rxandroidble2.internal.operations.server.ServerOperationsProvider
-import com.polidea.rxandroidble2.internal.operations.server.ServerOperationsProviderImpl
-import com.polidea.rxandroidble2.internal.serialization.QueueReleaseInterface
+import com.polidea.rxandroidble2.ServerTransactionFactory
+import com.polidea.rxandroidble2.ServerTransactionFactoryImpl
+import com.polidea.rxandroidble2.internal.operations.server.ServerConnectionOperationsProvider
+import com.polidea.rxandroidble2.internal.operations.server.ServerConnectionOperationsProviderImpl
+import com.polidea.rxandroidble2.internal.serialization.ServerConnectionOperationQueue
 import io.reactivex.annotations.NonNull
 import io.reactivex.functions.Predicate
 import io.reactivex.schedulers.TestScheduler
@@ -18,14 +20,14 @@ import java.util.concurrent.TimeUnit
 public class RxBleServerConnectionTest extends Specification {
     public static long DEFAULT_WRITE_DELAY = 1
     UUID testUuid = UUID.randomUUID()
-    def testScheduler = new TestScheduler()
-    ServerOperationsProvider operationsProvider
-    DummyOperationQueue dummyQueue = new DummyOperationQueue()
+    TestScheduler testScheduler = new TestScheduler()
+    ServerConnectionOperationsProvider operationsProvider
+    ServerConnectionOperationQueue dummyQueue = new DummyOperationQueue()
     ServerDisconnectionRouter disconnectionRouter = Mock ServerDisconnectionRouter
     BluetoothDevice bluetoothDevice = Mock BluetoothDevice
+    BluetoothGattServer bluetoothGattServer = Mock BluetoothGattServer
     RxBleServerConnection objectUnderTest
-    RxBleGattServerCallback callback = Mock RxBleGattServerCallback
-    QueueReleaseInterface mockQueueReleasingInterface = Mock QueueReleaseInterface
+    ServerTransactionFactory serverTransactionFactory = Mock ServerTransactionFactory
     BluetoothGattCharacteristic characteristic = new BluetoothGattCharacteristic(
             testUuid,
             BluetoothGattCharacteristic.PROPERTY_READ,
@@ -47,17 +49,19 @@ public class RxBleServerConnectionTest extends Specification {
         for (int i=0;i<finaldata.length;i++) {
             finaldata[i] = data[i % data.length]
         }
-        operationsProvider = new ServerOperationsProviderImpl(
-                callback,
+
+        operationsProvider = new ServerConnectionOperationsProviderImpl(
                 testScheduler,
-                Mock(BluetoothGattServer)
+                bluetoothGattServer
         )
+
         objectUnderTest = new RxBleServerConnectionImpl(
                 testScheduler,
                 operationsProvider,
                 dummyQueue,
                 bluetoothDevice,
-                disconnectionRouter
+                disconnectionRouter,
+                serverTransactionFactory
         )
     }
 

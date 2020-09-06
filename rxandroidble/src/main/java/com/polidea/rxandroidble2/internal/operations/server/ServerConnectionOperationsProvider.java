@@ -4,9 +4,7 @@ import android.bluetooth.BluetoothDevice;
 
 import io.reactivex.Observable;
 
-public interface ServerOperationsProvider {
-
-    ServerLongWriteOperation provideLongWriteOperation(Observable<byte[]> bytes, BluetoothDevice device);
+public interface ServerConnectionOperationsProvider {
     ServerReplyOperation provideReplyOperation(
             BluetoothDevice device,
             int requestID,
@@ -14,4 +12,6 @@ public interface ServerOperationsProvider {
             int offset,
             byte[] value
     );
+    ServerLongWriteOperation provideLongWriteOperation(Observable<byte[]> bytes, BluetoothDevice device);
+
 }

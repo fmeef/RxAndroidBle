@@ -78,6 +78,24 @@ public interface RxBleServerConnection {
 
     Observable<BluetoothDevice> getOnNotification();
 
+    <T> Observable<T> observeDisconnect();
+
+    void prepareDescriptorTransaction(
+            BluetoothGattDescriptor descriptor,
+            int requestID,
+            int offset,
+            BluetoothDevice device,
+            PublishRelay<GattServerTransaction<BluetoothGattDescriptor>> valueRelay
+    );
+
+    void prepareCharacteristicTransaction(
+            BluetoothGattCharacteristic descriptor,
+            int requestID,
+            int offset,
+            BluetoothDevice device,
+            PublishRelay<GattServerTransaction<UUID>> valueRelay
+    );
+
     class Output<T> {
 
         final PublishRelay<T> valueRelay;
