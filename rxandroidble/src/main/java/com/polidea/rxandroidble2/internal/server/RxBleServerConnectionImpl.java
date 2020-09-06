@@ -9,11 +9,14 @@ import androidx.annotation.NonNull;
 import com.jakewharton.rxrelay2.PublishRelay;
 import com.polidea.rxandroidble2.RxBleConnection;
 import com.polidea.rxandroidble2.ServerComponent;
+import com.polidea.rxandroidble2.ServerResponseTransaction;
+import com.polidea.rxandroidble2.ServerTransactionFactory;
 import com.polidea.rxandroidble2.exceptions.BleDisconnectedException;
+import com.polidea.rxandroidble2.exceptions.BleException;
 import com.polidea.rxandroidble2.exceptions.BleGattServerException;
+import com.polidea.rxandroidble2.internal.operations.server.ServerConnectionOperationsProvider;
 import com.polidea.rxandroidble2.internal.operations.server.ServerLongWriteOperation;
-import com.polidea.rxandroidble2.internal.operations.server.ServerOperationsProvider;
-import com.polidea.rxandroidble2.internal.serialization.ServerOperationQueue;
+import com.polidea.rxandroidble2.internal.serialization.ServerConnectionOperationQueue;
 import com.polidea.rxandroidble2.internal.util.GattServerTransaction;
 
 import java.util.UUID;
@@ -24,22 +27,26 @@ import bleshadow.javax.inject.Named;
 import io.reactivex.Observable;
 import io.reactivex.Scheduler;
 import io.reactivex.Single;
+import io.reactivex.disposables.CompositeDisposable;
+import io.reactivex.disposables.Disposable;
 import io.reactivex.functions.Function;
 
 public class RxBleServerConnectionImpl implements RxBleServerConnection {
     private final Scheduler callbackScheduler;
-    private final ServerOperationsProvider operationsProvider;
-    private final ServerOperationQueue operationQueue;
+    private final ServerConnectionOperationsProvider operationsProvider;
+    private final ServerConnectionOperationQueue operationQueue;
     private final BluetoothDevice device;
     private final ServerDisconnectionRouter disconnectionRouter;
     private final MultiIndex<Integer, BluetoothGattCharacteristic, LongWriteClosableOutput<byte[]>>
     characteristicMultiIndex = new MultiIndexImpl<>();
     private final MultiIndex<Integer, BluetoothGattDescriptor, LongWriteClosableOutput<byte[]>>
     descriptorMultiIndex = new MultiIndexImpl<>();
+    final ServerTransactionFactory serverTransactionFactory;
+    private final CompositeDisposable compositeDisposable = new CompositeDisposable();
 
-    private final Function<BleGattServerException, Observable<?>> errorMapper = new Function<BleGattServerException, Observable<?>>() {
+    private final Function<BleException, Observable<?>> errorMapper = new Function<BleException, Observable<?>>() {
         @Override
-        public Observable<?> apply(BleGattServerException bleGattException) {
+        public Observable<?> apply(BleException bleGattException) {
             return Observable.error(bleGattException);
         }
     };
@@ -47,10 +54,11 @@ public class RxBleServerConnectionImpl implements RxBleServerConnection {
     @Inject
     public RxBleServerConnectionImpl(
         @Named(ServerComponent.NamedSchedulers.BLUETOOTH_CONNECTION) Scheduler callbackScheduler,
-        ServerOperationsProvider operationsProvider,
-        ServerOperationQueue operationQueue,
+        ServerConnectionOperationsProvider operationsProvider,
+        ServerConnectionOperationQueue operationQueue,
         BluetoothDevice device,
-        ServerDisconnectionRouter disconnectionRouter
+        ServerDisconnectionRouter disconnectionRouter,
+        ServerTransactionFactory serverTransactionFactory
 
     ) {
         this.callbackScheduler = callbackScheduler;
@@ -58,6 +66,7 @@ public class RxBleServerConnectionImpl implements RxBleServerConnection {
         this.device = device;
         this.operationQueue = operationQueue;
         this.disconnectionRouter = disconnectionRouter;
+        this.serverTransactionFactory = serverTransactionFactory;
     }
 
 
@@ -237,6 +246,7 @@ public class RxBleServerConnectionImpl implements RxBleServerConnection {
      * @throws BleDisconnectedException emitted in case of a disconnect that is a part of the normal flow
      * @throws BleGattServerException         emitted in case of connection was interrupted unexpectedly.
      */
+    @Override
     public <T> Observable<T> observeDisconnect() {
         return disconnectionRouter.asErrorOnlyObservable();
     }
@@ -269,5 +279,55 @@ public class RxBleServerConnectionImpl implements RxBleServerConnection {
     public Observable<BluetoothDevice> getOnNotification() {
         return withDisconnectionHandling(getNotificationPublishRelay())
                 .delay(0, TimeUnit.SECONDS, callbackScheduler);
+    }
+
+    @Override
+    public void prepareDescriptorTransaction(
+            final BluetoothGattDescriptor descriptor,
+            int requestID,
+            int offset, BluetoothDevice device,
+            PublishRelay<GattServerTransaction<BluetoothGattDescriptor>> valueRelay
+    ) {
+        Disposable disposable = serverTransactionFactory.prepareCharacteristicTransaction(
+                descriptor.getValue(),
+                requestID,
+                offset,
+                device
+        )
+                .map(new Function<ServerResponseTransaction, GattServerTransaction<BluetoothGattDescriptor>>() {
+                    @Override
+                    public GattServerTransaction<BluetoothGattDescriptor> apply(
+                            ServerResponseTransaction serverResponseTransaction) throws Exception {
+                        return new GattServerTransaction<>(descriptor, serverResponseTransaction);
+                    }
+                })
+                .subscribeOn(callbackScheduler)
+                .subscribe(valueRelay);
+        compositeDisposable.add(disposable);
+    }
+
+    @Override
+    public void prepareCharacteristicTransaction(
+            final BluetoothGattCharacteristic characteristic,
+            int requestID,
+            int offset, BluetoothDevice device,
+            PublishRelay<GattServerTransaction<UUID>> valueRelay
+    ) {
+        Disposable disposable = serverTransactionFactory.prepareCharacteristicTransaction(
+                characteristic.getValue(),
+                requestID,
+                offset,
+                device
+        )
+                .map(new Function<ServerResponseTransaction, GattServerTransaction<UUID>>() {
+                    @Override
+                    public GattServerTransaction<UUID> apply(
+                            ServerResponseTransaction serverResponseTransaction) throws Exception {
+                        return new GattServerTransaction<>(characteristic.getUuid(), serverResponseTransaction);
+                    }
+                })
+                .subscribeOn(callbackScheduler)
+                .subscribe(valueRelay);
+        compositeDisposable.add(disposable);
     }
 }

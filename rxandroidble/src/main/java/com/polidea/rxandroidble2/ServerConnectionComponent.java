@@ -2,8 +2,14 @@ package com.polidea.rxandroidble2;
 
 import android.bluetooth.BluetoothDevice;
 
+import com.polidea.rxandroidble2.internal.connection.DisconnectionRouterOutput;
+import com.polidea.rxandroidble2.internal.operations.server.ServerConnectionOperationsProvider;
+import com.polidea.rxandroidble2.internal.operations.server.ServerConnectionOperationsProviderImpl;
+import com.polidea.rxandroidble2.internal.serialization.ServerConnectionOperationQueue;
+import com.polidea.rxandroidble2.internal.serialization.ServerConnectionOperationQueueImpl;
 import com.polidea.rxandroidble2.internal.server.RxBleServerConnection;
 import com.polidea.rxandroidble2.internal.server.RxBleServerConnectionImpl;
+import com.polidea.rxandroidble2.internal.server.ServerDisconnectionRouter;
 
 import java.util.concurrent.ExecutorService;
 
@@ -26,11 +32,25 @@ public interface ServerConnectionComponent {
         Builder bluetoothDevice(BluetoothDevice device);
     }
 
-    @Module
+    @Module(subcomponents = {ServerTransactionComponent.class})
     abstract class ConnectionModule {
         @Binds
         @ServerConnectionScope
         abstract RxBleServerConnection bindRxBleServerConnection(RxBleServerConnectionImpl rxBleServerConnection);
+
+        @Binds
+        abstract ServerConnectionOperationQueue bindServerConnectionOperationQueue(ServerConnectionOperationQueueImpl queue);
+
+        @Binds
+        abstract ServerConnectionOperationsProvider bindServerConnectionOperationsProvider(
+                ServerConnectionOperationsProviderImpl provider
+        );
+
+        @Binds
+        abstract ServerTransactionFactory bindServerTransactionFactory(ServerTransactionFactoryImpl transactionFactory);
+
+        @Binds
+        abstract DisconnectionRouterOutput bindDisconnectionRouterOutput(ServerDisconnectionRouter disconnectionRouter);
 
         @Provides
         static ServerComponent.ServerComponentFinalizer provideFinalizationCloseable(

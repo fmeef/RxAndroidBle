@@ -15,26 +15,20 @@ import com.jakewharton.rxrelay2.PublishRelay;
 import com.polidea.rxandroidble2.RxBleConnection;
 import com.polidea.rxandroidble2.ServerComponent;
 import com.polidea.rxandroidble2.ServerConnectionComponent;
-import com.polidea.rxandroidble2.ServerResponseTransaction;
 import com.polidea.rxandroidble2.ServerScope;
-import com.polidea.rxandroidble2.ServerTransactionFactory;
 import com.polidea.rxandroidble2.exceptions.BleDisconnectedException;
 import com.polidea.rxandroidble2.exceptions.BleGattServerException;
 import com.polidea.rxandroidble2.exceptions.BleGattServerOperationType;
 import com.polidea.rxandroidble2.internal.RxBleLog;
-import com.polidea.rxandroidble2.internal.util.GattServerTransaction;
 
 import java.util.HashMap;
 import java.util.Map;
-import java.util.UUID;
 
 import bleshadow.javax.inject.Inject;
 import bleshadow.javax.inject.Named;
 import io.reactivex.Observable;
 import io.reactivex.Scheduler;
 import io.reactivex.disposables.CompositeDisposable;
-import io.reactivex.disposables.Disposable;
-import io.reactivex.functions.Function;
 
 @ServerScope
 public class RxBleGattServerCallback {
@@ -42,7 +36,6 @@ public class RxBleGattServerCallback {
     final PublishRelay<Pair<BluetoothDevice, RxBleConnection.RxBleConnectionState>> connectionStatePublishRelay = PublishRelay.create();
     final Map<BluetoothDevice, RxBleServerConnection> deviceConnectionInfoMap = new HashMap<>();
     final ServerConnectionComponent.Builder connectionComponentBuilder;
-    final ServerTransactionFactory serverTransactionFactory;
     final Scheduler callbackScheduler;
     final CompositeDisposable compositeDisposable = new CompositeDisposable();
 
@@ -97,23 +90,13 @@ public class RxBleGattServerCallback {
 
             if (connectionInfo.getReadCharacteristicOutput().hasObservers()) {
 
-                Disposable disposable = serverTransactionFactory.prepareCharacteristicTransaction(
-                        characteristic.getValue(),
+                connectionInfo.prepareCharacteristicTransaction(
+                        characteristic,
                         requestId,
                         offset,
-                        device
-                ).map(new Function<ServerResponseTransaction, GattServerTransaction<UUID>>() {
-                            @Override
-                            public GattServerTransaction<UUID> apply(
-                                    ServerResponseTransaction serverResponseTransaction
-                            ) throws Exception {
-                                return new GattServerTransaction<>(characteristic.getUuid(), serverResponseTransaction);
-                            }
-                        })
-                        .subscribeOn(callbackScheduler)
-                        .subscribe(connectionInfo.getReadCharacteristicOutput().valueRelay);
-
-                compositeDisposable.add(disposable);
+                        device,
+                        connectionInfo.getReadCharacteristicOutput().valueRelay
+                );
             }
 
         }
@@ -138,20 +121,13 @@ public class RxBleGattServerCallback {
                 }
                 longWriteOuput.valueRelay.accept(value);
             } else if (connectionInfo.getWriteCharacteristicOutput().hasObservers()) {
-                Disposable disposable = serverTransactionFactory.prepareCharacteristicTransaction(
-                        value,
+                connectionInfo.prepareCharacteristicTransaction(
+                        characteristic,
                         requestId,
                         offset,
-                        device
-                ).map(new Function<ServerResponseTransaction, GattServerTransaction<UUID>>() {
-                    @Override
-                    public GattServerTransaction<UUID> apply(ServerResponseTransaction serverResponseTransaction) throws Exception {
-                        return new GattServerTransaction<>(characteristic.getUuid(), serverResponseTransaction);
-                    }
-                })
-                        .subscribeOn(callbackScheduler)
-                        .subscribe(connectionInfo.getWriteCharacteristicOutput().valueRelay);
-                compositeDisposable.add(disposable);
+                        device,
+                        connectionInfo.getWriteCharacteristicOutput().valueRelay
+                );
             }
         }
 
@@ -165,22 +141,13 @@ public class RxBleGattServerCallback {
             RxBleServerConnection connectionInfo = getOrCreateConnectionInfo(device);
 
             if (connectionInfo.getReadDescriptorOutput().hasObservers()) {
-                Disposable disposable = serverTransactionFactory.prepareCharacteristicTransaction(
-                        descriptor.getValue(),
+                connectionInfo.prepareDescriptorTransaction(
+                        descriptor,
                         requestId,
                         offset,
-                        device
-                )
-                        .map(new Function<ServerResponseTransaction, GattServerTransaction<BluetoothGattDescriptor>>() {
-                            @Override
-                            public GattServerTransaction<BluetoothGattDescriptor> apply(
-                                    ServerResponseTransaction serverResponseTransaction) throws Exception {
-                                return new GattServerTransaction<>(descriptor, serverResponseTransaction);
-                            }
-                        })
-                        .subscribeOn(callbackScheduler)
-                        .subscribe(connectionInfo.getReadDescriptorOutput().valueRelay);
-                compositeDisposable.add(disposable);
+                        device,
+                        connectionInfo.getReadDescriptorOutput().valueRelay
+                );
             }
 
         }
@@ -204,22 +171,13 @@ public class RxBleGattServerCallback {
                 }
                 longWriteOutput.valueRelay.accept(value); //TODO: offset?
             } else if (connectionInfo.getWriteDescriptorOutput().hasObservers()) {
-                Disposable disposable = serverTransactionFactory.prepareCharacteristicTransaction(
-                        value,
+                connectionInfo.prepareDescriptorTransaction(
+                        descriptor,
                         requestId,
                         offset,
-                        device
-                )
-                        .map(new Function<ServerResponseTransaction, GattServerTransaction<BluetoothGattDescriptor>>() {
-                            @Override
-                            public GattServerTransaction<BluetoothGattDescriptor> apply(
-                                    ServerResponseTransaction serverResponseTransaction) throws Exception {
-                                return new GattServerTransaction<>(descriptor, serverResponseTransaction);
-                            }
-                        })
-                        .subscribeOn(callbackScheduler)
-                        .subscribe(connectionInfo.getWriteDescriptorOutput().valueRelay);
-                compositeDisposable.add(disposable);
+                        device,
+                        connectionInfo.getWriteDescriptorOutput().valueRelay
+                );
             }
         }
 
@@ -288,11 +246,9 @@ public class RxBleGattServerCallback {
     @Inject
     public RxBleGattServerCallback(
             ServerConnectionComponent.Builder connectionComponentBuilder,
-            ServerTransactionFactory serverTransactionFactory,
             @Named(ServerComponent.NamedSchedulers.BLUETOOTH_CALLBACK) Scheduler callbackScheduler
     ) {
         this.connectionComponentBuilder = connectionComponentBuilder;
-        this.serverTransactionFactory = serverTransactionFactory;
         this.callbackScheduler = callbackScheduler;
     }
 

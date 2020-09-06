@@ -4,16 +4,16 @@ import android.bluetooth.BluetoothDevice;
 
 import androidx.annotation.NonNull;
 
-import com.polidea.rxandroidble2.internal.operations.server.ServerOperationsProvider;
-import com.polidea.rxandroidble2.internal.serialization.ServerOperationQueue;
+import com.polidea.rxandroidble2.internal.operations.server.ServerConnectionOperationsProvider;
+import com.polidea.rxandroidble2.internal.serialization.ServerConnectionOperationQueue;
 
 import bleshadow.javax.inject.Inject;
 import io.reactivex.Observable;
 
 @ServerTransactionScope
 public class ServerResponseTransactionImpl implements ServerResponseTransaction, Comparable<ServerResponseTransaction> {
-    private final ServerOperationQueue operationQueue;
-    private final ServerOperationsProvider operationsProvider;
+    private final ServerConnectionOperationQueue operationQueue;
+    private final ServerConnectionOperationsProvider operationsProvider;
     private final BluetoothDevice remoteDevice;
     private final byte[] value;
     private final int requestID;
@@ -21,8 +21,8 @@ public class ServerResponseTransactionImpl implements ServerResponseTransaction,
 
     @Inject
     public ServerResponseTransactionImpl(
-            ServerOperationQueue operationQueue,
-            ServerOperationsProvider operationsProvider,
+            ServerConnectionOperationQueue operationQueue,
+            ServerConnectionOperationsProvider operationsProvider,
             ServerTransactionComponent.TransactionConfig config
     ) {
         this.operationQueue = operationQueue;
