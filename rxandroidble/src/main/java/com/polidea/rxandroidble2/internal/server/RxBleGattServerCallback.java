@@ -8,22 +8,16 @@ import android.bluetooth.BluetoothGattDescriptor;
 import android.bluetooth.BluetoothGattServerCallback;
 import android.bluetooth.BluetoothGattService;
 import android.bluetooth.BluetoothProfile;
-import android.content.res.Resources;
 import android.util.Pair;
 
 import com.jakewharton.rxrelay2.PublishRelay;
 import com.polidea.rxandroidble2.RxBleConnection;
 import com.polidea.rxandroidble2.ServerComponent;
-import com.polidea.rxandroidble2.ServerConnectionComponent;
 import com.polidea.rxandroidble2.ServerScope;
 import com.polidea.rxandroidble2.exceptions.BleDisconnectedException;
 import com.polidea.rxandroidble2.exceptions.BleGattServerException;
 import com.polidea.rxandroidble2.exceptions.BleGattServerOperationType;
 import com.polidea.rxandroidble2.internal.RxBleLog;
-
-import java.util.HashMap;
-import java.util.Map;
-import java.util.concurrent.Callable;
 
 import bleshadow.javax.inject.Inject;
 import bleshadow.javax.inject.Named;
@@ -34,14 +28,15 @@ import io.reactivex.disposables.CompositeDisposable;
 import io.reactivex.disposables.Disposable;
 import io.reactivex.functions.Consumer;
 
+import static com.polidea.rxandroidble2.RxBleServerImpl.TAG;
+
 @ServerScope
 public class RxBleGattServerCallback {
     //TODO: make this per device
     final PublishRelay<Pair<BluetoothDevice, RxBleConnection.RxBleConnectionState>> connectionStatePublishRelay = PublishRelay.create();
-    final Map<BluetoothDevice, RxBleServerConnection> deviceConnectionInfoMap = new HashMap<>();
-    final ServerConnectionComponent.Builder connectionComponentBuilder;
     final Scheduler callbackScheduler;
     final CompositeDisposable compositeDisposable = new CompositeDisposable();
+    private final BluetoothGattServerProvider gattServerProvider;
 
     private final BluetoothGattServerCallback gattServerCallback = new BluetoothGattServerCallback() {
         @Override
@@ -61,7 +56,6 @@ public class RxBleGattServerCallback {
                                 connectionInfo.getDisconnectionRouter().onDisconnectedException(
                                         new BleDisconnectedException(device.getAddress(), status)
                                 );
-                                deviceConnectionInfoMap.remove(device);
                             } else {
                                 if (status != BluetoothGatt.GATT_SUCCESS) {
                                     RxBleLog.e("GattServer state change failed %i", status);
@@ -70,16 +64,19 @@ public class RxBleGattServerCallback {
                                             new BleGattServerException(status, device, BleGattServerOperationType.CONNECTION_STATE)
                                     );
                                 }
-                                deviceConnectionInfoMap.put(device, connectionInfo);
                             }
-
-                            connectionStatePublishRelay.accept(new Pair<BluetoothDevice, RxBleConnection.RxBleConnectionState>(
-                                    connectionInfo.getDevice(),
-                                    mapConnectionStateToRxBleConnectionStatus(newState)
-                            ));
                         }
                     });
-            compositeDisposable.add(d);
+            if (gattServerProvider.getConnection(device) != null) {
+                compositeDisposable.add(d);
+            } else {
+                d.dispose();
+            }
+
+            connectionStatePublishRelay.accept(new Pair<>(
+                    device,
+                    mapConnectionStateToRxBleConnectionStatus(newState)
+            ));
         }
 
         @Override
@@ -135,13 +132,6 @@ public class RxBleGattServerCallback {
                             if (preparedWrite) {
                                 RxBleServerConnection.Output<byte[]> longWriteOuput
                                         = connectionInfo.openLongWriteCharacteristicOutput(requestId, characteristic);
-                                if (longWriteOuput == null) {
-                                    throw new BleGattServerException(
-                                            -1,
-                                            device,
-                                            BleGattServerOperationType.CHARACTERISTIC_LONG_WRITE_REQUEST
-                                    );
-                                }
                                 longWriteOuput.valueRelay.accept(value);
                             } else if (connectionInfo.getWriteCharacteristicOutput().hasObservers()) {
                                 connectionInfo.prepareCharacteristicTransaction(
@@ -285,31 +275,24 @@ public class RxBleGattServerCallback {
         }
     };
 
-    private Single<RxBleServerConnection> getOrCreateConnectionInfo(final BluetoothDevice device) {
-
-        return Single.fromCallable(new Callable<RxBleServerConnection>() {
-            @Override
-            public RxBleServerConnection call() throws Exception {
-                RxBleServerConnection connectionInfo = deviceConnectionInfoMap.get(device);
-                if (connectionInfo == null) {
-                    connectionInfo =  connectionComponentBuilder
-                            .bluetoothDevice(device)
-                            .build()
-                            .serverConnection();
-                    deviceConnectionInfoMap.put(device, connectionInfo);
-                }
-                return connectionInfo;
-            }
-        });
+    private synchronized Single<RxBleServerConnection> getOrCreateConnectionInfo(final BluetoothDevice device) {
+        RxBleServerConnection connection = gattServerProvider.getConnection(device);
+        if (connection == null) {
+            RxBleLog.e(TAG, "attempted to get nonexistent connection");
+            return Single.never();
+        } else {
+            RxBleLog.e(TAG, "returned connection");
+            return Single.just(connection);
+        }
     }
 
     @Inject
     public RxBleGattServerCallback(
-            ServerConnectionComponent.Builder connectionComponentBuilder,
-            @Named(ServerComponent.NamedSchedulers.BLUETOOTH_CALLBACK) Scheduler callbackScheduler
+            @Named(ServerComponent.NamedSchedulers.BLUETOOTH_CALLBACK) Scheduler callbackScheduler,
+            BluetoothGattServerProvider gattServerProvider
     ) {
-        this.connectionComponentBuilder = connectionComponentBuilder;
         this.callbackScheduler = callbackScheduler;
+        this.gattServerProvider = gattServerProvider;
     }
 
     static RxBleConnection.RxBleConnectionState mapConnectionStateToRxBleConnectionStatus(int newState) {
@@ -333,15 +316,6 @@ public class RxBleGattServerCallback {
     private static boolean propagateStatusError(RxBleServerConnection.Output<?> output, BleGattServerException exception) {
         output.errorRelay.accept(exception);
         return true;
-    }
-
-    private RxBleServerConnection getConnectionInfoOrError(BluetoothDevice device) throws Resources.NotFoundException {
-        RxBleServerConnection connectionInfo = deviceConnectionInfoMap.get(device);
-
-        if (connectionInfo == null) {
-            throw new Resources.NotFoundException("device does not exist");
-        }
-        return connectionInfo;
     }
 
     /**
