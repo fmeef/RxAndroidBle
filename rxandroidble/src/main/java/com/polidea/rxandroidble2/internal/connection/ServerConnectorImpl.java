@@ -13,8 +13,6 @@ import com.polidea.rxandroidble2.RxBleConnection;
 import com.polidea.rxandroidble2.ServerComponent;
 import com.polidea.rxandroidble2.ServerConfig;
 import com.polidea.rxandroidble2.ServerScope;
-import com.polidea.rxandroidble2.exceptions.BleGattServerException;
-import com.polidea.rxandroidble2.exceptions.BleGattServerOperationType;
 import com.polidea.rxandroidble2.internal.RxBleLog;
 import com.polidea.rxandroidble2.internal.server.BluetoothGattServerProvider;
 import com.polidea.rxandroidble2.internal.server.RxBleGattServerCallback;
@@ -27,6 +25,8 @@ import java.util.UUID;
 import bleshadow.javax.inject.Inject;
 import bleshadow.javax.inject.Named;
 import io.reactivex.Observable;
+import io.reactivex.ObservableSource;
+import io.reactivex.Scheduler;
 import io.reactivex.functions.Consumer;
 import io.reactivex.functions.Function;
 import io.reactivex.functions.Predicate;
@@ -35,6 +35,7 @@ import io.reactivex.functions.Predicate;
 public class ServerConnectorImpl implements ServerConnector {
     private final RxBleGattServerCallback rxBleGattServerCallback;
     private final BluetoothGattServerProvider gattServerProvider;
+    private final Scheduler callbackScheduler;
     private final Context context;
     private final BluetoothManager bluetoothManager;
     private final Map<BluetoothDevice, RxBleServerConnection> connectionMap = new HashMap<>();
@@ -44,14 +45,15 @@ public class ServerConnectorImpl implements ServerConnector {
             final RxBleGattServerCallback rxBleGattServerCallback,
             final @Named(ServerComponent.SERVER_CONTEXT) Context context,
             final BluetoothGattServerProvider gattServerProvider,
-            final BluetoothManager bluetoothManager
-    ) {
+            final BluetoothManager bluetoothManager,
+            final @Named(ServerComponent.NamedSchedulers.BLUETOOTH_CALLBACK) Scheduler callbackScheduler
+            ) {
         this.rxBleGattServerCallback = rxBleGattServerCallback;
         this.context = context;
         this.gattServerProvider = gattServerProvider;
         this.bluetoothManager = bluetoothManager;
+        this.callbackScheduler = callbackScheduler;
     }
-
 
     private boolean initializeServer(ServerConfig config) {
         BluetoothGattServer server = gattServerProvider.getBluetoothGatt();
@@ -102,8 +104,6 @@ public class ServerConnectorImpl implements ServerConnector {
             gattServerProvider.updateBluetoothGatt(bluetoothGattServer);
         }
 
-        initializeServer(config);
-
         return rxBleGattServerCallback.getOnConnectionStateChange()
                 .doOnError(new Consumer<Throwable>() {
                     @Override
@@ -125,27 +125,17 @@ public class ServerConnectorImpl implements ServerConnector {
                         }
                     }
                 })
-                .map(new Function<Pair<BluetoothDevice, RxBleConnection.RxBleConnectionState>, RxBleServerConnection>() {
+                .flatMap(
+                        new Function<Pair<BluetoothDevice, RxBleConnection.RxBleConnectionState>,
+                                ObservableSource<RxBleServerConnection>>() {
                     @Override
-                    public RxBleServerConnection apply(
-                            Pair<BluetoothDevice, RxBleConnection.RxBleConnectionState> bluetoothDeviceRxBleConnectionStatePair
+                    public ObservableSource<RxBleServerConnection> apply(
+                            Pair<BluetoothDevice, RxBleConnection.RxBleConnectionState> p
                     ) throws Exception {
-                        RxBleServerConnection connection
-                                = rxBleGattServerCallback.getRxBleServerConnection(bluetoothDeviceRxBleConnectionStatePair.first);
-
-
-                        if (connection == null) {
-                            throw new BleGattServerException(
-                                    gattServerProvider.getBluetoothGatt(),
-                                    bluetoothDeviceRxBleConnectionStatePair.first,
-                                    BleGattServerOperationType.CONNECTION_STATE
-                                    );
-                        }
-                        connectionMap.put(bluetoothDeviceRxBleConnectionStatePair.first, connection);
-                        return connection;
-
+                        return rxBleGattServerCallback.getRxBleServerConnection(p.first).toObservable();
                     }
-                });
+                }
+                );
     }
 
     @Override

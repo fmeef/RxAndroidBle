@@ -67,7 +67,7 @@ public interface ServerConnectionComponent {
         }
     }
 
-
+    @ServerConnectionScope
     RxBleServerConnection serverConnection();
 
 }

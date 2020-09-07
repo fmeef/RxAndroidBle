@@ -23,12 +23,16 @@ import com.polidea.rxandroidble2.internal.RxBleLog;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.Callable;
 
 import bleshadow.javax.inject.Inject;
 import bleshadow.javax.inject.Named;
 import io.reactivex.Observable;
 import io.reactivex.Scheduler;
+import io.reactivex.Single;
 import io.reactivex.disposables.CompositeDisposable;
+import io.reactivex.disposables.Disposable;
+import io.reactivex.functions.Consumer;
 
 @ServerScope
 public class RxBleGattServerCallback {
@@ -41,35 +45,41 @@ public class RxBleGattServerCallback {
 
     private final BluetoothGattServerCallback gattServerCallback = new BluetoothGattServerCallback() {
         @Override
-        public void onConnectionStateChange(final BluetoothDevice device, int status, int newState) {
+        public void onConnectionStateChange(final BluetoothDevice device, final int status, final int newState) {
             super.onConnectionStateChange(device, status, newState);
 
             if (device == null) {
                 return;
             }
-            RxBleServerConnection connectionInfo = getOrCreateConnectionInfo(device);
+            final Disposable d = getOrCreateConnectionInfo(device)
+                    .subscribeOn(callbackScheduler)
+                    .subscribe(new Consumer<RxBleServerConnection>() {
+                        @Override
+                        public void accept(RxBleServerConnection connectionInfo) throws Exception {
+                            if (newState == BluetoothProfile.STATE_DISCONNECTED
+                                    || newState == BluetoothProfile.STATE_DISCONNECTING) {
+                                connectionInfo.getDisconnectionRouter().onDisconnectedException(
+                                        new BleDisconnectedException(device.getAddress(), status)
+                                );
+                                deviceConnectionInfoMap.remove(device);
+                            } else {
+                                if (status != BluetoothGatt.GATT_SUCCESS) {
+                                    RxBleLog.e("GattServer state change failed %i", status);
+                                    //TODO: is this the same as client
+                                    connectionInfo.getDisconnectionRouter().onGattConnectionStateException(
+                                            new BleGattServerException(status, device, BleGattServerOperationType.CONNECTION_STATE)
+                                    );
+                                }
+                                deviceConnectionInfoMap.put(device, connectionInfo);
+                            }
 
-            if (newState == BluetoothProfile.STATE_DISCONNECTED
-                    || newState == BluetoothProfile.STATE_DISCONNECTING) {
-                connectionInfo.getDisconnectionRouter().onDisconnectedException(
-                        new BleDisconnectedException(device.getAddress(), status)
-                );
-                deviceConnectionInfoMap.remove(device);
-            } else {
-                if (status != BluetoothGatt.GATT_SUCCESS) {
-                    RxBleLog.e("GattServer state change failed %i", status);
-                    //TODO: is this the same as client
-                    connectionInfo.getDisconnectionRouter().onGattConnectionStateException(
-                            new BleGattServerException(status, device, BleGattServerOperationType.CONNECTION_STATE)
-                    );
-                }
-                deviceConnectionInfoMap.put(device, connectionInfo);
-            }
-
-            connectionStatePublishRelay.accept(new Pair<BluetoothDevice, RxBleConnection.RxBleConnectionState>(
-                    connectionInfo.getDevice(),
-                    mapConnectionStateToRxBleConnectionStatus(newState)
-            ));
+                            connectionStatePublishRelay.accept(new Pair<BluetoothDevice, RxBleConnection.RxBleConnectionState>(
+                                    connectionInfo.getDevice(),
+                                    mapConnectionStateToRxBleConnectionStatus(newState)
+                            ));
+                        }
+                    });
+            compositeDisposable.add(d);
         }
 
         @Override
@@ -79,144 +89,189 @@ public class RxBleGattServerCallback {
         }
 
         @Override
-        public void onCharacteristicReadRequest(BluetoothDevice device,
-                                                int requestId,
-                                                int offset,
+        public void onCharacteristicReadRequest(final BluetoothDevice device,
+                                                final int requestId,
+                                                final int offset,
                                                 final BluetoothGattCharacteristic characteristic) {
             super.onCharacteristicReadRequest(device, requestId, offset, characteristic);
 
-            RxBleServerConnection connectionInfo = getOrCreateConnectionInfo(device);
+            Disposable d = getOrCreateConnectionInfo(device)
+                    .subscribeOn(callbackScheduler)
+                    .subscribe(new Consumer<RxBleServerConnection>() {
+                        @Override
+                        public void accept(RxBleServerConnection connectionInfo) throws Exception {
+                            if (connectionInfo.getReadCharacteristicOutput().hasObservers()) {
 
+                                connectionInfo.prepareCharacteristicTransaction(
+                                        characteristic,
+                                        requestId,
+                                        offset,
+                                        device,
+                                        connectionInfo.getReadCharacteristicOutput().valueRelay
+                                );
+                            }
+                        }
+                    });
 
-            if (connectionInfo.getReadCharacteristicOutput().hasObservers()) {
-
-                connectionInfo.prepareCharacteristicTransaction(
-                        characteristic,
-                        requestId,
-                        offset,
-                        device,
-                        connectionInfo.getReadCharacteristicOutput().valueRelay
-                );
-            }
-
+            compositeDisposable.add(d);
         }
 
         @Override
-        public void onCharacteristicWriteRequest(BluetoothDevice device,
-                                                 int requestId,
+        public void onCharacteristicWriteRequest(final BluetoothDevice device,
+                                                 final int requestId,
                                                  final BluetoothGattCharacteristic characteristic,
-                                                 boolean preparedWrite,
-                                                 boolean responseNeeded,
-                                                 int offset,
-                                                 byte[] value) {
+                                                 final boolean preparedWrite,
+                                                 final boolean responseNeeded,
+                                                 final int offset,
+                                                 final byte[] value) {
             super.onCharacteristicWriteRequest(device, requestId, characteristic, preparedWrite, responseNeeded, offset, value);
 
-            RxBleServerConnection connectionInfo = getOrCreateConnectionInfo(device);
+            Disposable d = getOrCreateConnectionInfo(device)
+                    .subscribeOn(callbackScheduler)
+                    .subscribe(new Consumer<RxBleServerConnection>() {
+                        @Override
+                        public void accept(RxBleServerConnection connectionInfo) throws Exception {
 
-            if (preparedWrite) {
-                RxBleServerConnection.Output<byte[]> longWriteOuput
-                        = connectionInfo.openLongWriteCharacteristicOutput(requestId, characteristic);
-                if (longWriteOuput == null) {
-                    throw new BleGattServerException(-1, device, BleGattServerOperationType.CHARACTERISTIC_LONG_WRITE_REQUEST);
-                }
-                longWriteOuput.valueRelay.accept(value);
-            } else if (connectionInfo.getWriteCharacteristicOutput().hasObservers()) {
-                connectionInfo.prepareCharacteristicTransaction(
-                        characteristic,
-                        requestId,
-                        offset,
-                        device,
-                        connectionInfo.getWriteCharacteristicOutput().valueRelay
-                );
-            }
+                            if (preparedWrite) {
+                                RxBleServerConnection.Output<byte[]> longWriteOuput
+                                        = connectionInfo.openLongWriteCharacteristicOutput(requestId, characteristic);
+                                if (longWriteOuput == null) {
+                                    throw new BleGattServerException(
+                                            -1,
+                                            device,
+                                            BleGattServerOperationType.CHARACTERISTIC_LONG_WRITE_REQUEST
+                                    );
+                                }
+                                longWriteOuput.valueRelay.accept(value);
+                            } else if (connectionInfo.getWriteCharacteristicOutput().hasObservers()) {
+                                connectionInfo.prepareCharacteristicTransaction(
+                                        characteristic,
+                                        requestId,
+                                        offset,
+                                        device,
+                                        connectionInfo.getWriteCharacteristicOutput().valueRelay
+                                );
+                            }
+                        }
+                    });
+
+            compositeDisposable.add(d);
         }
 
         @Override
-        public void onDescriptorReadRequest(BluetoothDevice device,
-                                            int requestId,
-                                            int offset,
+        public void onDescriptorReadRequest(final BluetoothDevice device,
+                                            final int requestId,
+                                            final int offset,
                                             final BluetoothGattDescriptor descriptor) {
             super.onDescriptorReadRequest(device, requestId, offset, descriptor);
 
-            RxBleServerConnection connectionInfo = getOrCreateConnectionInfo(device);
+            Disposable d = getOrCreateConnectionInfo(device)
+                    .subscribeOn(callbackScheduler)
+                    .subscribe(new Consumer<RxBleServerConnection>() {
+                        @Override
+                        public void accept(RxBleServerConnection connectionInfo) throws Exception {
 
-            if (connectionInfo.getReadDescriptorOutput().hasObservers()) {
-                connectionInfo.prepareDescriptorTransaction(
-                        descriptor,
-                        requestId,
-                        offset,
-                        device,
-                        connectionInfo.getReadDescriptorOutput().valueRelay
-                );
-            }
+                            if (connectionInfo.getReadDescriptorOutput().hasObservers()) {
+                                connectionInfo.prepareDescriptorTransaction(
+                                        descriptor,
+                                        requestId,
+                                        offset,
+                                        device,
+                                        connectionInfo.getReadDescriptorOutput().valueRelay
+                                );
+                            }
+                        }
+                    });
 
+            compositeDisposable.add(d);
         }
 
         @Override
-        public void onDescriptorWriteRequest(BluetoothDevice device,
-                                             int requestId,
+        public void onDescriptorWriteRequest(final BluetoothDevice device,
+                                             final int requestId,
                                              final BluetoothGattDescriptor descriptor,
-                                             boolean preparedWrite,
-                                             boolean responseNeeded,
-                                             int offset,
-                                             byte[] value) {
+                                             final boolean preparedWrite,
+                                             final boolean responseNeeded,
+                                             final int offset,
+                                             final byte[] value) {
             super.onDescriptorWriteRequest(device, requestId, descriptor, preparedWrite, responseNeeded, offset, value);
 
-            RxBleServerConnection connectionInfo = getOrCreateConnectionInfo(device);
-
-            if (preparedWrite) {
-                RxBleServerConnection.Output<byte[]> longWriteOutput = connectionInfo.openLongWriteDescriptorOutput(requestId, descriptor);
-                if (longWriteOutput == null) {
-                    throw new BleGattServerException(-1, device, BleGattServerOperationType.DESCRIPTOR_LONG_WRITE_REQUEST);
-                }
-                longWriteOutput.valueRelay.accept(value); //TODO: offset?
-            } else if (connectionInfo.getWriteDescriptorOutput().hasObservers()) {
-                connectionInfo.prepareDescriptorTransaction(
-                        descriptor,
-                        requestId,
-                        offset,
-                        device,
-                        connectionInfo.getWriteDescriptorOutput().valueRelay
-                );
-            }
+            Disposable d = getOrCreateConnectionInfo(device)
+                    .subscribeOn(callbackScheduler)
+                    .subscribe(new Consumer<RxBleServerConnection>() {
+                        @Override
+                        public void accept(RxBleServerConnection connectionInfo) throws Exception {
+                            if (preparedWrite) {
+                                RxBleServerConnection.Output<byte[]> longWriteOutput
+                                        = connectionInfo.openLongWriteDescriptorOutput(requestId, descriptor);
+                                longWriteOutput.valueRelay.accept(value); //TODO: offset?
+                            } else if (connectionInfo.getWriteDescriptorOutput().hasObservers()) {
+                                connectionInfo.prepareDescriptorTransaction(
+                                        descriptor,
+                                        requestId,
+                                        offset,
+                                        device,
+                                        connectionInfo.getWriteDescriptorOutput().valueRelay
+                                );
+                            }
+                        }
+                    });
+            compositeDisposable.add(d);
         }
 
         @Override
-        public void onExecuteWrite(BluetoothDevice device, int requestId, boolean execute) {
+        public void onExecuteWrite(final BluetoothDevice device, final int requestId, final boolean execute) {
             super.onExecuteWrite(device, requestId, execute);
             if (execute) {
-                RxBleServerConnection connectionInfo = getOrCreateConnectionInfo(device);
+                Disposable d = getOrCreateConnectionInfo(device)
+                        .subscribeOn(callbackScheduler)
+                        .subscribe(new Consumer<RxBleServerConnection>() {
+                            @Override
+                            public void accept(RxBleServerConnection connectionInfo) throws Exception {
+                                connectionInfo.closeLongWriteCharacteristicOutput(requestId);
 
-                connectionInfo.closeLongWriteCharacteristicOutput(requestId);
-
-                connectionInfo.resetCharacteristicMap();
-                connectionInfo.resetDescriptorMap();
+                                connectionInfo.resetCharacteristicMap();
+                                connectionInfo.resetDescriptorMap();
+                            }
+                        });
+                compositeDisposable.add(d);
             }
         }
 
         @Override
-        public void onNotificationSent(BluetoothDevice device, int status) {
+        public void onNotificationSent(final BluetoothDevice device, final int status) {
             super.onNotificationSent(device, status);
 
-            RxBleServerConnection connectionInfo = getOrCreateConnectionInfo(device);
-
-            if (connectionInfo.getNotificationPublishRelay().hasObservers()) {
-                connectionInfo.getNotificationPublishRelay().valueRelay.accept(
-                        device
-                );
-            }
-
+            Disposable d = getOrCreateConnectionInfo(device)
+                    .subscribeOn(callbackScheduler)
+                    .subscribe(new Consumer<RxBleServerConnection>() {
+                        @Override
+                        public void accept(RxBleServerConnection connectionInfo) throws Exception {
+                            if (connectionInfo.getNotificationPublishRelay().hasObservers()) {
+                                connectionInfo.getNotificationPublishRelay().valueRelay.accept(
+                                        device
+                                );
+                            }
+                        }
+                    });
+            compositeDisposable.add(d);
         }
 
         @Override
-        public void onMtuChanged(BluetoothDevice device, int mtu) {
+        public void onMtuChanged(final BluetoothDevice device, final int mtu) {
             super.onMtuChanged(device, mtu);
 
-            RxBleServerConnection connectionInfo = getOrCreateConnectionInfo(device);
-
-            if (connectionInfo.getChangedMtuOutput().hasObservers()) {
-                connectionInfo.getChangedMtuOutput().valueRelay.accept(mtu);
-            }
+            Disposable d = getOrCreateConnectionInfo(device)
+                    .subscribeOn(callbackScheduler)
+                    .subscribe(new Consumer<RxBleServerConnection>() {
+                        @Override
+                        public void accept(RxBleServerConnection connectionInfo) throws Exception {
+                            if (connectionInfo.getChangedMtuOutput().hasObservers()) {
+                                connectionInfo.getChangedMtuOutput().valueRelay.accept(mtu);
+                            }
+                        }
+                    });
+            compositeDisposable.add(d);
         }
 
         @Override
@@ -230,17 +285,22 @@ public class RxBleGattServerCallback {
         }
     };
 
-    private RxBleServerConnection getOrCreateConnectionInfo(BluetoothDevice device) {
-        RxBleServerConnection connectionInfo = deviceConnectionInfoMap.get(device);
+    private Single<RxBleServerConnection> getOrCreateConnectionInfo(final BluetoothDevice device) {
 
-        if (connectionInfo == null) {
-            connectionInfo =  connectionComponentBuilder
-                    .bluetoothDevice(device)
-                    .build()
-                    .serverConnection();
-            deviceConnectionInfoMap.put(device, connectionInfo);
-        }
-        return connectionInfo;
+        return Single.fromCallable(new Callable<RxBleServerConnection>() {
+            @Override
+            public RxBleServerConnection call() throws Exception {
+                RxBleServerConnection connectionInfo = deviceConnectionInfoMap.get(device);
+                if (connectionInfo == null) {
+                    connectionInfo =  connectionComponentBuilder
+                            .bluetoothDevice(device)
+                            .build()
+                            .serverConnection();
+                    deviceConnectionInfoMap.put(device, connectionInfo);
+                }
+                return connectionInfo;
+            }
+        });
     }
 
     @Inject
@@ -296,7 +356,7 @@ public class RxBleGattServerCallback {
         return gattServerCallback;
     }
 
-    public RxBleServerConnection getRxBleServerConnection(BluetoothDevice device) {
+    public Single<RxBleServerConnection> getRxBleServerConnection(BluetoothDevice device) {
         return getOrCreateConnectionInfo(device);
     }
 
