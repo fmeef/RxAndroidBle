@@ -1,11 +1,13 @@
 package com.polidea.rxandroidble2.internal.server;
 
+import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothGattServer;
 
 import androidx.annotation.NonNull;
 
 import com.polidea.rxandroidble2.ServerScope;
 
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicReference;
 
 import bleshadow.javax.inject.Inject;
@@ -13,6 +15,7 @@ import bleshadow.javax.inject.Inject;
 @ServerScope
 public class BluetoothGattServerProvider {
     private final AtomicReference<BluetoothGattServer> reference = new AtomicReference<>();
+    private final ConcurrentHashMap<BluetoothDevice, RxBleServerConnection> connections = new ConcurrentHashMap<>();
 
     @Inject
     BluetoothGattServerProvider() {
@@ -23,6 +26,22 @@ public class BluetoothGattServerProvider {
      */
     public BluetoothGattServer getBluetoothGatt() {
         return reference.get();
+    }
+
+    /**
+     * Access a server connection instance.
+     */
+    public RxBleServerConnection getConnection(final BluetoothDevice device) {
+        return connections.get(device);
+    }
+
+    public void updateConnection(final BluetoothDevice device, final RxBleServerConnection connection) {
+        connections.putIfAbsent(device, connection);
+    }
+
+    public synchronized void closeConnection(final BluetoothDevice device) {
+        connections.remove(device);
+        //TODO: cleanup connection
     }
 
     /**
