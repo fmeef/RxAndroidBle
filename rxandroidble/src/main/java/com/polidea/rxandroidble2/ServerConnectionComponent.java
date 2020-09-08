@@ -10,8 +10,10 @@ import com.polidea.rxandroidble2.internal.serialization.ServerConnectionOperatio
 import com.polidea.rxandroidble2.internal.serialization.ServerConnectionOperationQueueImpl;
 import com.polidea.rxandroidble2.internal.server.RxBleServerConnection;
 import com.polidea.rxandroidble2.internal.server.RxBleServerConnectionImpl;
+import com.polidea.rxandroidble2.internal.server.ServerDisconnectAction;
 import com.polidea.rxandroidble2.internal.server.ServerDisconnectionRouter;
 
+import java.util.Set;
 import java.util.concurrent.ExecutorService;
 
 import bleshadow.dagger.Binds;
@@ -19,6 +21,7 @@ import bleshadow.dagger.BindsInstance;
 import bleshadow.dagger.Module;
 import bleshadow.dagger.Provides;
 import bleshadow.dagger.Subcomponent;
+import bleshadow.dagger.multibindings.IntoSet;
 import bleshadow.javax.inject.Named;
 import io.reactivex.Scheduler;
 
@@ -54,7 +57,12 @@ public interface ServerConnectionComponent {
         abstract DisconnectionRouterOutput bindDisconnectionRouterOutput(ServerDisconnectionRouter disconnectionRouter);
 
         @Binds
+        @IntoSet
         abstract ConnectionSubscriptionWatcher bindSubscriptionWatcher(ServerConnectionOperationQueueImpl q);
+
+        @Binds
+        @IntoSet
+        abstract ConnectionSubscriptionWatcher bindServerDisconnectAction(ServerDisconnectAction action);
 
         @Provides
         static ServerComponent.ServerComponentFinalizer provideFinalizationCloseable(
@@ -72,7 +80,7 @@ public interface ServerConnectionComponent {
     }
 
     @ServerConnectionScope
-    ConnectionSubscriptionWatcher connectionSubscriptionWatchers();
+    Set<ConnectionSubscriptionWatcher> connectionSubscriptionWatchers();
 
     @ServerConnectionScope
     RxBleServerConnection serverConnection();
