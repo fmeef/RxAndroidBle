@@ -59,7 +59,7 @@ public class ServerDisconnectionRouter implements DisconnectionRouterInput<BleGa
                 .doOnTerminate(new Action() {
                     @Override
                     public void run() throws Exception {
-
+                        adapterMonitoringDisposable.dispose();
                     }
                 })
                 .replay()
