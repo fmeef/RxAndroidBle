@@ -49,7 +49,7 @@ public class ServerConnectorImpl implements ServerConnector {
             final @Named(ServerComponent.SERVER_CONTEXT) Context context,
             final BluetoothGattServerProvider gattServerProvider,
             final BluetoothManager bluetoothManager,
-            final @Named(ServerComponent.NamedSchedulers.BLUETOOTH_CALLBACK) Scheduler callbackScheduler,
+            final @Named(ServerComponent.NamedSchedulers.BLUETOOTH_SERVER) Scheduler callbackScheduler,
             ServerConnectionComponent.Builder connectionComponentBuilder,
             RxBleGattServerCallback rxBleGattServerCallback
             ) {
