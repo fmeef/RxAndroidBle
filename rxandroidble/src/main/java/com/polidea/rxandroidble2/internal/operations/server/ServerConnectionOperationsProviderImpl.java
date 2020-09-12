@@ -1,6 +1,7 @@
 package com.polidea.rxandroidble2.internal.operations.server;
 
 import android.bluetooth.BluetoothDevice;
+import android.bluetooth.BluetoothManager;
 
 import com.polidea.rxandroidble2.ServerComponent;
 import com.polidea.rxandroidble2.ServerConnectionScope;
@@ -18,6 +19,7 @@ public class ServerConnectionOperationsProviderImpl implements ServerConnectionO
     private final Scheduler gattServerScheduler;
     private final BluetoothDevice bluetoothDevice;
     private final RxBleGattServerCallback callback;
+    private final BluetoothManager bluetoothManager;
 
 
     @Inject
@@ -25,12 +27,14 @@ public class ServerConnectionOperationsProviderImpl implements ServerConnectionO
             @Named(ServerComponent.NamedSchedulers.BLUETOOTH_INTERACTION) Scheduler gattServerScheduler,
             BluetoothGattServerProvider bluetoothGattServer,
             BluetoothDevice bluetoothDevice,
-            RxBleGattServerCallback callback
+            RxBleGattServerCallback callback,
+            BluetoothManager bluetoothManager
     ) {
         this.gattServerScheduler = gattServerScheduler;
         this.bluetoothGattServer = bluetoothGattServer;
         this.bluetoothDevice = bluetoothDevice;
         this.callback = callback;
+        this.bluetoothManager = bluetoothManager;
     }
 
 
@@ -59,7 +63,8 @@ public class ServerConnectionOperationsProviderImpl implements ServerConnectionO
                 bluetoothGattServer,
                 device,
                 callback,
-                gattServerScheduler
+                gattServerScheduler,
+                bluetoothManager
                 );
     }
 }

@@ -2,6 +2,7 @@ package com.polidea.rxandroidble2.internal.operations.server;
 
 import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothGattServer;
+import android.bluetooth.BluetoothManager;
 import android.bluetooth.BluetoothProfile;
 import android.os.DeadObjectException;
 import android.util.Pair;
@@ -29,17 +30,20 @@ public class ServerDisconnectOperation extends QueueOperation<Void> {
     private final BluetoothDevice device;
     private final RxBleGattServerCallback callback;
     private final Scheduler gattServerScheduler;
+    private final BluetoothManager bluetoothManager;
 
     ServerDisconnectOperation(
             BluetoothGattServerProvider provider,
             BluetoothDevice device,
             RxBleGattServerCallback callback,
-            Scheduler gattServerScheduler
+            Scheduler gattServerScheduler,
+            BluetoothManager bluetoothManager
     ) {
         this.provider = provider;
         this.device = device;
         this.callback = callback;
         this.gattServerScheduler = gattServerScheduler;
+        this.bluetoothManager = bluetoothManager;
     }
 
     @Override
@@ -94,8 +98,8 @@ public class ServerDisconnectOperation extends QueueOperation<Void> {
     }
 
     private boolean isDisconnected() {
-        return provider.getBluetoothGatt()
-                .getConnectionState(device) == BluetoothProfile.STATE_DISCONNECTED;
+        return bluetoothManager
+                .getConnectionState(device, BluetoothProfile.GATT) == BluetoothProfile.STATE_DISCONNECTED;
     }
 
     @Override
