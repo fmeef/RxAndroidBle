@@ -25,6 +25,7 @@ public class RxBleServerConnectionTest extends Specification {
     BluetoothDevice bluetoothDevice = Mock BluetoothDevice
     BluetoothGattServerProvider bluetoothGattServer = Mock BluetoothGattServerProvider
     RxBleServerConnection objectUnderTest
+    RxBleGattServerCallback callback = Mock RxBleGattServerCallback
     ServerTransactionFactory serverTransactionFactory = Mock ServerTransactionFactory
     BluetoothGattCharacteristic characteristic = new BluetoothGattCharacteristic(
             testUuid,
@@ -50,7 +51,9 @@ public class RxBleServerConnectionTest extends Specification {
 
         operationsProvider = new ServerConnectionOperationsProviderImpl(
                 testScheduler,
-                bluetoothGattServer
+                bluetoothGattServer,
+                bluetoothDevice,
+                callback
         )
 
         objectUnderTest = new RxBleServerConnectionImpl(

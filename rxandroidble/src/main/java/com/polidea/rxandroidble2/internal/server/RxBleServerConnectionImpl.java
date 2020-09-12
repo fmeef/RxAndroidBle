@@ -299,6 +299,11 @@ public class RxBleServerConnectionImpl implements RxBleServerConnection {
     }
 
     @Override
+    public void disconnect() {
+        operationQueue.queue(operationsProvider.provideDisconnectOperation(device));
+    }
+
+    @Override
     public void prepareDescriptorTransaction(
             final BluetoothGattDescriptor descriptor,
             int requestID,

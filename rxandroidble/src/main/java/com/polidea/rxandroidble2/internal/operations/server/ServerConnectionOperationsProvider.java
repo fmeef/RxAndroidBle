@@ -10,4 +10,6 @@ public interface ServerConnectionOperationsProvider {
             int offset,
             byte[] value
     );
+
+    ServerDisconnectOperation provideDisconnectOperation(BluetoothDevice device);
 }
