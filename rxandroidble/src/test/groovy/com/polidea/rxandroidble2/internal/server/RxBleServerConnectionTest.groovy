@@ -3,6 +3,7 @@ package com.polidea.rxandroidble2.internal.server
 import android.bluetooth.BluetoothDevice
 import android.bluetooth.BluetoothGattCharacteristic
 import android.bluetooth.BluetoothGattDescriptor
+import android.bluetooth.BluetoothManager
 import com.polidea.rxandroidble2.DummyOperationQueue
 import com.polidea.rxandroidble2.ServerTransactionFactory
 import com.polidea.rxandroidble2.internal.operations.server.ServerConnectionOperationsProvider
@@ -25,6 +26,7 @@ public class RxBleServerConnectionTest extends Specification {
     BluetoothDevice bluetoothDevice = Mock BluetoothDevice
     BluetoothGattServerProvider bluetoothGattServer = Mock BluetoothGattServerProvider
     RxBleServerConnection objectUnderTest
+    BluetoothManager bluetoothManager = Mock BluetoothManager
     RxBleGattServerCallback callback = Mock RxBleGattServerCallback
     ServerTransactionFactory serverTransactionFactory = Mock ServerTransactionFactory
     BluetoothGattCharacteristic characteristic = new BluetoothGattCharacteristic(
@@ -53,7 +55,8 @@ public class RxBleServerConnectionTest extends Specification {
                 testScheduler,
                 bluetoothGattServer,
                 bluetoothDevice,
-                callback
+                callback,
+                bluetoothManager
         )
 
         objectUnderTest = new RxBleServerConnectionImpl(
