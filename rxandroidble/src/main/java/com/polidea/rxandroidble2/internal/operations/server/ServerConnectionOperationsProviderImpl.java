@@ -7,7 +7,6 @@ import com.polidea.rxandroidble2.ServerComponent;
 
 import bleshadow.javax.inject.Inject;
 import bleshadow.javax.inject.Named;
-import io.reactivex.Observable;
 import io.reactivex.Scheduler;
 
 public class ServerConnectionOperationsProviderImpl implements ServerConnectionOperationsProvider {
@@ -43,14 +42,6 @@ public class ServerConnectionOperationsProviderImpl implements ServerConnectionO
                 status,
                 offset,
                 value
-        );
-    }
-
-    public ServerLongWriteOperation provideLongWriteOperation(Observable<byte[]> bytes, BluetoothDevice device) {
-        return new ServerLongWriteOperation(
-                gattServerScheduler,
-                bytes,
-                device
         );
     }
 }

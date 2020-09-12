@@ -15,10 +15,10 @@ import com.polidea.rxandroidble2.exceptions.BleDisconnectedException;
 import com.polidea.rxandroidble2.exceptions.BleException;
 import com.polidea.rxandroidble2.exceptions.BleGattServerException;
 import com.polidea.rxandroidble2.internal.operations.server.ServerConnectionOperationsProvider;
-import com.polidea.rxandroidble2.internal.operations.server.ServerLongWriteOperation;
 import com.polidea.rxandroidble2.internal.serialization.ServerConnectionOperationQueue;
 import com.polidea.rxandroidble2.internal.util.GattServerTransaction;
 
+import java.util.Arrays;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 
@@ -29,6 +29,7 @@ import io.reactivex.Scheduler;
 import io.reactivex.Single;
 import io.reactivex.disposables.CompositeDisposable;
 import io.reactivex.disposables.Disposable;
+import io.reactivex.functions.BiFunction;
 import io.reactivex.functions.Function;
 
 public class RxBleServerConnectionImpl implements RxBleServerConnection {
@@ -141,10 +142,18 @@ public class RxBleServerConnectionImpl implements RxBleServerConnection {
         LongWriteClosableOutput<byte[]> output = characteristicMultiIndex.get(requestid);
         if (output == null) {
             output = new LongWriteClosableOutput<>();
-            ServerLongWriteOperation operation
-                    = operationsProvider.provideLongWriteOperation(output.valueRelay, device);
-            Observable<byte[]> operationResult = operationQueue.queue(operation);
-            operationResult.firstOrError().subscribe(output.out);
+            output.valueRelay
+                    .reduce(new BiFunction<byte[], byte[], byte[]>() {
+                        @Override
+                        public byte[] apply(byte[] first, byte[] second) throws Exception {
+                            byte[] both = Arrays.copyOf(first, first.length + second.length);
+                            System.arraycopy(second, 0, both, first.length, second.length);
+                            return both;
+                        }
+                    })
+                    .subscribeOn(callbackScheduler)
+                    .toSingle()
+                    .subscribe(output.out);
             characteristicMultiIndex.put(requestid, output);
             characteristicMultiIndex.putMulti(characteristic, output);
         }
@@ -157,10 +166,18 @@ public class RxBleServerConnectionImpl implements RxBleServerConnection {
         LongWriteClosableOutput<byte[]> output = descriptorMultiIndex.get(requestid);
         if (output == null) {
             output = new LongWriteClosableOutput<>();
-            ServerLongWriteOperation operation
-                    = operationsProvider.provideLongWriteOperation(output.valueRelay, device);
-            Observable<byte[]> operationResult =  operationQueue.queue(operation);
-            operationResult.firstOrError().subscribe(output.out);
+            output.valueRelay
+                    .reduce(new BiFunction<byte[], byte[], byte[]>() {
+                        @Override
+                        public byte[] apply(byte[] first, byte[] second) throws Exception {
+                            byte[] both = Arrays.copyOf(first, first.length + second.length);
+                            System.arraycopy(second, 0, both, first.length, second.length);
+                            return both;
+                        }
+                    })
+                    .subscribeOn(callbackScheduler)
+                    .toSingle()
+                    .subscribe(output.out);
             descriptorMultiIndex.put(requestid, output);
             descriptorMultiIndex.putMulti(descriptor, output);
         }
