@@ -78,6 +78,8 @@ public interface RxBleServerConnection {
 
     Observable<BluetoothDevice> getOnNotification();
 
+    void disconnect();
+
     <T> Observable<T> observeDisconnect();
 
     void prepareDescriptorTransaction(
