@@ -33,7 +33,6 @@ import bleshadow.javax.inject.Named;
 import io.reactivex.Observable;
 import io.reactivex.Scheduler;
 import io.reactivex.plugins.RxJavaPlugins;
-import io.reactivex.schedulers.Schedulers;
 
 @ServerScope
 @Component(modules = {ServerComponent.ServerModule.class})
@@ -42,8 +41,7 @@ public interface ServerComponent {
     String SERVER_CONTEXT = "server-context";
 
     class NamedSchedulers {
-        public static final String BLUETOOTH_CALLBACK = "bluetooth_callback";
-        public static final String BLUETOOTH_INTERACTION = "bluetooth_interaction_server";
+        public static final String BLUETOOTH_SERVER = "bluetooth_callback";
         public static final String BLUETOOTH_CONNECTION = "bluetooth_connection";
         private NamedSchedulers() {
 
@@ -155,18 +153,10 @@ public interface ServerComponent {
         }
 
         @Provides
-        @Named(NamedSchedulers.BLUETOOTH_CALLBACK)
+        @Named(NamedSchedulers.BLUETOOTH_SERVER)
         @ServerScope
         static Scheduler provideBluetoothCallbacksScheduler() {
             return RxJavaPlugins.createSingleScheduler(new RxBleThreadFactory());
-        }
-
-
-        @Provides
-        @Named(NamedSchedulers.BLUETOOTH_INTERACTION)
-        static Scheduler provideBluetoothInteractionScheduler(
-                @Named(NamedExecutors.BLUETOOTH_INTERACTION) ExecutorService service) {
-            return Schedulers.from(service);
         }
 
         @Provides

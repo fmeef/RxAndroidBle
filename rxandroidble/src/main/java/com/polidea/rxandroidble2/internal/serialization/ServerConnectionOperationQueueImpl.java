@@ -31,7 +31,7 @@ public class ServerConnectionOperationQueueImpl extends OperationQueueBase imple
 
     @Inject
     public ServerConnectionOperationQueueImpl(
-            @Named(ServerComponent.NamedSchedulers.BLUETOOTH_INTERACTION) final Scheduler callbackScheduler,
+            @Named(ServerComponent.NamedSchedulers.BLUETOOTH_CONNECTION) final Scheduler callbackScheduler,
             BluetoothDevice device,
             final DisconnectionRouterOutput disconnectionRouterOutput
 

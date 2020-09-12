@@ -288,7 +288,7 @@ public class RxBleGattServerCallback {
 
     @Inject
     public RxBleGattServerCallback(
-            @Named(ServerComponent.NamedSchedulers.BLUETOOTH_CALLBACK) Scheduler callbackScheduler,
+            @Named(ServerComponent.NamedSchedulers.BLUETOOTH_SERVER) Scheduler callbackScheduler,
             BluetoothGattServerProvider gattServerProvider
     ) {
         this.callbackScheduler = callbackScheduler;

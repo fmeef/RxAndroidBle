@@ -12,7 +12,7 @@ public class ServerOperationQueueImpl extends OperationQueueBase implements Serv
 
     @Inject
     public ServerOperationQueueImpl(
-            @Named(ServerComponent.NamedSchedulers.BLUETOOTH_INTERACTION) final Scheduler callbackScheduler
+            @Named(ServerComponent.NamedSchedulers.BLUETOOTH_CONNECTION) final Scheduler callbackScheduler
     ) {
         super(callbackScheduler);
     }
