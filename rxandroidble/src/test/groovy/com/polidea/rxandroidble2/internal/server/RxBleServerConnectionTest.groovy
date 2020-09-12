@@ -3,10 +3,8 @@ package com.polidea.rxandroidble2.internal.server
 import android.bluetooth.BluetoothDevice
 import android.bluetooth.BluetoothGattCharacteristic
 import android.bluetooth.BluetoothGattDescriptor
-import android.bluetooth.BluetoothGattServer
 import com.polidea.rxandroidble2.DummyOperationQueue
 import com.polidea.rxandroidble2.ServerTransactionFactory
-import com.polidea.rxandroidble2.ServerTransactionFactoryImpl
 import com.polidea.rxandroidble2.internal.operations.server.ServerConnectionOperationsProvider
 import com.polidea.rxandroidble2.internal.operations.server.ServerConnectionOperationsProviderImpl
 import com.polidea.rxandroidble2.internal.serialization.ServerConnectionOperationQueue
@@ -25,7 +23,7 @@ public class RxBleServerConnectionTest extends Specification {
     ServerConnectionOperationQueue dummyQueue = new DummyOperationQueue()
     ServerDisconnectionRouter disconnectionRouter = Mock ServerDisconnectionRouter
     BluetoothDevice bluetoothDevice = Mock BluetoothDevice
-    BluetoothGattServer bluetoothGattServer = Mock BluetoothGattServer
+    BluetoothGattServerProvider bluetoothGattServer = Mock BluetoothGattServerProvider
     RxBleServerConnection objectUnderTest
     ServerTransactionFactory serverTransactionFactory = Mock ServerTransactionFactory
     BluetoothGattCharacteristic characteristic = new BluetoothGattCharacteristic(
