@@ -44,6 +44,10 @@ public class BluetoothGattServerProvider {
         //TODO: cleanup connection
     }
 
+    public int getConnectionCount() {
+        return connections.size();
+    }
+
     /**
      * Updates GATT instance storage if it wasn't initialized previously.
      */
