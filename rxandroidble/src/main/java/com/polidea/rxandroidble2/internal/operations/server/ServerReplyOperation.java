@@ -29,7 +29,7 @@ public class ServerReplyOperation extends QueueOperation<Boolean> {
     private final BluetoothDevice device;
 
     public ServerReplyOperation(
-            @Named(ServerComponent.NamedSchedulers.BLUETOOTH_INTERACTION) Scheduler bluetoothInteractionScheduler,
+            @Named(ServerComponent.NamedSchedulers.BLUETOOTH_CONNECTION) Scheduler bluetoothInteractionScheduler,
             BluetoothGattServer bluetoothGattServer,
             BluetoothDevice device,
             int requestID,

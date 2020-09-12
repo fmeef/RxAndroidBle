@@ -24,7 +24,7 @@ public class ServerConnectionOperationsProviderImpl implements ServerConnectionO
 
     @Inject
     public ServerConnectionOperationsProviderImpl(
-            @Named(ServerComponent.NamedSchedulers.BLUETOOTH_INTERACTION) Scheduler gattServerScheduler,
+            @Named(ServerComponent.NamedSchedulers.BLUETOOTH_CONNECTION) Scheduler gattServerScheduler,
             BluetoothGattServerProvider bluetoothGattServer,
             BluetoothDevice bluetoothDevice,
             RxBleGattServerCallback callback,
