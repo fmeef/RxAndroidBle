@@ -30,6 +30,7 @@ import io.reactivex.Observable;
 import io.reactivex.ObservableSource;
 import io.reactivex.Scheduler;
 import io.reactivex.Single;
+import io.reactivex.functions.Action;
 import io.reactivex.functions.Consumer;
 import io.reactivex.functions.Function;
 import io.reactivex.functions.Predicate;
@@ -167,6 +168,12 @@ public class ServerConnectorImpl implements ServerConnector {
                             }
                         });
                         return connection;
+                    }
+                })
+                .doOnDispose(new Action() {
+                    @Override
+                    public void run() throws Exception {
+                        closeServer();
                     }
                 })
                 .subscribeOn(callbackScheduler)
