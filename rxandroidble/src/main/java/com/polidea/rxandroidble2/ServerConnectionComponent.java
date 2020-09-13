@@ -4,6 +4,7 @@ import android.bluetooth.BluetoothDevice;
 
 import com.polidea.rxandroidble2.internal.connection.ConnectionSubscriptionWatcher;
 import com.polidea.rxandroidble2.internal.connection.DisconnectionRouterOutput;
+import com.polidea.rxandroidble2.internal.operations.TimeoutConfiguration;
 import com.polidea.rxandroidble2.internal.operations.server.ServerConnectionOperationsProvider;
 import com.polidea.rxandroidble2.internal.operations.server.ServerConnectionOperationsProviderImpl;
 import com.polidea.rxandroidble2.internal.serialization.ServerConnectionOperationQueue;
@@ -28,9 +29,16 @@ import io.reactivex.Scheduler;
 @ServerConnectionScope
 @Subcomponent(modules = {ServerConnectionComponent.ConnectionModule.class})
 public interface ServerConnectionComponent {
+
+    String OPERATION_TIMEOUT = "server-operation-timeout";
+
+
     @Subcomponent.Builder
     interface Builder {
         ServerConnectionComponent build();
+
+        @BindsInstance
+        Builder operationTimeout(Timeout operationTimeout);
 
         @BindsInstance
         Builder bluetoothDevice(BluetoothDevice device);
@@ -77,6 +85,18 @@ public interface ServerConnectionComponent {
                 }
             };
         }
+
+        @Provides
+        @Named(OPERATION_TIMEOUT)
+        static TimeoutConfiguration providesOperationTimeoutConf(
+                @Named(ServerComponent.NamedSchedulers.TIMEOUT) Scheduler timeoutScheduler,
+                Timeout operationTimeout
+        ) {
+            return new TimeoutConfiguration(operationTimeout.timeout, operationTimeout.timeUnit, timeoutScheduler);
+        }
+
+
+
     }
 
     @ServerConnectionScope
