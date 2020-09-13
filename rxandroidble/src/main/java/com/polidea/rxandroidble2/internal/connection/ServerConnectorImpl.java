@@ -44,6 +44,7 @@ public class ServerConnectorImpl implements ServerConnector {
     private final BluetoothManager bluetoothManager;
     private final ServerConnectionComponent.Builder connectionComponentBuilder;
     private final RxBleGattServerCallback rxBleGattServerCallback;
+    private final ServerConfig serverConfig;
 
     @Inject
     public ServerConnectorImpl(
@@ -52,7 +53,8 @@ public class ServerConnectorImpl implements ServerConnector {
             final BluetoothManager bluetoothManager,
             final @Named(ServerComponent.NamedSchedulers.BLUETOOTH_SERVER) Scheduler callbackScheduler,
             ServerConnectionComponent.Builder connectionComponentBuilder,
-            RxBleGattServerCallback rxBleGattServerCallback
+            RxBleGattServerCallback rxBleGattServerCallback,
+            ServerConfig serverConfig
             ) {
         this.context = context;
         this.gattServerProvider = gattServerProvider;
@@ -60,6 +62,7 @@ public class ServerConnectorImpl implements ServerConnector {
         this.callbackScheduler = callbackScheduler;
         this.connectionComponentBuilder = connectionComponentBuilder;
         this.rxBleGattServerCallback = rxBleGattServerCallback;
+        this.serverConfig = serverConfig;
     }
 
     private boolean initializeServer(ServerConfig config) {
@@ -117,14 +120,14 @@ public class ServerConnectorImpl implements ServerConnector {
     }
 
     @Override
-    public Observable<RxBleServerConnection> subscribeToConnections(final ServerConfig config) {
+    public Observable<RxBleServerConnection> subscribeToConnections() {
         if (gattServerProvider.getBluetoothGatt() == null) {
             BluetoothGattServer bluetoothGattServer = bluetoothManager.openGattServer(
                     context,
                     rxBleGattServerCallback.getBluetoothGattServerCallback()
             );
             gattServerProvider.updateBluetoothGatt(bluetoothGattServer);
-            initializeServer(config);
+            initializeServer(serverConfig);
         }
 
         return rxBleGattServerCallback.getOnConnectionStateChange()
@@ -155,7 +158,7 @@ public class ServerConnectorImpl implements ServerConnector {
                     public ObservableSource<RxBleServerConnection> apply(
                             Pair<BluetoothDevice, RxBleConnection.RxBleConnectionState> p
                     ) throws Exception {
-                        return createConnection(p.first, config.getOperationTimeout())
+                        return createConnection(p.first, serverConfig.getOperationTimeout())
                                 .toObservable();
                     }
                 })

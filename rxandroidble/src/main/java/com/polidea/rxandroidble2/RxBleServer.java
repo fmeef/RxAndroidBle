@@ -77,15 +77,16 @@ public abstract class RxBleServer {
      */
     public abstract State getState();
 
-    public static RxBleServer create(@NonNull Context context) {
+    public static RxBleServer create(@NonNull Context context, ServerConfig config) {
         return DaggerServerComponent
                 .builder()
                 .applicationContext(context)
+                .serverConfig(config)
                 .build()
                 .rxBleServer();
     }
 
-    public abstract Observable<RxBleServerConnection> openServer(ServerConfig config);
+    public abstract Observable<RxBleServerConnection> openServer();
 
     public abstract RxBleServerConnection getConnection(BluetoothDevice device);
 
