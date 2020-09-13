@@ -12,6 +12,7 @@ import com.polidea.rxandroidble2.exceptions.BleDisconnectedException;
 import com.polidea.rxandroidble2.exceptions.BleException;
 import com.polidea.rxandroidble2.internal.QueueOperation;
 import com.polidea.rxandroidble2.internal.RxBleLog;
+import com.polidea.rxandroidble2.internal.operations.TimeoutConfiguration;
 import com.polidea.rxandroidble2.internal.serialization.QueueReleaseInterface;
 import com.polidea.rxandroidble2.internal.server.BluetoothGattServerProvider;
 import com.polidea.rxandroidble2.internal.server.RxBleGattServerCallback;
@@ -31,19 +32,22 @@ public class ServerDisconnectOperation extends QueueOperation<Void> {
     private final RxBleGattServerCallback callback;
     private final Scheduler gattServerScheduler;
     private final BluetoothManager bluetoothManager;
+    private final TimeoutConfiguration timeoutConfiguration;
 
     ServerDisconnectOperation(
             BluetoothGattServerProvider provider,
             BluetoothDevice device,
             RxBleGattServerCallback callback,
             Scheduler gattServerScheduler,
-            BluetoothManager bluetoothManager
+            BluetoothManager bluetoothManager,
+            TimeoutConfiguration timeoutConfiguration
     ) {
         this.provider = provider;
         this.device = device;
         this.callback = callback;
         this.gattServerScheduler = gattServerScheduler;
         this.bluetoothManager = bluetoothManager;
+        this.timeoutConfiguration = timeoutConfiguration;
     }
 
     @Override
@@ -55,6 +59,11 @@ public class ServerDisconnectOperation extends QueueOperation<Void> {
             emitter.onComplete();
         } else {
             disconnectIfRequired()
+             .timeout(
+                     timeoutConfiguration.timeout,
+                     timeoutConfiguration.timeoutTimeUnit,
+                     timeoutConfiguration.timeoutScheduler
+             )
             .observeOn(gattServerScheduler)
             .subscribe(new SingleObserver<BluetoothGattServer>() {
                 @Override
