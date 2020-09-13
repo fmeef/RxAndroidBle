@@ -3,6 +3,7 @@ package com.polidea.rxandroidble2.internal.operations.server;
 import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothGattCharacteristic;
 
+import com.polidea.rxandroidble2.internal.operations.TimeoutConfiguration;
 import com.polidea.rxandroidble2.internal.server.BluetoothGattServerProvider;
 
 import io.reactivex.Observable;
@@ -15,9 +16,17 @@ public class CharacteristicNotificationOperation extends NotifyCharacteristicCha
             BluetoothDevice device,
             BluetoothGattServerProvider serverProvider,
             Observable<Integer> notificationCompletedObservable,
-            BluetoothGattCharacteristic characteristic
+            BluetoothGattCharacteristic characteristic,
+            TimeoutConfiguration timeoutConfiguration
     ) {
-        super(clientScheduler, device, serverProvider, notificationCompletedObservable, characteristic);
+        super(
+                clientScheduler,
+                device,
+                serverProvider,
+                notificationCompletedObservable,
+                characteristic,
+                timeoutConfiguration
+        );
     }
 
     @Override
