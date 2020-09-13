@@ -87,7 +87,8 @@ public class ServerConnectionOperationsProviderImpl implements ServerConnectionO
                 bluetoothDevice,
                 bluetoothGattServer,
                 notificationCompletedObservable,
-                characteristic
+                characteristic,
+                timeoutConfiguration
                 );
     }
 
@@ -101,7 +102,8 @@ public class ServerConnectionOperationsProviderImpl implements ServerConnectionO
                 bluetoothDevice,
                 bluetoothGattServer,
                 notificationCompletedObservable,
-                characteristic
+                characteristic,
+                timeoutConfiguration
         );
     }
 }
