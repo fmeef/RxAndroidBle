@@ -11,6 +11,12 @@ import java.util.UUID;
 public class ServerConfig {
     private final Map<UUID, BluetoothGattService> serviceList = new HashMap<>();
     private final Set<BluetoothPhy> phySet = new TreeSet<>();
+    private final Timeout operationTimeout;
+
+    public ServerConfig(Timeout operationTimeout) {
+        this.operationTimeout = operationTimeout;
+    }
+
     public enum BluetoothPhy {
         PHY_LE_1M,
         PHY_LE_2M,
@@ -31,6 +37,10 @@ public class ServerConfig {
 
     public void removeService(BluetoothGattService service) {
         serviceList.remove(service.getUuid());
+    }
+
+    public Timeout getOperationTimeout() {
+        return operationTimeout;
     }
 
     public Map<UUID, BluetoothGattService> getServices() {
