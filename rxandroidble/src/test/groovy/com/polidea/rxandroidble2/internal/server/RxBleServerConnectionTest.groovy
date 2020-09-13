@@ -9,6 +9,7 @@ import com.polidea.rxandroidble2.ServerTransactionFactory
 import com.polidea.rxandroidble2.internal.operations.server.ServerConnectionOperationsProvider
 import com.polidea.rxandroidble2.internal.operations.server.ServerConnectionOperationsProviderImpl
 import com.polidea.rxandroidble2.internal.serialization.ServerConnectionOperationQueue
+import com.polidea.rxandroidble2.internal.util.MockOperationTimeoutConfiguration
 import io.reactivex.annotations.NonNull
 import io.reactivex.functions.Predicate
 import io.reactivex.schedulers.TestScheduler
@@ -17,6 +18,8 @@ import spock.lang.Specification
 import java.util.concurrent.TimeUnit
 
 public class RxBleServerConnectionTest extends Specification {
+    static long timeout = 10
+    static TimeUnit timeoutTimeUnit = TimeUnit.SECONDS
     public static long DEFAULT_WRITE_DELAY = 1
     UUID testUuid = UUID.randomUUID()
     TestScheduler testScheduler = new TestScheduler()
@@ -56,7 +59,8 @@ public class RxBleServerConnectionTest extends Specification {
                 bluetoothGattServer,
                 bluetoothDevice,
                 callback,
-                bluetoothManager
+                bluetoothManager,
+                new MockOperationTimeoutConfiguration(timeout.intValue(), testScheduler)
         )
 
         objectUnderTest = new RxBleServerConnectionImpl(
