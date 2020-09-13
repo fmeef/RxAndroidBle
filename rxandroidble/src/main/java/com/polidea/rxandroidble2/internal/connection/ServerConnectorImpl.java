@@ -15,6 +15,7 @@ import com.polidea.rxandroidble2.ServerComponent;
 import com.polidea.rxandroidble2.ServerConfig;
 import com.polidea.rxandroidble2.ServerConnectionComponent;
 import com.polidea.rxandroidble2.ServerScope;
+import com.polidea.rxandroidble2.Timeout;
 import com.polidea.rxandroidble2.internal.RxBleLog;
 import com.polidea.rxandroidble2.internal.server.BluetoothGattServerProvider;
 import com.polidea.rxandroidble2.internal.server.RxBleGattServerCallback;
@@ -95,12 +96,13 @@ public class ServerConnectorImpl implements ServerConnector {
         return true;
     }
 
-    public Single<RxBleServerConnection> createConnection(final BluetoothDevice device) {
+    public Single<RxBleServerConnection> createConnection(final BluetoothDevice device, final Timeout timeout) {
         return Single.fromCallable(new Callable<RxBleServerConnection>() {
             @Override
             public RxBleServerConnection call() throws Exception {
                 RxBleServerConnection connection = connectionComponentBuilder
                         .bluetoothDevice(device)
+                        .operationTimeout(timeout)
                         .build()
                         .serverConnection();
                 gattServerProvider.updateConnection(device, connection);
@@ -115,7 +117,7 @@ public class ServerConnectorImpl implements ServerConnector {
     }
 
     @Override
-    public Observable<RxBleServerConnection> subscribeToConnections(ServerConfig config) {
+    public Observable<RxBleServerConnection> subscribeToConnections(final ServerConfig config) {
         if (gattServerProvider.getBluetoothGatt() == null) {
             BluetoothGattServer bluetoothGattServer = bluetoothManager.openGattServer(
                     context,
@@ -153,7 +155,7 @@ public class ServerConnectorImpl implements ServerConnector {
                     public ObservableSource<RxBleServerConnection> apply(
                             Pair<BluetoothDevice, RxBleConnection.RxBleConnectionState> p
                     ) throws Exception {
-                        return createConnection(p.first)
+                        return createConnection(p.first, config.getOperationTimeout())
                                 .toObservable();
                     }
                 })
