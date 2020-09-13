@@ -41,9 +41,9 @@ public interface ServerComponent {
     String SERVER_CONTEXT = "server-context";
 
     class NamedSchedulers {
-        public static final String BLUETOOTH_SERVER = "bluetooth_callback";
-        public static final String BLUETOOTH_CONNECTION = "bluetooth_connection";
-        public static final String TIMEOUT = "bluetooth_timeout";
+        public static final String BLUETOOTH_SERVER = "server_callback";
+        public static final String BLUETOOTH_CONNECTION = "server_connection";
+        public static final String TIMEOUT = "server_timeout";
         private NamedSchedulers() {
 
         }
