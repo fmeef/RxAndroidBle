@@ -5,6 +5,7 @@ import android.bluetooth.BluetoothGattCharacteristic
 import android.bluetooth.BluetoothGattDescriptor
 import android.bluetooth.BluetoothManager
 import com.polidea.rxandroidble2.DummyOperationQueue
+import com.polidea.rxandroidble2.ServerConfig
 import com.polidea.rxandroidble2.ServerTransactionFactory
 import com.polidea.rxandroidble2.internal.operations.server.ServerConnectionOperationsProvider
 import com.polidea.rxandroidble2.internal.operations.server.ServerConnectionOperationsProviderImpl
@@ -69,7 +70,8 @@ public class RxBleServerConnectionTest extends Specification {
                 dummyQueue,
                 bluetoothDevice,
                 disconnectionRouter,
-                serverTransactionFactory
+                serverTransactionFactory,
+                Mock(ServerConfig)
         )
     }
 
