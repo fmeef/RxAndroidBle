@@ -81,7 +81,7 @@ public class RxBleServerConnectionImpl implements RxBleServerConnection {
             new Output<>();
     private final PublishRelay<RxBleConnection.RxBleConnectionState> connectionStatePublishRelay =
             PublishRelay.create();
-    private final Output<BluetoothDevice> notificationPublishRelay =
+    private final Output<Integer> notificationPublishRelay =
             new Output<>();
     private final Output<Integer> changedMtuOutput =
             new Output<>();
@@ -117,7 +117,7 @@ public class RxBleServerConnectionImpl implements RxBleServerConnection {
 
     @NonNull
     @Override
-    public Output<BluetoothDevice> getNotificationPublishRelay() {
+    public Output<Integer> getNotificationPublishRelay() {
         return notificationPublishRelay;
     }
 
@@ -293,7 +293,7 @@ public class RxBleServerConnectionImpl implements RxBleServerConnection {
     }
 
     @Override
-    public Observable<BluetoothDevice> getOnNotification() {
+    public Observable<Integer> getOnNotification() {
         return withDisconnectionHandling(getNotificationPublishRelay())
                 .delay(0, TimeUnit.SECONDS, callbackScheduler);
     }
