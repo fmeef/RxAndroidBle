@@ -1,14 +1,18 @@
 package com.polidea.rxandroidble2.internal.operations.server;
 
 import android.bluetooth.BluetoothDevice;
+import android.bluetooth.BluetoothGatt;
 import android.bluetooth.BluetoothGattServer;
 import android.os.DeadObjectException;
 
 import com.polidea.rxandroidble2.ServerComponent;
 import com.polidea.rxandroidble2.exceptions.BleException;
+import com.polidea.rxandroidble2.exceptions.BleGattServerCallbackTimeoutException;
 import com.polidea.rxandroidble2.exceptions.BleGattServerException;
 import com.polidea.rxandroidble2.exceptions.BleGattServerOperationType;
 import com.polidea.rxandroidble2.internal.QueueOperation;
+import com.polidea.rxandroidble2.internal.connection.RxBleGattCallback;
+import com.polidea.rxandroidble2.internal.operations.TimeoutConfiguration;
 import com.polidea.rxandroidble2.internal.serialization.QueueReleaseInterface;
 import com.polidea.rxandroidble2.internal.util.QueueReleasingEmitterWrapper;
 
@@ -18,6 +22,7 @@ import bleshadow.javax.inject.Named;
 import io.reactivex.Observable;
 import io.reactivex.ObservableEmitter;
 import io.reactivex.Scheduler;
+import io.reactivex.Single;
 
 public class ServerReplyOperation extends QueueOperation<Boolean> {
     private final Scheduler bluetoothInteractionScheduler;
@@ -27,9 +32,11 @@ public class ServerReplyOperation extends QueueOperation<Boolean> {
     private final byte[] value;
     private final int status;
     private final BluetoothDevice device;
+    private final TimeoutConfiguration timeoutConfiguration;
 
     public ServerReplyOperation(
             @Named(ServerComponent.NamedSchedulers.BLUETOOTH_CONNECTION) Scheduler bluetoothInteractionScheduler,
+            TimeoutConfiguration timeoutConfiguration,
             BluetoothGattServer bluetoothGattServer,
             BluetoothDevice device,
             int requestID,
@@ -44,6 +51,7 @@ public class ServerReplyOperation extends QueueOperation<Boolean> {
         this.value = value;
         this.device = device;
         this.status = status;
+        this.timeoutConfiguration = timeoutConfiguration;
     }
 
     @Override
@@ -56,6 +64,11 @@ public class ServerReplyOperation extends QueueOperation<Boolean> {
                 return bluetoothGattServer.sendResponse(device, requestID, status, offset, value);
             }
         })
+                .timeout(
+                        timeoutConfiguration.timeout,
+                        timeoutConfiguration.timeoutTimeUnit,
+                        timeoutConfiguration.timeoutScheduler
+                )
                 .subscribeOn(bluetoothInteractionScheduler)
                 .subscribe(emitterWrapper);
 
@@ -65,4 +78,18 @@ public class ServerReplyOperation extends QueueOperation<Boolean> {
     protected BleException provideException(DeadObjectException deadObjectException) {
         return new BleGattServerException(bluetoothGattServer, device, BleGattServerOperationType.REPLY);
     }
+
+    @SuppressWarnings("unused")
+    protected Single<Boolean> timeoutFallbackProcedure(
+            BluetoothGatt bluetoothGatt,
+            RxBleGattCallback rxBleGattCallback,
+            Scheduler timeoutScheduler
+    ) {
+        return Single.error(new BleGattServerCallbackTimeoutException(
+                bluetoothGattServer,
+                device,
+                BleGattServerOperationType.REPLY
+        ));
+    }
+
 }
