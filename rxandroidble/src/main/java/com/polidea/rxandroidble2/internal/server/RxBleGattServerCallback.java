@@ -239,7 +239,7 @@ public class RxBleGattServerCallback {
                         public void accept(RxBleServerConnection connectionInfo) throws Exception {
                             if (connectionInfo.getNotificationPublishRelay().hasObservers()) {
                                 connectionInfo.getNotificationPublishRelay().valueRelay.accept(
-                                        device
+                                        status
                                 );
                             }
                         }

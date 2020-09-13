@@ -37,7 +37,7 @@ public interface RxBleServerConnection {
     Output<GattServerTransaction<BluetoothGattDescriptor>> getWriteDescriptorOutput();
 
     @NonNull
-    Output<BluetoothDevice> getNotificationPublishRelay();
+    Output<Integer> getNotificationPublishRelay();
 
     @NonNull
     Output<Integer> getChangedMtuOutput();
@@ -76,7 +76,7 @@ public interface RxBleServerConnection {
 
     Observable<GattServerTransaction<BluetoothGattDescriptor>> getOnDescriptorWriteRequest();
 
-    Observable<BluetoothDevice> getOnNotification();
+    Observable<Integer> getOnNotification();
 
     void disconnect();
 

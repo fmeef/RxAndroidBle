@@ -1,6 +1,7 @@
 package com.polidea.rxandroidble2.internal.operations.server;
 
 import android.bluetooth.BluetoothDevice;
+import android.bluetooth.BluetoothGattCharacteristic;
 import android.bluetooth.BluetoothManager;
 
 import com.polidea.rxandroidble2.ServerComponent;
@@ -10,6 +11,7 @@ import com.polidea.rxandroidble2.internal.server.RxBleGattServerCallback;
 
 import bleshadow.javax.inject.Inject;
 import bleshadow.javax.inject.Named;
+import io.reactivex.Observable;
 import io.reactivex.Scheduler;
 
 @ServerConnectionScope
@@ -66,5 +68,33 @@ public class ServerConnectionOperationsProviderImpl implements ServerConnectionO
                 gattServerScheduler,
                 bluetoothManager
                 );
+    }
+
+    @Override
+    public CharacteristicNotificationOperation provideCharacteristicNotificationOperation(
+            BluetoothGattCharacteristic characteristic,
+            Observable<Integer> notificationCompletedObservable
+    ) {
+        return new CharacteristicNotificationOperation(
+                gattServerScheduler,
+                bluetoothDevice,
+                bluetoothGattServer,
+                notificationCompletedObservable,
+                characteristic
+                );
+    }
+
+    @Override
+    public CharacteristicIndicationOperation provideCharacteristicIndicationOperation(
+            BluetoothGattCharacteristic characteristic,
+            Observable<Integer> notificationCompletedObservable
+    ) {
+        return new CharacteristicIndicationOperation(
+                gattServerScheduler,
+                bluetoothDevice,
+                bluetoothGattServer,
+                notificationCompletedObservable,
+                characteristic
+        );
     }
 }
