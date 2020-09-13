@@ -66,6 +66,8 @@ public interface RxBleServerConnection {
 
     void resetCharacteristicMap();
 
+    Observable<Integer> setupNotifications(BluetoothGattCharacteristic characteristic, Observable<byte[]> notifications);
+
     Observable<Integer> getOnMtuChanged();
 
     Observable<GattServerTransaction<UUID>> getOnCharacteristicReadRequest();

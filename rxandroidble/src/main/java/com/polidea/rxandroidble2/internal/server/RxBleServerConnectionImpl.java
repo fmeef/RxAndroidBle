@@ -9,11 +9,13 @@ import androidx.annotation.NonNull;
 import com.jakewharton.rxrelay2.PublishRelay;
 import com.polidea.rxandroidble2.RxBleConnection;
 import com.polidea.rxandroidble2.ServerComponent;
+import com.polidea.rxandroidble2.ServerConfig;
 import com.polidea.rxandroidble2.ServerResponseTransaction;
 import com.polidea.rxandroidble2.ServerTransactionFactory;
 import com.polidea.rxandroidble2.exceptions.BleDisconnectedException;
 import com.polidea.rxandroidble2.exceptions.BleException;
 import com.polidea.rxandroidble2.exceptions.BleGattServerException;
+import com.polidea.rxandroidble2.internal.operations.server.CharacteristicNotificationOperation;
 import com.polidea.rxandroidble2.internal.operations.server.ServerConnectionOperationsProvider;
 import com.polidea.rxandroidble2.internal.serialization.ServerConnectionOperationQueue;
 import com.polidea.rxandroidble2.internal.util.GattServerTransaction;
@@ -25,6 +27,7 @@ import java.util.concurrent.TimeUnit;
 import bleshadow.javax.inject.Inject;
 import bleshadow.javax.inject.Named;
 import io.reactivex.Observable;
+import io.reactivex.ObservableSource;
 import io.reactivex.Scheduler;
 import io.reactivex.Single;
 import io.reactivex.disposables.CompositeDisposable;
@@ -44,6 +47,7 @@ public class RxBleServerConnectionImpl implements RxBleServerConnection {
     descriptorMultiIndex = new MultiIndexImpl<>();
     final ServerTransactionFactory serverTransactionFactory;
     private final CompositeDisposable compositeDisposable = new CompositeDisposable();
+    private final ServerConfig serverConfig;
 
     private final Function<BleException, Observable<?>> errorMapper = new Function<BleException, Observable<?>>() {
         @Override
@@ -59,7 +63,8 @@ public class RxBleServerConnectionImpl implements RxBleServerConnection {
         ServerConnectionOperationQueue operationQueue,
         BluetoothDevice device,
         ServerDisconnectionRouter disconnectionRouter,
-        ServerTransactionFactory serverTransactionFactory
+        ServerTransactionFactory serverTransactionFactory,
+        ServerConfig serverConfig
 
     ) {
         this.callbackScheduler = callbackScheduler;
@@ -68,6 +73,7 @@ public class RxBleServerConnectionImpl implements RxBleServerConnection {
         this.operationQueue = operationQueue;
         this.disconnectionRouter = disconnectionRouter;
         this.serverTransactionFactory = serverTransactionFactory;
+        this.serverConfig = serverConfig;
     }
 
 
@@ -85,6 +91,8 @@ public class RxBleServerConnectionImpl implements RxBleServerConnection {
             new Output<>();
     private final Output<Integer> changedMtuOutput =
             new Output<>();
+
+
 
     @NonNull
     @Override
@@ -236,6 +244,23 @@ public class RxBleServerConnectionImpl implements RxBleServerConnection {
         characteristicMultiIndex.clear();
     }
 
+    @Override
+    public Observable<Integer> setupNotifications(final BluetoothGattCharacteristic characteristic, Observable<byte[]> notifications) {
+        return notifications
+                .flatMap(new Function<byte[], ObservableSource<Integer>>() {
+                    @Override
+                    public ObservableSource<Integer> apply(byte[] bytes) throws Exception {
+                        characteristic.setValue(bytes);
+                        CharacteristicNotificationOperation operation = operationsProvider.provideCharacteristicNotificationOperation(
+                                characteristic,
+                                getOnNotification()
+                        );
+                        Observable<Integer> result = operationQueue.queue(operation);
+                        return result;
+                    }
+                })
+                .subscribeOn(callbackScheduler);
+    }
 
     private <T> Observable<T> withDisconnectionHandling(Output<T> output) {
         //noinspection unchecked
