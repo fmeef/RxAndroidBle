@@ -72,7 +72,8 @@ public class ServerConnectionOperationsProviderImpl implements ServerConnectionO
                 device,
                 callback,
                 gattServerScheduler,
-                bluetoothManager
+                bluetoothManager,
+                timeoutConfiguration
                 );
     }
 
