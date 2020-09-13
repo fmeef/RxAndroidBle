@@ -25,14 +25,17 @@ public class RxBleServerImpl extends RxBleServer {
     private final Observable<RxBleAdapterStateObservable.BleAdapterState> rxBleAdapterStateObservable;
     private final Lazy<ServerStateObservable> lazyServerStateObservable;
     private final ServerConnector serverConnector;
+    private final ServerConfig serverConfig;
 
     @Inject
     public RxBleServerImpl(
+            final ServerConfig serverConfig,
             final RxBleAdapterWrapper rxBleAdapterWrapper,
             final Observable<RxBleAdapterStateObservable.BleAdapterState> rxBleAdapterStateObservable,
             final Lazy<ServerStateObservable> lazyServerStateObservable,
             final ServerConnector serverConnector
     ) {
+        this.serverConfig = serverConfig;
         this.rxBleAdapterWrapper = rxBleAdapterWrapper;
         this.rxBleAdapterStateObservable = rxBleAdapterStateObservable;
         this.lazyServerStateObservable = lazyServerStateObservable;
@@ -72,8 +75,8 @@ public class RxBleServerImpl extends RxBleServer {
     }
 
     @Override
-    public Observable<RxBleServerConnection> openServer(ServerConfig config) {
-        return serverConnector.subscribeToConnections(config); //TODO:
+    public Observable<RxBleServerConnection> openServer() {
+        return serverConnector.subscribeToConnections(); //TODO:
     }
 
     @Override

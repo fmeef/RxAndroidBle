@@ -3,7 +3,6 @@ package com.polidea.rxandroidble2.mockrxandroidble;
 import android.bluetooth.BluetoothDevice;
 
 import com.polidea.rxandroidble2.RxBleServer;
-import com.polidea.rxandroidble2.ServerConfig;
 import com.polidea.rxandroidble2.internal.server.RxBleServerConnection;
 
 import io.reactivex.Observable;
@@ -21,7 +20,7 @@ public class RxBleServerMock extends RxBleServer {
     }
 
     @Override
-    public Observable<RxBleServerConnection> openServer(ServerConfig config) {
+    public Observable<RxBleServerConnection> openServer() {
         return null;
     }
 
