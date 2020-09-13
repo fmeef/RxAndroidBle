@@ -8,6 +8,7 @@ import android.os.DeadObjectException;
 import com.polidea.rxandroidble2.exceptions.BleException;
 import com.polidea.rxandroidble2.internal.QueueOperation;
 import com.polidea.rxandroidble2.internal.RxBleLog;
+import com.polidea.rxandroidble2.internal.operations.TimeoutConfiguration;
 import com.polidea.rxandroidble2.internal.serialization.QueueReleaseInterface;
 import com.polidea.rxandroidble2.internal.server.BluetoothGattServerProvider;
 
@@ -25,19 +26,22 @@ public abstract class NotifyCharacteristicChangedOperation extends QueueOperatio
     private final Observable<Integer> notificationCompletedObservable;
     private final Scheduler clientScheduler;
     private final BluetoothGattCharacteristic characteristic;
+    private final TimeoutConfiguration timeoutConfiguration;
 
     public NotifyCharacteristicChangedOperation(
             Scheduler clientScheduler,
             BluetoothDevice device,
             BluetoothGattServerProvider serverProvider,
             Observable<Integer> notificationCompletedObservable,
-            BluetoothGattCharacteristic characteristic
+            BluetoothGattCharacteristic characteristic,
+            TimeoutConfiguration timeoutConfiguration
             ) {
         this.clientScheduler = clientScheduler;
         this.device = device;
         this.serverProvider = serverProvider;
         this.notificationCompletedObservable = notificationCompletedObservable;
         this.characteristic = characteristic;
+        this.timeoutConfiguration = timeoutConfiguration;
     }
 
 
@@ -51,6 +55,11 @@ public abstract class NotifyCharacteristicChangedOperation extends QueueOperatio
         } else {
             server.notifyCharacteristicChanged(device, characteristic, isIndication());
             getCompleted()
+                    .timeout(
+                            timeoutConfiguration.timeout,
+                            timeoutConfiguration.timeoutTimeUnit,
+                            timeoutConfiguration.timeoutScheduler
+                    )
                     .observeOn(clientScheduler)
                     .subscribe(new SingleObserver<Integer>() {
                         @Override
