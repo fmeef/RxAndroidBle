@@ -5,7 +5,9 @@ import android.bluetooth.BluetoothGattCharacteristic;
 import android.bluetooth.BluetoothManager;
 
 import com.polidea.rxandroidble2.ServerComponent;
+import com.polidea.rxandroidble2.ServerConnectionComponent;
 import com.polidea.rxandroidble2.ServerConnectionScope;
+import com.polidea.rxandroidble2.internal.operations.TimeoutConfiguration;
 import com.polidea.rxandroidble2.internal.server.BluetoothGattServerProvider;
 import com.polidea.rxandroidble2.internal.server.RxBleGattServerCallback;
 
@@ -22,6 +24,7 @@ public class ServerConnectionOperationsProviderImpl implements ServerConnectionO
     private final BluetoothDevice bluetoothDevice;
     private final RxBleGattServerCallback callback;
     private final BluetoothManager bluetoothManager;
+    private final TimeoutConfiguration timeoutConfiguration;
 
 
     @Inject
@@ -30,13 +33,15 @@ public class ServerConnectionOperationsProviderImpl implements ServerConnectionO
             BluetoothGattServerProvider bluetoothGattServer,
             BluetoothDevice bluetoothDevice,
             RxBleGattServerCallback callback,
-            BluetoothManager bluetoothManager
+            BluetoothManager bluetoothManager,
+            @Named(ServerConnectionComponent.OPERATION_TIMEOUT) TimeoutConfiguration timeoutConfiguration
     ) {
         this.gattServerScheduler = gattServerScheduler;
         this.bluetoothGattServer = bluetoothGattServer;
         this.bluetoothDevice = bluetoothDevice;
         this.callback = callback;
         this.bluetoothManager = bluetoothManager;
+        this.timeoutConfiguration = timeoutConfiguration;
     }
 
 
@@ -51,6 +56,7 @@ public class ServerConnectionOperationsProviderImpl implements ServerConnectionO
     ) {
         return new ServerReplyOperation(
                 gattServerScheduler,
+                timeoutConfiguration,
                 bluetoothGattServer.getBluetoothGatt(),
                 device,
                 requestID,

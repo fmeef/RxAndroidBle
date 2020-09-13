@@ -3,12 +3,15 @@ package com.polidea.rxandroidble2.internal.operations.server
 import android.bluetooth.BluetoothDevice
 import android.bluetooth.BluetoothGattServer
 import com.polidea.rxandroidble2.internal.serialization.QueueReleaseInterface
+import com.polidea.rxandroidble2.internal.util.MockOperationTimeoutConfiguration
 import io.reactivex.schedulers.TestScheduler
 import spock.lang.Specification
 
 import java.util.concurrent.TimeUnit
 
 public class ServerReplyOperationTest extends Specification {
+    static long timeout = 10
+    static TimeUnit timeoutTimeUnit = TimeUnit.SECONDS
     private static long DEFAULT_WRITE_DELAY = 1
     BluetoothGattServer mockGattServer = Mock BluetoothGattServer
     TestScheduler testScheduler = new TestScheduler()
@@ -24,6 +27,7 @@ public class ServerReplyOperationTest extends Specification {
         device = Mock BluetoothDevice
         objectUnderTest = new ServerReplyOperation(
                 testScheduler,
+                new MockOperationTimeoutConfiguration(timeout.intValue(), testScheduler),
                 mockGattServer,
                 device,
                 requestID,
