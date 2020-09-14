@@ -255,11 +255,9 @@ public class RxBleServerConnectionImpl implements RxBleServerConnection {
                                 characteristic,
                                 getOnNotification()
                         );
-                        Observable<Integer> result = operationQueue.queue(operation);
-                        return result;
+                        return operationQueue.queue(operation);
                     }
-                })
-                .subscribeOn(callbackScheduler);
+                });
     }
 
     private <T> Observable<T> withDisconnectionHandling(Output<T> output) {
