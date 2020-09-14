@@ -1,9 +1,11 @@
 package com.polidea.rxandroidble2.internal.operations.server;
 
 import android.bluetooth.BluetoothDevice;
+import android.bluetooth.BluetoothGatt;
 import android.bluetooth.BluetoothGattCharacteristic;
 import android.bluetooth.BluetoothGattServer;
 import android.os.DeadObjectException;
+import android.util.Log;
 
 import com.polidea.rxandroidble2.exceptions.BleException;
 import com.polidea.rxandroidble2.internal.QueueOperation;
@@ -46,21 +48,24 @@ public abstract class NotifyCharacteristicChangedOperation extends QueueOperatio
 
 
     @Override
-    protected void protectedRun(final ObservableEmitter<Integer> emitter, QueueReleaseInterface queueReleaseInterface) throws Throwable {
+    protected void protectedRun(
+            final ObservableEmitter<Integer> emitter,
+            final QueueReleaseInterface queueReleaseInterface
+    ) throws Throwable {
         final BluetoothGattServer server = serverProvider.getBluetoothGatt();
         if (server == null) {
             RxBleLog.w("NotificationSendOperation encountered null gatt server");
             queueReleaseInterface.release();
             emitter.onComplete();
         } else {
-            server.notifyCharacteristicChanged(device, characteristic, isIndication());
+            Log.v("debug", "NotifyCharacteristicChanged");
             getCompleted()
                     .timeout(
                             timeoutConfiguration.timeout,
                             timeoutConfiguration.timeoutTimeUnit,
                             timeoutConfiguration.timeoutScheduler
                     )
-                    .observeOn(clientScheduler)
+                    .subscribeOn(clientScheduler)
                     .subscribe(new SingleObserver<Integer>() {
                         @Override
                         public void onSubscribe(Disposable d) {
@@ -69,23 +74,28 @@ public abstract class NotifyCharacteristicChangedOperation extends QueueOperatio
 
                         @Override
                         public void onSuccess(Integer integer) {
+                            Log.v("debug", "onsuccess " + integer);
+                            queueReleaseInterface.release();
                             emitter.onNext(integer);
+                            emitter.onComplete();
                         }
 
                         @Override
                         public void onError(Throwable e) {
                             RxBleLog.w("onNotificationSent observable completed without returning items");
+                            queueReleaseInterface.release();
                             emitter.onError(e);
                         }
                     });
 
+            server.notifyCharacteristicChanged(device, characteristic, isIndication());
         }
     }
 
     public abstract boolean isIndication();
 
     private Single<Integer> getCompleted() {
-        return notificationCompletedObservable.firstOrError();
+        return notificationCompletedObservable.first(BluetoothGatt.GATT_SUCCESS);
     }
 
     @Override
