@@ -8,6 +8,7 @@ import android.bluetooth.BluetoothGattDescriptor;
 import android.bluetooth.BluetoothGattServerCallback;
 import android.bluetooth.BluetoothGattService;
 import android.bluetooth.BluetoothProfile;
+import android.util.Log;
 import android.util.Pair;
 
 import com.jakewharton.rxrelay2.PublishRelay;
@@ -47,7 +48,6 @@ public class RxBleGattServerCallback {
                 return;
             }
             final Disposable d = getOrCreateConnectionInfo(device)
-                    .subscribeOn(callbackScheduler)
                     .subscribe(new Consumer<RxBleServerConnection>() {
                         @Override
                         public void accept(RxBleServerConnection connectionInfo) throws Exception {
@@ -93,7 +93,6 @@ public class RxBleGattServerCallback {
             super.onCharacteristicReadRequest(device, requestId, offset, characteristic);
 
             Disposable d = getOrCreateConnectionInfo(device)
-                    .subscribeOn(callbackScheduler)
                     .subscribe(new Consumer<RxBleServerConnection>() {
                         @Override
                         public void accept(RxBleServerConnection connectionInfo) throws Exception {
@@ -124,7 +123,6 @@ public class RxBleGattServerCallback {
             super.onCharacteristicWriteRequest(device, requestId, characteristic, preparedWrite, responseNeeded, offset, value);
 
             Disposable d = getOrCreateConnectionInfo(device)
-                    .subscribeOn(callbackScheduler)
                     .subscribe(new Consumer<RxBleServerConnection>() {
                         @Override
                         public void accept(RxBleServerConnection connectionInfo) throws Exception {
@@ -156,7 +154,6 @@ public class RxBleGattServerCallback {
             super.onDescriptorReadRequest(device, requestId, offset, descriptor);
 
             Disposable d = getOrCreateConnectionInfo(device)
-                    .subscribeOn(callbackScheduler)
                     .subscribe(new Consumer<RxBleServerConnection>() {
                         @Override
                         public void accept(RxBleServerConnection connectionInfo) throws Exception {
@@ -187,7 +184,6 @@ public class RxBleGattServerCallback {
             super.onDescriptorWriteRequest(device, requestId, descriptor, preparedWrite, responseNeeded, offset, value);
 
             Disposable d = getOrCreateConnectionInfo(device)
-                    .subscribeOn(callbackScheduler)
                     .subscribe(new Consumer<RxBleServerConnection>() {
                         @Override
                         public void accept(RxBleServerConnection connectionInfo) throws Exception {
@@ -214,7 +210,6 @@ public class RxBleGattServerCallback {
             super.onExecuteWrite(device, requestId, execute);
             if (execute) {
                 Disposable d = getOrCreateConnectionInfo(device)
-                        .subscribeOn(callbackScheduler)
                         .subscribe(new Consumer<RxBleServerConnection>() {
                             @Override
                             public void accept(RxBleServerConnection connectionInfo) throws Exception {
@@ -231,9 +226,8 @@ public class RxBleGattServerCallback {
         @Override
         public void onNotificationSent(final BluetoothDevice device, final int status) {
             super.onNotificationSent(device, status);
-
+            Log.v(TAG, "onNotificationSent: " + device.getAddress());
             Disposable d = getOrCreateConnectionInfo(device)
-                    .subscribeOn(callbackScheduler)
                     .subscribe(new Consumer<RxBleServerConnection>() {
                         @Override
                         public void accept(RxBleServerConnection connectionInfo) throws Exception {
@@ -252,7 +246,6 @@ public class RxBleGattServerCallback {
             super.onMtuChanged(device, mtu);
 
             Disposable d = getOrCreateConnectionInfo(device)
-                    .subscribeOn(callbackScheduler)
                     .subscribe(new Consumer<RxBleServerConnection>() {
                         @Override
                         public void accept(RxBleServerConnection connectionInfo) throws Exception {

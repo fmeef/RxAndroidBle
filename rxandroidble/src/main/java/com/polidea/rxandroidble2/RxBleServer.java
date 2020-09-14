@@ -5,10 +5,14 @@ import android.content.Context;
 
 import com.polidea.rxandroidble2.internal.server.RxBleServerConnection;
 
+import java.util.UUID;
+
 import io.reactivex.Observable;
 import io.reactivex.annotations.NonNull;
 
 public abstract class RxBleServer {
+
+    public static final UUID CLIENT_CONFIG = UUID.fromString("00002902-0000-1000-8000-00805f9b34fb");
 
     @SuppressWarnings("WeakerAccess")
     public enum State {
