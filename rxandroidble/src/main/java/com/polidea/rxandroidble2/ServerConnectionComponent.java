@@ -9,8 +9,8 @@ import com.polidea.rxandroidble2.internal.operations.server.ServerConnectionOper
 import com.polidea.rxandroidble2.internal.operations.server.ServerConnectionOperationsProviderImpl;
 import com.polidea.rxandroidble2.internal.serialization.ServerConnectionOperationQueue;
 import com.polidea.rxandroidble2.internal.serialization.ServerConnectionOperationQueueImpl;
-import com.polidea.rxandroidble2.internal.server.RxBleServerConnection;
-import com.polidea.rxandroidble2.internal.server.RxBleServerConnectionImpl;
+import com.polidea.rxandroidble2.internal.server.RxBleServerConnectionInternal;
+import com.polidea.rxandroidble2.internal.server.RxBleServerConnectionInternalImpl;
 import com.polidea.rxandroidble2.internal.server.ServerDisconnectAction;
 import com.polidea.rxandroidble2.internal.server.ServerDisconnectionRouter;
 
@@ -48,7 +48,7 @@ public interface ServerConnectionComponent {
     abstract class ConnectionModule {
         @Binds
         @ServerConnectionScope
-        abstract RxBleServerConnection bindRxBleServerConnection(RxBleServerConnectionImpl rxBleServerConnection);
+        abstract RxBleServerConnectionInternal bindRxBleServerConnection(RxBleServerConnectionInternalImpl rxBleServerConnection);
 
         @Binds
         abstract ServerConnectionOperationQueue bindServerConnectionOperationQueue(ServerConnectionOperationQueueImpl queue);
@@ -103,6 +103,6 @@ public interface ServerConnectionComponent {
     Set<ConnectionSubscriptionWatcher> connectionSubscriptionWatchers();
 
     @ServerConnectionScope
-    RxBleServerConnection serverConnection();
+    RxBleServerConnectionInternal serverConnection();
 
 }

@@ -15,7 +15,7 @@ import bleshadow.javax.inject.Inject;
 @ServerScope
 public class BluetoothGattServerProvider {
     private final AtomicReference<BluetoothGattServer> reference = new AtomicReference<>();
-    private final ConcurrentHashMap<BluetoothDevice, RxBleServerConnection> connections = new ConcurrentHashMap<>();
+    private final ConcurrentHashMap<BluetoothDevice, RxBleServerConnectionInternal> connections = new ConcurrentHashMap<>();
 
     @Inject
     BluetoothGattServerProvider() {
@@ -31,11 +31,11 @@ public class BluetoothGattServerProvider {
     /**
      * Access a server connection instance.
      */
-    public RxBleServerConnection getConnection(final BluetoothDevice device) {
+    public RxBleServerConnectionInternal getConnection(final BluetoothDevice device) {
         return connections.get(device);
     }
 
-    public void updateConnection(final BluetoothDevice device, final RxBleServerConnection connection) {
+    public void updateConnection(final BluetoothDevice device, final RxBleServerConnectionInternal connection) {
         connections.putIfAbsent(device, connection);
     }
 

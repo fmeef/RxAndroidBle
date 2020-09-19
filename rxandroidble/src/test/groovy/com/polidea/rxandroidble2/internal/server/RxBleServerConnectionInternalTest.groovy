@@ -18,7 +18,7 @@ import spock.lang.Specification
 
 import java.util.concurrent.TimeUnit
 
-public class RxBleServerConnectionTest extends Specification {
+public class RxBleServerConnectionInternalTest extends Specification {
     static long timeout = 10
     static TimeUnit timeoutTimeUnit = TimeUnit.SECONDS
     public static long DEFAULT_WRITE_DELAY = 1
@@ -30,7 +30,7 @@ public class RxBleServerConnectionTest extends Specification {
     ServerDisconnectionRouter disconnectionRouter = Mock ServerDisconnectionRouter
     BluetoothDevice bluetoothDevice = Mock BluetoothDevice
     BluetoothGattServerProvider bluetoothGattServer = Mock BluetoothGattServerProvider
-    RxBleServerConnection objectUnderTest
+    RxBleServerConnectionInternal objectUnderTest
     BluetoothManager bluetoothManager = Mock BluetoothManager
     RxBleGattServerCallback callback = Mock RxBleGattServerCallback
     ServerTransactionFactory serverTransactionFactory = Mock ServerTransactionFactory
@@ -66,7 +66,7 @@ public class RxBleServerConnectionTest extends Specification {
                 Mock(BluetoothGattServerProvider)
         )
 
-        objectUnderTest = new RxBleServerConnectionImpl(
+        objectUnderTest = new RxBleServerConnectionInternalImpl(
                 testScheduler,
                 callbackScheduler,
                 operationsProvider,

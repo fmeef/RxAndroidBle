@@ -19,7 +19,7 @@ import com.polidea.rxandroidble2.Timeout;
 import com.polidea.rxandroidble2.internal.RxBleLog;
 import com.polidea.rxandroidble2.internal.server.BluetoothGattServerProvider;
 import com.polidea.rxandroidble2.internal.server.RxBleGattServerCallback;
-import com.polidea.rxandroidble2.internal.server.RxBleServerConnection;
+import com.polidea.rxandroidble2.internal.server.RxBleServerConnectionInternal;
 
 import java.util.Map;
 import java.util.UUID;
@@ -99,11 +99,11 @@ public class ServerConnectorImpl implements ServerConnector {
         return true;
     }
 
-    public Single<RxBleServerConnection> createConnection(final BluetoothDevice device, final Timeout timeout) {
-        return Single.fromCallable(new Callable<RxBleServerConnection>() {
+    public Single<RxBleServerConnectionInternal> createConnection(final BluetoothDevice device, final Timeout timeout) {
+        return Single.fromCallable(new Callable<RxBleServerConnectionInternal>() {
             @Override
-            public RxBleServerConnection call() throws Exception {
-                RxBleServerConnection connection = connectionComponentBuilder
+            public RxBleServerConnectionInternal call() throws Exception {
+                RxBleServerConnectionInternal connection = connectionComponentBuilder
                         .bluetoothDevice(device)
                         .operationTimeout(timeout)
                         .build()
@@ -115,12 +115,12 @@ public class ServerConnectorImpl implements ServerConnector {
     }
 
     @Override
-    public RxBleServerConnection getConnection(BluetoothDevice device) {
+    public RxBleServerConnectionInternal getConnection(BluetoothDevice device) {
         return gattServerProvider.getConnection(device);
     }
 
     @Override
-    public Observable<RxBleServerConnection> subscribeToConnections() {
+    public Observable<RxBleServerConnectionInternal> subscribeToConnections() {
         if (gattServerProvider.getBluetoothGatt() == null) {
             BluetoothGattServer bluetoothGattServer = bluetoothManager.openGattServer(
                     context,
@@ -153,19 +153,19 @@ public class ServerConnectorImpl implements ServerConnector {
                 })
                 .flatMap(
                         new Function<Pair<BluetoothDevice, RxBleConnection.RxBleConnectionState>,
-                                ObservableSource<RxBleServerConnection>>() {
+                                ObservableSource<RxBleServerConnectionInternal>>() {
                     @Override
-                    public ObservableSource<RxBleServerConnection> apply(
+                    public ObservableSource<RxBleServerConnectionInternal> apply(
                             Pair<BluetoothDevice, RxBleConnection.RxBleConnectionState> p
                     ) throws Exception {
                         return createConnection(p.first, serverConfig.getOperationTimeout())
                                 .toObservable();
                     }
                 })
-                .map(new Function<RxBleServerConnection, RxBleServerConnection>() {
+                .map(new Function<RxBleServerConnectionInternal, RxBleServerConnectionInternal>() {
                     @SuppressLint("CheckResult")
                     @Override
-                    public RxBleServerConnection apply(final RxBleServerConnection connection) throws Exception {
+                    public RxBleServerConnectionInternal apply(final RxBleServerConnectionInternal connection) throws Exception {
                         connection.observeDisconnect().doOnError(new Consumer<Throwable>() {
                             @Override
                             public void accept(Throwable throwable) throws Exception {

@@ -13,7 +13,7 @@ import com.polidea.rxandroidble2.internal.RxBleLog;
 import com.polidea.rxandroidble2.internal.operations.TimeoutConfiguration;
 import com.polidea.rxandroidble2.internal.serialization.QueueReleaseInterface;
 import com.polidea.rxandroidble2.internal.server.BluetoothGattServerProvider;
-import com.polidea.rxandroidble2.internal.server.RxBleServerConnection;
+import com.polidea.rxandroidble2.internal.server.RxBleServerConnectionInternal;
 import com.polidea.rxandroidble2.internal.util.QueueReleasingEmitterWrapper;
 
 import io.reactivex.ObservableEmitter;
@@ -24,13 +24,13 @@ public abstract class NotifyCharacteristicChangedOperation extends QueueOperatio
     private final BluetoothGattServerProvider serverProvider;
     private final BluetoothGattCharacteristic characteristic;
     private final TimeoutConfiguration timeoutConfiguration;
-    private final RxBleServerConnection connection;
+    private final RxBleServerConnectionInternal connection;
 
     public NotifyCharacteristicChangedOperation(
             BluetoothGattServerProvider serverProvider,
             BluetoothGattCharacteristic characteristic,
             TimeoutConfiguration timeoutConfiguration,
-            RxBleServerConnection connection
+            RxBleServerConnectionInternal connection
             ) {
         this.serverProvider = serverProvider;
         this.characteristic = characteristic;
