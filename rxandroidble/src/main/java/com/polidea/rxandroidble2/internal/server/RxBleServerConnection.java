@@ -70,13 +70,13 @@ public interface RxBleServerConnection {
 
     Observable<Integer> getOnMtuChanged();
 
-    Observable<GattServerTransaction<UUID>> getOnCharacteristicReadRequest();
+    Observable<GattServerTransaction<UUID>> getOnCharacteristicReadRequest(BluetoothGattCharacteristic characteristic);
 
-    Observable<GattServerTransaction<UUID>> getOnCharacteristicWriteRequest();
+    Observable<GattServerTransaction<UUID>> getOnCharacteristicWriteRequest(BluetoothGattCharacteristic characteristic);
 
-    Observable<GattServerTransaction<BluetoothGattDescriptor>> getOnDescriptorReadRequest();
+    Observable<GattServerTransaction<BluetoothGattDescriptor>> getOnDescriptorReadRequest(BluetoothGattDescriptor descriptor);
 
-    Observable<GattServerTransaction<BluetoothGattDescriptor>> getOnDescriptorWriteRequest();
+    Observable<GattServerTransaction<BluetoothGattDescriptor>> getOnDescriptorWriteRequest(BluetoothGattDescriptor descriptor);
 
     Observable<Integer> getOnNotification();
 

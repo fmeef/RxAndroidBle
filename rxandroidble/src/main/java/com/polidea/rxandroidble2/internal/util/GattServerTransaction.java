@@ -87,4 +87,8 @@ public class GattServerTransaction<T> implements ServerResponseTransaction {
     public static <T> GattServerTransaction<T> create(T first, ServerResponseTransaction bytes) {
         return new GattServerTransaction<>(first, bytes);
     }
+
+    public T getPayload() {
+        return first;
+    }
 }
