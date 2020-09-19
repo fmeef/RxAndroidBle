@@ -25,17 +25,20 @@ public abstract class NotifyCharacteristicChangedOperation extends QueueOperatio
     private final BluetoothGattCharacteristic characteristic;
     private final TimeoutConfiguration timeoutConfiguration;
     private final RxBleServerConnectionInternal connection;
+    private final byte[] value;
 
     public NotifyCharacteristicChangedOperation(
             BluetoothGattServerProvider serverProvider,
             BluetoothGattCharacteristic characteristic,
             TimeoutConfiguration timeoutConfiguration,
-            RxBleServerConnectionInternal connection
+            RxBleServerConnectionInternal connection,
+            byte[] value
             ) {
         this.serverProvider = serverProvider;
         this.characteristic = characteristic;
         this.timeoutConfiguration = timeoutConfiguration;
         this.connection = connection;
+        this.value = value;
     }
 
 
@@ -61,6 +64,7 @@ public abstract class NotifyCharacteristicChangedOperation extends QueueOperatio
                     .toObservable()
                     .subscribe(emitterWrapper);
 
+            characteristic.setValue(value);
             if (!server.notifyCharacteristicChanged(connection.getDevice(), characteristic, isIndication())) {
                 emitterWrapper.cancel();
                 emitter.onError(new BleGattServerException(server, connection.getDevice(), BleGattServerOperationType.CONNECTION_STATE));

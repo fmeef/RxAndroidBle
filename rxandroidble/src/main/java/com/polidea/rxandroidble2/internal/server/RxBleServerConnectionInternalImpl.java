@@ -256,9 +256,9 @@ public class RxBleServerConnectionInternalImpl implements RxBleServerConnectionI
                     @Override
                     public ObservableSource<Integer> apply(byte[] bytes) throws Exception {
                         Log.v("debug", "scheduling CharacteristicNotificationOperation length " + bytes.length);
-                        characteristic.setValue(bytes);
                         CharacteristicNotificationOperation operation = operationsProvider.provideCharacteristicNotificationOperation(
-                                characteristic
+                                characteristic,
+                                bytes
                         );
                         return operationQueue.queue(operation);
                     }
