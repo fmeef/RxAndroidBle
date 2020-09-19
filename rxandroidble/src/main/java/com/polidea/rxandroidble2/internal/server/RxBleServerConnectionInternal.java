@@ -89,7 +89,8 @@ public interface RxBleServerConnectionInternal {
             int requestID,
             int offset,
             BluetoothDevice device,
-            PublishRelay<GattServerTransaction<BluetoothGattDescriptor>> valueRelay
+            PublishRelay<GattServerTransaction<BluetoothGattDescriptor>> valueRelay,
+            byte[] value
     );
 
     void prepareCharacteristicTransaction(
@@ -97,7 +98,8 @@ public interface RxBleServerConnectionInternal {
             int requestID,
             int offset,
             BluetoothDevice device,
-            PublishRelay<GattServerTransaction<UUID>> valueRelay
+            PublishRelay<GattServerTransaction<UUID>> valueRelay,
+            byte[] value
     );
 
     class Output<T> {
