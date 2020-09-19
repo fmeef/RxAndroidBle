@@ -1,31 +1,24 @@
 package com.polidea.rxandroidble2.internal.operations.server;
 
-import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothGattCharacteristic;
 
 import com.polidea.rxandroidble2.internal.operations.TimeoutConfiguration;
 import com.polidea.rxandroidble2.internal.server.BluetoothGattServerProvider;
-
-import io.reactivex.Observable;
-import io.reactivex.Scheduler;
+import com.polidea.rxandroidble2.internal.server.RxBleServerConnection;
 
 public class CharacteristicNotificationOperation extends NotifyCharacteristicChangedOperation {
 
     public CharacteristicNotificationOperation(
-            Scheduler clientScheduler,
-            BluetoothDevice device,
             BluetoothGattServerProvider serverProvider,
-            Observable<Integer> notificationCompletedObservable,
             BluetoothGattCharacteristic characteristic,
-            TimeoutConfiguration timeoutConfiguration
+            TimeoutConfiguration timeoutConfiguration,
+            RxBleServerConnection connection
     ) {
         super(
-                clientScheduler,
-                device,
                 serverProvider,
-                notificationCompletedObservable,
                 characteristic,
-                timeoutConfiguration
+                timeoutConfiguration,
+                connection
         );
     }
 

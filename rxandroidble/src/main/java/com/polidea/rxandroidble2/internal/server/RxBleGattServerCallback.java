@@ -226,12 +226,12 @@ public class RxBleGattServerCallback {
         @Override
         public void onNotificationSent(final BluetoothDevice device, final int status) {
             super.onNotificationSent(device, status);
-            Log.v(TAG, "onNotificationSent: " + device.getAddress());
             Disposable d = getOrCreateConnectionInfo(device)
                     .subscribe(new Consumer<RxBleServerConnection>() {
                         @Override
                         public void accept(RxBleServerConnection connectionInfo) throws Exception {
                             if (connectionInfo.getNotificationPublishRelay().hasObservers()) {
+                                Log.v(TAG, "onNotificationSent: " + device.getAddress());
                                 connectionInfo.getNotificationPublishRelay().valueRelay.accept(
                                         status
                                 );
