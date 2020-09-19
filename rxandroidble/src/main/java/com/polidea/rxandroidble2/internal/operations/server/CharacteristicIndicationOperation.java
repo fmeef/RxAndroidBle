@@ -4,7 +4,7 @@ import android.bluetooth.BluetoothGattCharacteristic;
 
 import com.polidea.rxandroidble2.internal.operations.TimeoutConfiguration;
 import com.polidea.rxandroidble2.internal.server.BluetoothGattServerProvider;
-import com.polidea.rxandroidble2.internal.server.RxBleServerConnection;
+import com.polidea.rxandroidble2.internal.server.RxBleServerConnectionInternal;
 
 public class CharacteristicIndicationOperation extends NotifyCharacteristicChangedOperation {
 
@@ -13,7 +13,7 @@ public class CharacteristicIndicationOperation extends NotifyCharacteristicChang
             BluetoothGattServerProvider serverProvider,
             BluetoothGattCharacteristic characteristic,
             TimeoutConfiguration timeoutConfiguration,
-            RxBleServerConnection connection
+            RxBleServerConnectionInternal connection
     ) {
         super(
                 serverProvider,

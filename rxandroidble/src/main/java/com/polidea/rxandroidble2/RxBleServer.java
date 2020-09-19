@@ -3,7 +3,7 @@ package com.polidea.rxandroidble2;
 import android.bluetooth.BluetoothDevice;
 import android.content.Context;
 
-import com.polidea.rxandroidble2.internal.server.RxBleServerConnection;
+import com.polidea.rxandroidble2.internal.server.RxBleServerConnectionInternal;
 
 import java.util.UUID;
 
@@ -90,9 +90,9 @@ public abstract class RxBleServer {
                 .rxBleServer();
     }
 
-    public abstract Observable<RxBleServerConnection> openServer();
+    public abstract Observable<RxBleServerConnectionInternal> openServer();
 
-    public abstract RxBleServerConnection getConnection(BluetoothDevice device);
+    public abstract RxBleServerConnectionInternal getConnection(BluetoothDevice device);
 
     public abstract void closeServer();
 }

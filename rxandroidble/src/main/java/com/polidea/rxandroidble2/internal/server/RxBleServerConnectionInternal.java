@@ -23,7 +23,7 @@ import io.reactivex.subjects.Subject;
  * BLE connection handle for a single devices connected to the GATT server
  */
 @ServerConnectionScope
-public interface RxBleServerConnection {
+public interface RxBleServerConnectionInternal {
     @NonNull
     Output<GattServerTransaction<UUID>> getReadCharacteristicOutput();
 

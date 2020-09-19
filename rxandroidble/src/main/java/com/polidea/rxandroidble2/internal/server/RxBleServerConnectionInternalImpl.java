@@ -37,7 +37,7 @@ import io.reactivex.functions.BiFunction;
 import io.reactivex.functions.Function;
 import io.reactivex.functions.Predicate;
 
-public class RxBleServerConnectionImpl implements RxBleServerConnection {
+public class RxBleServerConnectionInternalImpl implements RxBleServerConnectionInternal {
     private final Scheduler connectionScheduler;
     private final Scheduler callbackScheduler;
     private final ServerConnectionOperationsProvider operationsProvider;
@@ -60,7 +60,7 @@ public class RxBleServerConnectionImpl implements RxBleServerConnection {
     };
 
     @Inject
-    public RxBleServerConnectionImpl(
+    public RxBleServerConnectionInternalImpl(
         @Named(ServerComponent.NamedSchedulers.BLUETOOTH_CONNECTION) Scheduler connectionScheduler,
         @Named(ServerComponent.NamedSchedulers.BLUETOOTH_CALLBACK) Scheduler callbackScheduler,
         ServerConnectionOperationsProvider operationsProvider,
