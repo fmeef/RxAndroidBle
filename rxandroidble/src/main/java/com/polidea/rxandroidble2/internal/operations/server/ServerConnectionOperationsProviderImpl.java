@@ -81,25 +81,29 @@ public class ServerConnectionOperationsProviderImpl implements ServerConnectionO
 
     @Override
     public CharacteristicNotificationOperation provideCharacteristicNotificationOperation(
-            BluetoothGattCharacteristic characteristic
+            BluetoothGattCharacteristic characteristic,
+            byte[] value
     ) {
         return new CharacteristicNotificationOperation(
                 bluetoothGattServer,
                 characteristic,
                 timeoutConfiguration,
-                serverProvider.getConnection(bluetoothDevice)
+                serverProvider.getConnection(bluetoothDevice),
+                value
                 );
     }
 
     @Override
     public CharacteristicIndicationOperation provideCharacteristicIndicationOperation(
-            BluetoothGattCharacteristic characteristic
+            BluetoothGattCharacteristic characteristic,
+            byte[] value
     ) {
         return new CharacteristicIndicationOperation(
                 bluetoothGattServer,
                 characteristic,
                 timeoutConfiguration,
-                serverProvider.getConnection(bluetoothDevice)
+                serverProvider.getConnection(bluetoothDevice),
+                value
         );
     }
 }

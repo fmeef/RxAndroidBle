@@ -13,13 +13,15 @@ public class CharacteristicIndicationOperation extends NotifyCharacteristicChang
             BluetoothGattServerProvider serverProvider,
             BluetoothGattCharacteristic characteristic,
             TimeoutConfiguration timeoutConfiguration,
-            RxBleServerConnectionInternal connection
+            RxBleServerConnectionInternal connection,
+            byte[] value
     ) {
         super(
                 serverProvider,
                 characteristic,
                 timeoutConfiguration,
-                connection
+                connection,
+                value
         );
     }
 
