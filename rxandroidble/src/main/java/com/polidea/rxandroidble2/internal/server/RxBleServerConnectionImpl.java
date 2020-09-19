@@ -35,6 +35,7 @@ import io.reactivex.disposables.CompositeDisposable;
 import io.reactivex.disposables.Disposable;
 import io.reactivex.functions.BiFunction;
 import io.reactivex.functions.Function;
+import io.reactivex.functions.Predicate;
 
 public class RxBleServerConnectionImpl implements RxBleServerConnection {
     private final Scheduler connectionScheduler;
@@ -297,26 +298,56 @@ public class RxBleServerConnectionImpl implements RxBleServerConnection {
     }
 
     @Override
-    public Observable<GattServerTransaction<UUID>> getOnCharacteristicReadRequest() {
+    public Observable<GattServerTransaction<UUID>> getOnCharacteristicReadRequest(final BluetoothGattCharacteristic characteristic) {
         return withDisconnectionHandling(getReadCharacteristicOutput())
+                .filter(new Predicate<GattServerTransaction<UUID>>() {
+                    @Override
+                    public boolean test(GattServerTransaction<UUID> uuidGattServerTransaction) throws Exception {
+                        return uuidGattServerTransaction.getPayload().compareTo(characteristic.getUuid()) == 0;
+                    }
+                })
                 .delay(0, TimeUnit.SECONDS, callbackScheduler);
     }
 
     @Override
-    public Observable<GattServerTransaction<UUID>> getOnCharacteristicWriteRequest() {
+    public Observable<GattServerTransaction<UUID>> getOnCharacteristicWriteRequest(final BluetoothGattCharacteristic characteristic) {
         return withDisconnectionHandling(getWriteCharacteristicOutput())
+                .filter(new Predicate<GattServerTransaction<UUID>>() {
+                    @Override
+                    public boolean test(GattServerTransaction<UUID> uuidGattServerTransaction) throws Exception {
+                        return uuidGattServerTransaction.getPayload().compareTo(characteristic.getUuid()) == 0;
+                    }
+                })
                 .delay(0, TimeUnit.SECONDS, callbackScheduler);
     }
 
     @Override
-    public Observable<GattServerTransaction<BluetoothGattDescriptor>> getOnDescriptorReadRequest() {
+    public Observable<GattServerTransaction<BluetoothGattDescriptor>> getOnDescriptorReadRequest(final BluetoothGattDescriptor descriptor) {
         return withDisconnectionHandling(getReadDescriptorOutput())
+                .filter(new Predicate<GattServerTransaction<BluetoothGattDescriptor>>() {
+                    @Override
+                    public boolean test(GattServerTransaction<BluetoothGattDescriptor> transaction) throws Exception {
+                        return transaction.getPayload().getUuid().compareTo(descriptor.getUuid()) == 0
+                                && transaction.getPayload().getCharacteristic().getUuid()
+                                .compareTo(descriptor.getUuid()) == 0;
+                    }
+                })
                 .delay(0, TimeUnit.SECONDS, callbackScheduler);
     }
 
     @Override
-    public Observable<GattServerTransaction<BluetoothGattDescriptor>> getOnDescriptorWriteRequest() {
+    public Observable<GattServerTransaction<BluetoothGattDescriptor>> getOnDescriptorWriteRequest(
+            final BluetoothGattDescriptor descriptor
+    ) {
         return withDisconnectionHandling(getWriteDescriptorOutput())
+                .filter(new Predicate<GattServerTransaction<BluetoothGattDescriptor>>() {
+                    @Override
+                    public boolean test(GattServerTransaction<BluetoothGattDescriptor> transaction) throws Exception {
+                        return transaction.getPayload().getUuid().compareTo(descriptor.getUuid()) == 0
+                                && transaction.getPayload().getCharacteristic().getUuid()
+                                .compareTo(descriptor.getCharacteristic().getUuid()) == 0;
+                    }
+                })
                 .delay(0, TimeUnit.SECONDS, callbackScheduler);
     }
 
