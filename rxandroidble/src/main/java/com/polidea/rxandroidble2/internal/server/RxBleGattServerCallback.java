@@ -103,7 +103,8 @@ public class RxBleGattServerCallback {
                                         requestId,
                                         offset,
                                         device,
-                                        connectionInfo.getReadCharacteristicOutput().valueRelay
+                                        connectionInfo.getReadCharacteristicOutput().valueRelay,
+                                        null
                                 );
                             }
                         }
@@ -137,7 +138,8 @@ public class RxBleGattServerCallback {
                                         requestId,
                                         offset,
                                         device,
-                                        connectionInfo.getWriteCharacteristicOutput().valueRelay
+                                        connectionInfo.getWriteCharacteristicOutput().valueRelay,
+                                        value
                                 );
                             }
                         }
@@ -164,7 +166,8 @@ public class RxBleGattServerCallback {
                                         requestId,
                                         offset,
                                         device,
-                                        connectionInfo.getReadDescriptorOutput().valueRelay
+                                        connectionInfo.getReadDescriptorOutput().valueRelay,
+                                        null
                                 );
                             }
                         }
@@ -197,7 +200,8 @@ public class RxBleGattServerCallback {
                                         requestId,
                                         offset,
                                         device,
-                                        connectionInfo.getWriteDescriptorOutput().valueRelay
+                                        connectionInfo.getWriteDescriptorOutput().valueRelay,
+                                        value
                                 );
                             }
                         }
