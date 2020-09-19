@@ -48,9 +48,9 @@ public class RxBleGattServerCallback {
                 return;
             }
             final Disposable d = getOrCreateConnectionInfo(device)
-                    .subscribe(new Consumer<RxBleServerConnection>() {
+                    .subscribe(new Consumer<RxBleServerConnectionInternal>() {
                         @Override
-                        public void accept(RxBleServerConnection connectionInfo) throws Exception {
+                        public void accept(RxBleServerConnectionInternal connectionInfo) throws Exception {
                             if (newState == BluetoothProfile.STATE_DISCONNECTED
                                     || newState == BluetoothProfile.STATE_DISCONNECTING) {
                                 connectionInfo.getDisconnectionRouter().onDisconnectedException(
@@ -93,9 +93,9 @@ public class RxBleGattServerCallback {
             super.onCharacteristicReadRequest(device, requestId, offset, characteristic);
 
             Disposable d = getOrCreateConnectionInfo(device)
-                    .subscribe(new Consumer<RxBleServerConnection>() {
+                    .subscribe(new Consumer<RxBleServerConnectionInternal>() {
                         @Override
-                        public void accept(RxBleServerConnection connectionInfo) throws Exception {
+                        public void accept(RxBleServerConnectionInternal connectionInfo) throws Exception {
                             if (connectionInfo.getReadCharacteristicOutput().hasObservers()) {
 
                                 connectionInfo.prepareCharacteristicTransaction(
@@ -123,12 +123,12 @@ public class RxBleGattServerCallback {
             super.onCharacteristicWriteRequest(device, requestId, characteristic, preparedWrite, responseNeeded, offset, value);
 
             Disposable d = getOrCreateConnectionInfo(device)
-                    .subscribe(new Consumer<RxBleServerConnection>() {
+                    .subscribe(new Consumer<RxBleServerConnectionInternal>() {
                         @Override
-                        public void accept(RxBleServerConnection connectionInfo) throws Exception {
+                        public void accept(RxBleServerConnectionInternal connectionInfo) throws Exception {
 
                             if (preparedWrite) {
-                                RxBleServerConnection.Output<byte[]> longWriteOuput
+                                RxBleServerConnectionInternal.Output<byte[]> longWriteOuput
                                         = connectionInfo.openLongWriteCharacteristicOutput(requestId, characteristic);
                                 longWriteOuput.valueRelay.accept(value);
                             } else if (connectionInfo.getWriteCharacteristicOutput().hasObservers()) {
@@ -154,9 +154,9 @@ public class RxBleGattServerCallback {
             super.onDescriptorReadRequest(device, requestId, offset, descriptor);
 
             Disposable d = getOrCreateConnectionInfo(device)
-                    .subscribe(new Consumer<RxBleServerConnection>() {
+                    .subscribe(new Consumer<RxBleServerConnectionInternal>() {
                         @Override
-                        public void accept(RxBleServerConnection connectionInfo) throws Exception {
+                        public void accept(RxBleServerConnectionInternal connectionInfo) throws Exception {
 
                             if (connectionInfo.getReadDescriptorOutput().hasObservers()) {
                                 connectionInfo.prepareDescriptorTransaction(
@@ -184,11 +184,11 @@ public class RxBleGattServerCallback {
             super.onDescriptorWriteRequest(device, requestId, descriptor, preparedWrite, responseNeeded, offset, value);
 
             Disposable d = getOrCreateConnectionInfo(device)
-                    .subscribe(new Consumer<RxBleServerConnection>() {
+                    .subscribe(new Consumer<RxBleServerConnectionInternal>() {
                         @Override
-                        public void accept(RxBleServerConnection connectionInfo) throws Exception {
+                        public void accept(RxBleServerConnectionInternal connectionInfo) throws Exception {
                             if (preparedWrite) {
-                                RxBleServerConnection.Output<byte[]> longWriteOutput
+                                RxBleServerConnectionInternal.Output<byte[]> longWriteOutput
                                         = connectionInfo.openLongWriteDescriptorOutput(requestId, descriptor);
                                 longWriteOutput.valueRelay.accept(value); //TODO: offset?
                             } else if (connectionInfo.getWriteDescriptorOutput().hasObservers()) {
@@ -210,9 +210,9 @@ public class RxBleGattServerCallback {
             super.onExecuteWrite(device, requestId, execute);
             if (execute) {
                 Disposable d = getOrCreateConnectionInfo(device)
-                        .subscribe(new Consumer<RxBleServerConnection>() {
+                        .subscribe(new Consumer<RxBleServerConnectionInternal>() {
                             @Override
-                            public void accept(RxBleServerConnection connectionInfo) throws Exception {
+                            public void accept(RxBleServerConnectionInternal connectionInfo) throws Exception {
                                 connectionInfo.closeLongWriteCharacteristicOutput(requestId);
 
                                 connectionInfo.resetCharacteristicMap();
@@ -227,9 +227,9 @@ public class RxBleGattServerCallback {
         public void onNotificationSent(final BluetoothDevice device, final int status) {
             super.onNotificationSent(device, status);
             Disposable d = getOrCreateConnectionInfo(device)
-                    .subscribe(new Consumer<RxBleServerConnection>() {
+                    .subscribe(new Consumer<RxBleServerConnectionInternal>() {
                         @Override
-                        public void accept(RxBleServerConnection connectionInfo) throws Exception {
+                        public void accept(RxBleServerConnectionInternal connectionInfo) throws Exception {
                             if (connectionInfo.getNotificationPublishRelay().hasObservers()) {
                                 Log.v(TAG, "onNotificationSent: " + device.getAddress());
                                 connectionInfo.getNotificationPublishRelay().valueRelay.accept(
@@ -246,9 +246,9 @@ public class RxBleGattServerCallback {
             super.onMtuChanged(device, mtu);
 
             Disposable d = getOrCreateConnectionInfo(device)
-                    .subscribe(new Consumer<RxBleServerConnection>() {
+                    .subscribe(new Consumer<RxBleServerConnectionInternal>() {
                         @Override
-                        public void accept(RxBleServerConnection connectionInfo) throws Exception {
+                        public void accept(RxBleServerConnectionInternal connectionInfo) throws Exception {
                             if (connectionInfo.getChangedMtuOutput().hasObservers()) {
                                 connectionInfo.getChangedMtuOutput().valueRelay.accept(mtu);
                             }
@@ -268,8 +268,8 @@ public class RxBleGattServerCallback {
         }
     };
 
-    private synchronized Single<RxBleServerConnection> getOrCreateConnectionInfo(final BluetoothDevice device) {
-        RxBleServerConnection connection = gattServerProvider.getConnection(device);
+    private synchronized Single<RxBleServerConnectionInternal> getOrCreateConnectionInfo(final BluetoothDevice device) {
+        RxBleServerConnectionInternal connection = gattServerProvider.getConnection(device);
         if (connection == null) {
             RxBleLog.e(TAG, "attempted to get nonexistent connection");
             return Single.never();
@@ -306,7 +306,7 @@ public class RxBleGattServerCallback {
         return status != BluetoothGatt.GATT_SUCCESS;
     }
 
-    private static boolean propagateStatusError(RxBleServerConnection.Output<?> output, BleGattServerException exception) {
+    private static boolean propagateStatusError(RxBleServerConnectionInternal.Output<?> output, BleGattServerException exception) {
         output.errorRelay.accept(exception);
         return true;
     }
@@ -323,7 +323,7 @@ public class RxBleGattServerCallback {
         return gattServerCallback;
     }
 
-    public Single<RxBleServerConnection> getRxBleServerConnection(BluetoothDevice device) {
+    public Single<RxBleServerConnectionInternal> getRxBleServerConnection(BluetoothDevice device) {
         return getOrCreateConnectionInfo(device);
     }
 
