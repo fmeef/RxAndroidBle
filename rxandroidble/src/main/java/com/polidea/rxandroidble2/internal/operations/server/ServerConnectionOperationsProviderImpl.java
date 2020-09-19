@@ -13,7 +13,6 @@ import com.polidea.rxandroidble2.internal.server.RxBleGattServerCallback;
 
 import bleshadow.javax.inject.Inject;
 import bleshadow.javax.inject.Named;
-import io.reactivex.Observable;
 import io.reactivex.Scheduler;
 
 @ServerConnectionScope
@@ -25,6 +24,7 @@ public class ServerConnectionOperationsProviderImpl implements ServerConnectionO
     private final RxBleGattServerCallback callback;
     private final BluetoothManager bluetoothManager;
     private final TimeoutConfiguration timeoutConfiguration;
+    private final BluetoothGattServerProvider serverProvider;
 
 
     @Inject
@@ -34,7 +34,8 @@ public class ServerConnectionOperationsProviderImpl implements ServerConnectionO
             BluetoothDevice bluetoothDevice,
             RxBleGattServerCallback callback,
             BluetoothManager bluetoothManager,
-            @Named(ServerConnectionComponent.OPERATION_TIMEOUT) TimeoutConfiguration timeoutConfiguration
+            @Named(ServerConnectionComponent.OPERATION_TIMEOUT) TimeoutConfiguration timeoutConfiguration,
+            BluetoothGattServerProvider serverProvider
     ) {
         this.gattServerScheduler = gattServerScheduler;
         this.bluetoothGattServer = bluetoothGattServer;
@@ -42,6 +43,7 @@ public class ServerConnectionOperationsProviderImpl implements ServerConnectionO
         this.callback = callback;
         this.bluetoothManager = bluetoothManager;
         this.timeoutConfiguration = timeoutConfiguration;
+        this.serverProvider = serverProvider;
     }
 
 
@@ -79,31 +81,25 @@ public class ServerConnectionOperationsProviderImpl implements ServerConnectionO
 
     @Override
     public CharacteristicNotificationOperation provideCharacteristicNotificationOperation(
-            BluetoothGattCharacteristic characteristic,
-            Observable<Integer> notificationCompletedObservable
+            BluetoothGattCharacteristic characteristic
     ) {
         return new CharacteristicNotificationOperation(
-                gattServerScheduler,
-                bluetoothDevice,
                 bluetoothGattServer,
-                notificationCompletedObservable,
                 characteristic,
-                timeoutConfiguration
+                timeoutConfiguration,
+                serverProvider.getConnection(bluetoothDevice)
                 );
     }
 
     @Override
     public CharacteristicIndicationOperation provideCharacteristicIndicationOperation(
-            BluetoothGattCharacteristic characteristic,
-            Observable<Integer> notificationCompletedObservable
+            BluetoothGattCharacteristic characteristic
     ) {
         return new CharacteristicIndicationOperation(
-                gattServerScheduler,
-                bluetoothDevice,
                 bluetoothGattServer,
-                notificationCompletedObservable,
                 characteristic,
-                timeoutConfiguration
+                timeoutConfiguration,
+                serverProvider.getConnection(bluetoothDevice)
         );
     }
 }

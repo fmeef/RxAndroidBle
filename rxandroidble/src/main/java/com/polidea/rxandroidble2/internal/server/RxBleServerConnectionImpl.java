@@ -3,6 +3,7 @@ package com.polidea.rxandroidble2.internal.server;
 import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothGattCharacteristic;
 import android.bluetooth.BluetoothGattDescriptor;
+import android.util.Log;
 
 import androidx.annotation.NonNull;
 
@@ -36,6 +37,7 @@ import io.reactivex.functions.BiFunction;
 import io.reactivex.functions.Function;
 
 public class RxBleServerConnectionImpl implements RxBleServerConnection {
+    private final Scheduler connectionScheduler;
     private final Scheduler callbackScheduler;
     private final ServerConnectionOperationsProvider operationsProvider;
     private final ServerConnectionOperationQueue operationQueue;
@@ -58,7 +60,8 @@ public class RxBleServerConnectionImpl implements RxBleServerConnection {
 
     @Inject
     public RxBleServerConnectionImpl(
-        @Named(ServerComponent.NamedSchedulers.BLUETOOTH_CONNECTION) Scheduler callbackScheduler,
+        @Named(ServerComponent.NamedSchedulers.BLUETOOTH_CONNECTION) Scheduler connectionScheduler,
+        @Named(ServerComponent.NamedSchedulers.BLUETOOTH_CALLBACK) Scheduler callbackScheduler,
         ServerConnectionOperationsProvider operationsProvider,
         ServerConnectionOperationQueue operationQueue,
         BluetoothDevice device,
@@ -67,13 +70,14 @@ public class RxBleServerConnectionImpl implements RxBleServerConnection {
         ServerConfig serverConfig
 
     ) {
-        this.callbackScheduler = callbackScheduler;
+        this.connectionScheduler = connectionScheduler;
         this.operationsProvider = operationsProvider;
         this.device = device;
         this.operationQueue = operationQueue;
         this.disconnectionRouter = disconnectionRouter;
         this.serverTransactionFactory = serverTransactionFactory;
         this.serverConfig = serverConfig;
+        this.callbackScheduler = callbackScheduler;
     }
 
 
@@ -159,7 +163,7 @@ public class RxBleServerConnectionImpl implements RxBleServerConnection {
                             return both;
                         }
                     })
-                    .subscribeOn(callbackScheduler)
+                    .subscribeOn(connectionScheduler)
                     .toSingle()
                     .subscribe(output.out);
             characteristicMultiIndex.put(requestid, output);
@@ -183,7 +187,7 @@ public class RxBleServerConnectionImpl implements RxBleServerConnection {
                             return both;
                         }
                     })
-                    .subscribeOn(callbackScheduler)
+                    .subscribeOn(connectionScheduler)
                     .toSingle()
                     .subscribe(output.out);
             descriptorMultiIndex.put(requestid, output);
@@ -247,13 +251,13 @@ public class RxBleServerConnectionImpl implements RxBleServerConnection {
     @Override
     public Observable<Integer> setupNotifications(final BluetoothGattCharacteristic characteristic, Observable<byte[]> notifications) {
         return notifications
-                .flatMap(new Function<byte[], ObservableSource<Integer>>() {
+                .concatMap(new Function<byte[], ObservableSource<Integer>>() {
                     @Override
                     public ObservableSource<Integer> apply(byte[] bytes) throws Exception {
+                        Log.v("debug", "scheduling CharacteristicNotificationOperation length " + bytes.length);
                         characteristic.setValue(bytes);
                         CharacteristicNotificationOperation operation = operationsProvider.provideCharacteristicNotificationOperation(
-                                characteristic,
-                                getOnNotification()
+                                characteristic
                         );
                         return operationQueue.queue(operation);
                     }
@@ -277,6 +281,7 @@ public class RxBleServerConnectionImpl implements RxBleServerConnection {
     }
 
     @Override
+    @NonNull
     public ServerDisconnectionRouter getDisconnectionRouter() {
         return disconnectionRouter;
     }
@@ -317,8 +322,7 @@ public class RxBleServerConnectionImpl implements RxBleServerConnection {
 
     @Override
     public Observable<Integer> getOnNotification() {
-        return withDisconnectionHandling(getNotificationPublishRelay())
-                .delay(0, TimeUnit.SECONDS, callbackScheduler);
+        return getNotificationPublishRelay().valueRelay;
     }
 
     @Override
@@ -346,7 +350,7 @@ public class RxBleServerConnectionImpl implements RxBleServerConnection {
                         return new GattServerTransaction<>(descriptor, serverResponseTransaction);
                     }
                 })
-                .subscribeOn(callbackScheduler)
+                .subscribeOn(connectionScheduler)
                 .subscribe(valueRelay);
         compositeDisposable.add(disposable);
     }
@@ -371,7 +375,7 @@ public class RxBleServerConnectionImpl implements RxBleServerConnection {
                         return new GattServerTransaction<>(characteristic.getUuid(), serverResponseTransaction);
                     }
                 })
-                .subscribeOn(callbackScheduler)
+                .subscribeOn(connectionScheduler)
                 .subscribe(valueRelay);
         compositeDisposable.add(disposable);
     }

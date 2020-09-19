@@ -3,8 +3,6 @@ package com.polidea.rxandroidble2.internal.operations.server;
 import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothGattCharacteristic;
 
-import io.reactivex.Observable;
-
 public interface ServerConnectionOperationsProvider {
     ServerReplyOperation provideReplyOperation(
             BluetoothDevice device,
@@ -17,12 +15,10 @@ public interface ServerConnectionOperationsProvider {
     ServerDisconnectOperation provideDisconnectOperation(BluetoothDevice device);
 
     CharacteristicNotificationOperation provideCharacteristicNotificationOperation(
-            BluetoothGattCharacteristic characteristic,
-            Observable<Integer> notificationCompletedObservable
+            BluetoothGattCharacteristic characteristic
     );
 
     CharacteristicIndicationOperation provideCharacteristicIndicationOperation(
-            BluetoothGattCharacteristic characteristic,
-            Observable<Integer> notificationCompletedObservable
+            BluetoothGattCharacteristic characteristic
     );
 }
