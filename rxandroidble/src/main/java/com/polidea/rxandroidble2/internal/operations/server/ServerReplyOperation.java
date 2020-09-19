@@ -64,12 +64,12 @@ public class ServerReplyOperation extends QueueOperation<Boolean> {
                 return bluetoothGattServer.sendResponse(device, requestID, status, offset, value);
             }
         })
+                .observeOn(bluetoothInteractionScheduler)
                 .timeout(
                         timeoutConfiguration.timeout,
                         timeoutConfiguration.timeoutTimeUnit,
                         timeoutConfiguration.timeoutScheduler
                 )
-                .subscribeOn(bluetoothInteractionScheduler)
                 .subscribe(emitterWrapper);
 
     }
