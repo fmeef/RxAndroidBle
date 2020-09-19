@@ -366,10 +366,11 @@ public class RxBleServerConnectionInternalImpl implements RxBleServerConnectionI
             final BluetoothGattDescriptor descriptor,
             int requestID,
             int offset, BluetoothDevice device,
-            PublishRelay<GattServerTransaction<BluetoothGattDescriptor>> valueRelay
+            PublishRelay<GattServerTransaction<BluetoothGattDescriptor>> valueRelay,
+            byte[] value
     ) {
         Disposable disposable = serverTransactionFactory.prepareCharacteristicTransaction(
-                descriptor.getValue(),
+                value,
                 requestID,
                 offset,
                 device
@@ -391,10 +392,11 @@ public class RxBleServerConnectionInternalImpl implements RxBleServerConnectionI
             final BluetoothGattCharacteristic characteristic,
             int requestID,
             int offset, BluetoothDevice device,
-            PublishRelay<GattServerTransaction<UUID>> valueRelay
+            PublishRelay<GattServerTransaction<UUID>> valueRelay,
+            byte[] value
     ) {
         Disposable disposable = serverTransactionFactory.prepareCharacteristicTransaction(
-                characteristic.getValue(),
+                value,
                 requestID,
                 offset,
                 device
