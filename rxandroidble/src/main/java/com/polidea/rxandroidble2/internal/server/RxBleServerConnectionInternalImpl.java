@@ -53,6 +53,7 @@ public class RxBleServerConnectionInternalImpl implements RxBleServerConnectionI
     private final CompositeDisposable compositeDisposable = new CompositeDisposable();
     private final ServerConfig serverConfig;
     private final BluetoothGattServerProvider gattServerProvider;
+    private final RxBleServerState serverState;
 
     private final Function<BleException, Observable<?>> errorMapper = new Function<BleException, Observable<?>>() {
         @Override
@@ -70,7 +71,8 @@ public class RxBleServerConnectionInternalImpl implements RxBleServerConnectionI
         ServerDisconnectionRouter disconnectionRouter,
         ServerTransactionFactory serverTransactionFactory,
         ServerConfig serverConfig,
-        BluetoothGattServerProvider serverProvider
+        BluetoothGattServerProvider serverProvider,
+        RxBleServerState serverState
 
     ) {
         this.connectionScheduler = connectionScheduler;
@@ -81,6 +83,7 @@ public class RxBleServerConnectionInternalImpl implements RxBleServerConnectionI
         this.serverTransactionFactory = serverTransactionFactory;
         this.serverConfig = serverConfig;
         this.gattServerProvider = serverProvider;
+        this.serverState = serverState;
     }
 
 
@@ -260,12 +263,18 @@ public class RxBleServerConnectionInternalImpl implements RxBleServerConnectionI
                     device,
                     BleGattServerOperationType.NOTIFICATION_SENT
             ));
-
         }
+
         return notifications
-                .concatMap(new Function<byte[], ObservableSource<Integer>>() {
+                .takeWhile(new Predicate<byte[]>() {
                     @Override
-                    public ObservableSource<Integer> apply(byte[] bytes) throws Exception {
+                    public boolean test(byte[] bytes) throws Exception {
+                        return serverState.getNotifications(characteristic.getUuid());
+                    }
+                })
+                .concatMap(new Function<byte[], ObservableSource<? extends Integer>>() {
+                    @Override
+                    public ObservableSource<? extends Integer> apply(byte[] bytes) throws Exception {
                         Log.v("debug", "scheduling CharacteristicNotificationOperation length " + bytes.length);
                         CharacteristicNotificationOperation operation = operationsProvider.provideCharacteristicNotificationOperation(
                                 characteristic,
@@ -273,7 +282,8 @@ public class RxBleServerConnectionInternalImpl implements RxBleServerConnectionI
                         );
                         return operationQueue.queue(operation);
                     }
-                }).delay(0, TimeUnit.SECONDS, connectionScheduler);
+                })
+               .delay(0, TimeUnit.SECONDS, connectionScheduler);
     }
 
     private <T> Observable<T> withDisconnectionHandling(Output<T> output) {
