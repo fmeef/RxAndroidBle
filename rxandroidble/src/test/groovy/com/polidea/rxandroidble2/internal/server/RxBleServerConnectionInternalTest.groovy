@@ -72,7 +72,8 @@ public class RxBleServerConnectionInternalTest extends Specification {
                 bluetoothDevice,
                 disconnectionRouter,
                 serverTransactionFactory,
-                Mock(ServerConfig)
+                Mock(ServerConfig),
+                Mock(BluetoothGattServerProvider)
         )
     }
 
