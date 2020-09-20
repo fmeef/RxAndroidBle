@@ -2,6 +2,8 @@ package com.polidea.rxandroidble2.internal.connection;
 
 import android.annotation.SuppressLint;
 import android.bluetooth.BluetoothDevice;
+import android.bluetooth.BluetoothGattCharacteristic;
+import android.bluetooth.BluetoothGattDescriptor;
 import android.bluetooth.BluetoothGattServer;
 import android.bluetooth.BluetoothGattService;
 import android.bluetooth.BluetoothManager;
@@ -11,6 +13,7 @@ import android.util.Log;
 import android.util.Pair;
 
 import com.polidea.rxandroidble2.RxBleConnection;
+import com.polidea.rxandroidble2.RxBleServer;
 import com.polidea.rxandroidble2.ServerComponent;
 import com.polidea.rxandroidble2.ServerConfig;
 import com.polidea.rxandroidble2.ServerConnectionComponent;
@@ -93,6 +96,15 @@ public class ServerConnectorImpl implements ServerConnector {
         }
 
         for (Map.Entry<UUID, BluetoothGattService> entry : config.getServices().entrySet()) {
+            for (BluetoothGattCharacteristic characteristic : entry.getValue().getCharacteristics()) {
+                if ((characteristic.getProperties() & BluetoothGattCharacteristic.PROPERTY_NOTIFY) == 0
+                || (characteristic.getProperties() & BluetoothGattCharacteristic.PROPERTY_INDICATE) == 0) {
+                    characteristic.addDescriptor(new BluetoothGattDescriptor(
+                            RxBleServer.CLIENT_CONFIG,
+                            BluetoothGattDescriptor.PERMISSION_WRITE | BluetoothGattDescriptor.PERMISSION_READ
+                    ));
+                }
+            }
             server.addService(entry.getValue());
         }
 
