@@ -3,6 +3,7 @@ package com.polidea.rxandroidble2.internal.util;
 import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothGattCharacteristic;
 import android.bluetooth.BluetoothGattDescriptor;
+import android.util.Log;
 
 import androidx.annotation.NonNull;
 
@@ -34,6 +35,7 @@ public class GattServerTransaction<T> implements ServerResponseTransaction {
 
     @Override
     public Observable<Boolean> sendReply(int status, int offset, byte[] value) {
+        Log.v("debug", "sendreply");
         return second.sendReply(status, offset, value);
     }
 

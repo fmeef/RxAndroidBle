@@ -43,7 +43,6 @@ public interface ServerComponent {
     class NamedSchedulers {
         public static final String BLUETOOTH_SERVER = "server_computation";
         public static final String BLUETOOTH_CONNECTION = "server_connection";
-        public static final String BLUETOOTH_CALLBACK = "server_callback";
         public static final String TIMEOUT = "server_timeout";
         private NamedSchedulers() {
 
@@ -167,12 +166,6 @@ public interface ServerComponent {
         @Provides
         @Named(NamedSchedulers.BLUETOOTH_CONNECTION)
         static Scheduler provideBluetoothConnectionScheduler() {
-            return RxJavaPlugins.createSingleScheduler(new RxBleThreadFactory());
-        }
-
-        @Provides
-        @Named(NamedSchedulers.BLUETOOTH_CALLBACK)
-        static Scheduler provideBluetoothCallbackScheduler() {
             return RxJavaPlugins.createSingleScheduler(new RxBleThreadFactory());
         }
 

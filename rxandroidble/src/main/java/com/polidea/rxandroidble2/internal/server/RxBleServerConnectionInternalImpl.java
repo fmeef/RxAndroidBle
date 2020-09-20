@@ -39,7 +39,6 @@ import io.reactivex.functions.Predicate;
 
 public class RxBleServerConnectionInternalImpl implements RxBleServerConnectionInternal {
     private final Scheduler connectionScheduler;
-    private final Scheduler callbackScheduler;
     private final ServerConnectionOperationsProvider operationsProvider;
     private final ServerConnectionOperationQueue operationQueue;
     private final BluetoothDevice device;
@@ -62,7 +61,6 @@ public class RxBleServerConnectionInternalImpl implements RxBleServerConnectionI
     @Inject
     public RxBleServerConnectionInternalImpl(
         @Named(ServerComponent.NamedSchedulers.BLUETOOTH_CONNECTION) Scheduler connectionScheduler,
-        @Named(ServerComponent.NamedSchedulers.BLUETOOTH_CALLBACK) Scheduler callbackScheduler,
         ServerConnectionOperationsProvider operationsProvider,
         ServerConnectionOperationQueue operationQueue,
         BluetoothDevice device,
@@ -78,7 +76,6 @@ public class RxBleServerConnectionInternalImpl implements RxBleServerConnectionI
         this.disconnectionRouter = disconnectionRouter;
         this.serverTransactionFactory = serverTransactionFactory;
         this.serverConfig = serverConfig;
-        this.callbackScheduler = callbackScheduler;
     }
 
 
@@ -203,7 +200,7 @@ public class RxBleServerConnectionInternalImpl implements RxBleServerConnectionI
         if (output != null) {
             output.valueRelay.onComplete();
             characteristicMultiIndex.remove(requestid);
-            return output.out.delay(0, TimeUnit.SECONDS, callbackScheduler);
+            return output.out.delay(0, TimeUnit.SECONDS, connectionScheduler);
         }
         return Single.never();
     }
@@ -214,7 +211,7 @@ public class RxBleServerConnectionInternalImpl implements RxBleServerConnectionI
         if (output != null) {
             output.valueRelay.onComplete();
             characteristicMultiIndex.remove(requestid);
-            return output.out.delay(0, TimeUnit.SECONDS, callbackScheduler);
+            return output.out.delay(0, TimeUnit.SECONDS, connectionScheduler);
         }
         return Single.never();
     }
@@ -223,7 +220,7 @@ public class RxBleServerConnectionInternalImpl implements RxBleServerConnectionI
     public Single<byte[]> getLongWriteCharacteristicObservable(Integer requestid) {
         LongWriteClosableOutput<byte[]> output = characteristicMultiIndex.get(requestid);
         if (output != null) {
-            return output.out.delay(0, TimeUnit.SECONDS, callbackScheduler);
+            return output.out.delay(0, TimeUnit.SECONDS, connectionScheduler);
         } else {
             return Single.never();
         }
@@ -233,7 +230,7 @@ public class RxBleServerConnectionInternalImpl implements RxBleServerConnectionI
     public Single<byte[]> getLongWriteDescriptorObservable(Integer requestid) {
         LongWriteClosableOutput<byte[]> output = descriptorMultiIndex.get(requestid);
         if (output != null) {
-            return output.out.delay(0, TimeUnit.SECONDS, callbackScheduler);
+            return output.out.delay(0, TimeUnit.SECONDS, connectionScheduler);
         } else {
             return Single.never();
         }
@@ -278,7 +275,7 @@ public class RxBleServerConnectionInternalImpl implements RxBleServerConnectionI
     public Observable<Integer> getOnMtuChanged() {
 
         return withDisconnectionHandling(getChangedMtuOutput())
-                .delay(0, TimeUnit.SECONDS, callbackScheduler);
+                .delay(0, TimeUnit.SECONDS, connectionScheduler);
     }
 
     @Override
@@ -306,7 +303,7 @@ public class RxBleServerConnectionInternalImpl implements RxBleServerConnectionI
                         return uuidGattServerTransaction.getPayload().compareTo(characteristic.getUuid()) == 0;
                     }
                 })
-                .delay(0, TimeUnit.SECONDS, callbackScheduler);
+                .delay(0, TimeUnit.SECONDS, connectionScheduler);
     }
 
     @Override
@@ -318,7 +315,8 @@ public class RxBleServerConnectionInternalImpl implements RxBleServerConnectionI
                         return uuidGattServerTransaction.getPayload().compareTo(characteristic.getUuid()) == 0;
                     }
                 })
-                .delay(0, TimeUnit.SECONDS, callbackScheduler);
+                .subscribeOn(connectionScheduler)
+                .delay(0, TimeUnit.SECONDS, connectionScheduler);
     }
 
     @Override
@@ -332,7 +330,7 @@ public class RxBleServerConnectionInternalImpl implements RxBleServerConnectionI
                                 .compareTo(descriptor.getUuid()) == 0;
                     }
                 })
-                .delay(0, TimeUnit.SECONDS, callbackScheduler);
+                .delay(0, TimeUnit.SECONDS, connectionScheduler);
     }
 
     @Override
@@ -348,7 +346,7 @@ public class RxBleServerConnectionInternalImpl implements RxBleServerConnectionI
                                 .compareTo(descriptor.getCharacteristic().getUuid()) == 0;
                     }
                 })
-                .delay(0, TimeUnit.SECONDS, callbackScheduler);
+                .delay(0, TimeUnit.SECONDS, connectionScheduler);
     }
 
     @Override
