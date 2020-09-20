@@ -255,7 +255,9 @@ public class RxBleServerConnectionInternalImpl implements RxBleServerConnectionI
     }
 
     @Override
-    public Observable<Integer> setupNotifications(final BluetoothGattCharacteristic characteristic, Observable<byte[]> notifications) {
+    public Observable<Integer> setupNotifications(
+            final BluetoothGattCharacteristic characteristic, final Observable<byte[]> notifications
+    ) {
         final BluetoothGattDescriptor clientconfig = characteristic.getDescriptor(RxBleServer.CLIENT_CONFIG);
         if (clientconfig == null) {
             return Observable.error(new BleGattServerException(
@@ -264,26 +266,37 @@ public class RxBleServerConnectionInternalImpl implements RxBleServerConnectionI
                     BleGattServerOperationType.NOTIFICATION_SENT
             ));
         }
+        return getOnDescriptorWriteRequest(clientconfig)
+                .flatMap(new Function<GattServerTransaction<BluetoothGattDescriptor>, ObservableSource<Integer>>() {
+                    @Override
+                    public ObservableSource<Integer> apply(GattServerTransaction<BluetoothGattDescriptor> transaction) throws Exception {
+                        if (Arrays.equals(transaction.getValue(), BluetoothGattDescriptor.ENABLE_NOTIFICATION_VALUE)) {
+                            return notifications
+                                    .takeWhile(new Predicate<byte[]>() {
+                                        @Override
+                                        public boolean test(byte[] bytes) throws Exception {
+                                            return serverState.getNotifications(characteristic.getUuid());
+                                        }
+                                    })
+                                    .concatMap(new Function<byte[], ObservableSource<? extends Integer>>() {
+                                        @Override
+                                        public ObservableSource<? extends Integer> apply(byte[] bytes) throws Exception {
+                                            Log.v("debug", "scheduling CharacteristicNotificationOperation length "
+                                                    + bytes.length);
+                                            CharacteristicNotificationOperation operation
+                                                    = operationsProvider.provideCharacteristicNotificationOperation(
+                                                    characteristic,
+                                                    bytes
+                                            );
+                                            return operationQueue.queue(operation);
+                                        }
 
-        return notifications
-                .takeWhile(new Predicate<byte[]>() {
-                    @Override
-                    public boolean test(byte[] bytes) throws Exception {
-                        return serverState.getNotifications(characteristic.getUuid());
+                                    });
+                        } else {
+                            return Observable.empty();
+                        }
                     }
-                })
-                .concatMap(new Function<byte[], ObservableSource<? extends Integer>>() {
-                    @Override
-                    public ObservableSource<? extends Integer> apply(byte[] bytes) throws Exception {
-                        Log.v("debug", "scheduling CharacteristicNotificationOperation length " + bytes.length);
-                        CharacteristicNotificationOperation operation = operationsProvider.provideCharacteristicNotificationOperation(
-                                characteristic,
-                                bytes
-                        );
-                        return operationQueue.queue(operation);
-                    }
-                })
-               .delay(0, TimeUnit.SECONDS, connectionScheduler);
+                }).delay(0, TimeUnit.SECONDS, connectionScheduler);
     }
 
     private <T> Observable<T> withDisconnectionHandling(Output<T> output) {
