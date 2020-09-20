@@ -20,6 +20,8 @@ import com.polidea.rxandroidble2.internal.serialization.RxBleThreadFactory;
 import com.polidea.rxandroidble2.internal.serialization.ServerOperationQueue;
 import com.polidea.rxandroidble2.internal.serialization.ServerOperationQueueImpl;
 import com.polidea.rxandroidble2.internal.server.BluetoothGattServerProvider;
+import com.polidea.rxandroidble2.internal.server.RxBleServerState;
+import com.polidea.rxandroidble2.internal.server.RxBleServerStateImpl;
 
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -198,6 +200,9 @@ public interface ServerComponent {
         @ServerScope
         abstract ServerConnector bindServerConnector(ServerConnectorImpl serverConnector);
 
+        @Binds
+        @ServerScope
+        abstract RxBleServerState bindServerState(RxBleServerStateImpl serverState);
 
         @Binds
         abstract ServerOperationQueue bindServerOperationQueue(ServerOperationQueueImpl operationQueue);
