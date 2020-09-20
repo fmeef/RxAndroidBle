@@ -259,7 +259,7 @@ public class RxBleServerConnectionInternalImpl implements RxBleServerConnectionI
                         );
                         return operationQueue.queue(operation);
                     }
-                });
+                }).delay(0, TimeUnit.SECONDS, connectionScheduler);
     }
 
     private <T> Observable<T> withDisconnectionHandling(Output<T> output) {
