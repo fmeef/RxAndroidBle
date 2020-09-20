@@ -15,8 +15,12 @@ import com.polidea.rxandroidble2.internal.QueueOperation;
 import com.polidea.rxandroidble2.internal.connection.RxBleGattCallback;
 import com.polidea.rxandroidble2.internal.operations.TimeoutConfiguration;
 import com.polidea.rxandroidble2.internal.serialization.QueueReleaseInterface;
+import com.polidea.rxandroidble2.internal.util.QueueReleasingEmitterWrapper;
+
+import java.util.concurrent.Callable;
 
 import bleshadow.javax.inject.Named;
+import io.reactivex.Observable;
 import io.reactivex.ObservableEmitter;
 import io.reactivex.Scheduler;
 import io.reactivex.Single;
@@ -54,14 +58,13 @@ public class ServerReplyOperation extends QueueOperation<Boolean> {
     @Override
     protected void protectedRun(ObservableEmitter<Boolean> emitter, QueueReleaseInterface queueReleaseInterface) throws Throwable {
         Log.v("debug", "serverResponseTransaction id: " + requestID);
-        if (!bluetoothGattServer.sendResponse(device, requestID, status, offset, value)) {
-            emitter.onError(new BleGattServerException(bluetoothGattServer, device, BleGattServerOperationType.REPLY));
-            emitter.onNext(false);
-        } else {
-            emitter.onNext(true);
-        }
-        emitter.onComplete();
-        queueReleaseInterface.release();
+        final QueueReleasingEmitterWrapper<Boolean> emitterWrapper = new QueueReleasingEmitterWrapper<>(emitter, queueReleaseInterface);
+        Observable.fromCallable(new Callable<Boolean>() {
+            @Override
+            public Boolean call() throws Exception {
+                return bluetoothGattServer.sendResponse(device, requestID, status, offset, value);
+            }
+        }).subscribe(emitterWrapper);
     }
 
     @Override

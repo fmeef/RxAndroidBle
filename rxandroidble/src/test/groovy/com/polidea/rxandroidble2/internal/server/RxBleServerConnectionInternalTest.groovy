@@ -24,7 +24,6 @@ public class RxBleServerConnectionInternalTest extends Specification {
     public static long DEFAULT_WRITE_DELAY = 1
     UUID testUuid = UUID.randomUUID()
     TestScheduler testScheduler = new TestScheduler()
-    TestScheduler callbackScheduler = new TestScheduler()
     ServerConnectionOperationsProvider operationsProvider
     ServerConnectionOperationQueue dummyQueue = new DummyOperationQueue()
     ServerDisconnectionRouter disconnectionRouter = Mock ServerDisconnectionRouter
@@ -68,7 +67,6 @@ public class RxBleServerConnectionInternalTest extends Specification {
 
         objectUnderTest = new RxBleServerConnectionInternalImpl(
                 testScheduler,
-                callbackScheduler,
                 operationsProvider,
                 dummyQueue,
                 bluetoothDevice,
@@ -161,7 +159,6 @@ public class RxBleServerConnectionInternalTest extends Specification {
 
     private advanceTimeForWrites(long numberOfWrites) {
         testScheduler.advanceTimeBy(numberOfWrites * DEFAULT_WRITE_DELAY, TimeUnit.SECONDS)
-        callbackScheduler.advanceTimeBy(numberOfWrites * DEFAULT_WRITE_DELAY, TimeUnit.SECONDS)
     }
 
     private advanceTimeForWritesToComplete(long numberOfWrites) {
