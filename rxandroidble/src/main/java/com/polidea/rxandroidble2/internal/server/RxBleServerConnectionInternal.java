@@ -102,6 +102,12 @@ public interface RxBleServerConnectionInternal {
             byte[] value
     );
 
+    Observable<Boolean> blindAck(
+            int requestID,
+            int status,
+            byte[] value
+    );
+
     class Output<T> {
 
         final PublishRelay<T> valueRelay;

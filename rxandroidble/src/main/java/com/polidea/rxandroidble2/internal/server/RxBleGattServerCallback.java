@@ -13,6 +13,7 @@ import android.util.Pair;
 
 import com.jakewharton.rxrelay2.PublishRelay;
 import com.polidea.rxandroidble2.RxBleConnection;
+import com.polidea.rxandroidble2.RxBleServer;
 import com.polidea.rxandroidble2.ServerComponent;
 import com.polidea.rxandroidble2.ServerScope;
 import com.polidea.rxandroidble2.exceptions.BleDisconnectedException;
@@ -37,6 +38,7 @@ public class RxBleGattServerCallback {
     final PublishRelay<Pair<BluetoothDevice, RxBleConnection.RxBleConnectionState>> connectionStatePublishRelay = PublishRelay.create();
     final Scheduler callbackScheduler;
     final CompositeDisposable compositeDisposable = new CompositeDisposable();
+    final RxBleServerState serverState;
     private final BluetoothGattServerProvider gattServerProvider;
 
     private final BluetoothGattServerCallback gattServerCallback = new BluetoothGattServerCallback() {
@@ -159,16 +161,22 @@ public class RxBleGattServerCallback {
                     .subscribe(new Consumer<RxBleServerConnectionInternal>() {
                         @Override
                         public void accept(RxBleServerConnectionInternal connectionInfo) throws Exception {
-
-                            if (connectionInfo.getReadDescriptorOutput().hasObservers()) {
-                                connectionInfo.prepareDescriptorTransaction(
-                                        descriptor,
+                            if (descriptor.getUuid().compareTo(RxBleServer.CLIENT_CONFIG) == 0) {
+                                connectionInfo.blindAck(
                                         requestId,
-                                        offset,
-                                        device,
-                                        connectionInfo.getReadDescriptorOutput().valueRelay,
+                                        BluetoothGatt.GATT_SUCCESS,
                                         null
-                                );
+                                )
+                                .subscribe();
+                            } else if (connectionInfo.getReadDescriptorOutput().hasObservers()) {
+                                    connectionInfo.prepareDescriptorTransaction(
+                                            descriptor,
+                                            requestId,
+                                            offset,
+                                            device,
+                                            connectionInfo.getReadDescriptorOutput().valueRelay,
+                                            null
+                                    );
                             }
                         }
                     });
@@ -194,6 +202,10 @@ public class RxBleGattServerCallback {
                                 RxBleServerConnectionInternal.Output<byte[]> longWriteOutput
                                         = connectionInfo.openLongWriteDescriptorOutput(requestId, descriptor);
                                 longWriteOutput.valueRelay.accept(value); //TODO: offset?
+                            } else if (descriptor.getUuid().compareTo(RxBleServer.CLIENT_CONFIG) == 0) {
+                                serverState.setNotifications(descriptor.getCharacteristic().getUuid(), value);
+                                connectionInfo.blindAck(requestId, BluetoothGatt.GATT_SUCCESS, null)
+                                        .subscribe();
                             } else if (connectionInfo.getWriteDescriptorOutput().hasObservers()) {
                                 connectionInfo.prepareDescriptorTransaction(
                                         descriptor,
@@ -286,10 +298,12 @@ public class RxBleGattServerCallback {
     @Inject
     public RxBleGattServerCallback(
             @Named(ServerComponent.NamedSchedulers.BLUETOOTH_SERVER) Scheduler callbackScheduler,
-            BluetoothGattServerProvider gattServerProvider
+            BluetoothGattServerProvider gattServerProvider,
+            RxBleServerState serverState
     ) {
         this.callbackScheduler = callbackScheduler;
         this.gattServerProvider = gattServerProvider;
+        this.serverState = serverState;
     }
 
     static RxBleConnection.RxBleConnectionState mapConnectionStateToRxBleConnectionStatus(int newState) {

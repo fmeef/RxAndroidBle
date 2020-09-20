@@ -424,4 +424,15 @@ public class RxBleServerConnectionInternalImpl implements RxBleServerConnectionI
                 .subscribe(valueRelay);
         compositeDisposable.add(disposable);
     }
+
+    @Override
+    public Observable<Boolean> blindAck(int requestID, int status, byte[] value) {
+        return operationQueue.queue(operationsProvider.provideReplyOperation(
+                device,
+                requestID,
+                status,
+                0,
+                value
+        ));
+    }
 }
