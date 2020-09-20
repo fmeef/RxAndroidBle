@@ -9,6 +9,7 @@ import androidx.annotation.NonNull;
 
 import com.jakewharton.rxrelay2.PublishRelay;
 import com.polidea.rxandroidble2.RxBleConnection;
+import com.polidea.rxandroidble2.RxBleServer;
 import com.polidea.rxandroidble2.ServerComponent;
 import com.polidea.rxandroidble2.ServerConfig;
 import com.polidea.rxandroidble2.ServerResponseTransaction;
@@ -16,6 +17,7 @@ import com.polidea.rxandroidble2.ServerTransactionFactory;
 import com.polidea.rxandroidble2.exceptions.BleDisconnectedException;
 import com.polidea.rxandroidble2.exceptions.BleException;
 import com.polidea.rxandroidble2.exceptions.BleGattServerException;
+import com.polidea.rxandroidble2.exceptions.BleGattServerOperationType;
 import com.polidea.rxandroidble2.internal.operations.server.CharacteristicNotificationOperation;
 import com.polidea.rxandroidble2.internal.operations.server.ServerConnectionOperationsProvider;
 import com.polidea.rxandroidble2.internal.serialization.ServerConnectionOperationQueue;
@@ -50,6 +52,7 @@ public class RxBleServerConnectionInternalImpl implements RxBleServerConnectionI
     final ServerTransactionFactory serverTransactionFactory;
     private final CompositeDisposable compositeDisposable = new CompositeDisposable();
     private final ServerConfig serverConfig;
+    private final BluetoothGattServerProvider gattServerProvider;
 
     private final Function<BleException, Observable<?>> errorMapper = new Function<BleException, Observable<?>>() {
         @Override
@@ -66,7 +69,8 @@ public class RxBleServerConnectionInternalImpl implements RxBleServerConnectionI
         BluetoothDevice device,
         ServerDisconnectionRouter disconnectionRouter,
         ServerTransactionFactory serverTransactionFactory,
-        ServerConfig serverConfig
+        ServerConfig serverConfig,
+        BluetoothGattServerProvider serverProvider
 
     ) {
         this.connectionScheduler = connectionScheduler;
@@ -76,6 +80,7 @@ public class RxBleServerConnectionInternalImpl implements RxBleServerConnectionI
         this.disconnectionRouter = disconnectionRouter;
         this.serverTransactionFactory = serverTransactionFactory;
         this.serverConfig = serverConfig;
+        this.gattServerProvider = serverProvider;
     }
 
 
@@ -248,6 +253,15 @@ public class RxBleServerConnectionInternalImpl implements RxBleServerConnectionI
 
     @Override
     public Observable<Integer> setupNotifications(final BluetoothGattCharacteristic characteristic, Observable<byte[]> notifications) {
+        final BluetoothGattDescriptor clientconfig = characteristic.getDescriptor(RxBleServer.CLIENT_CONFIG);
+        if (clientconfig == null) {
+            return Observable.error(new BleGattServerException(
+                    gattServerProvider.getBluetoothGatt(),
+                    device,
+                    BleGattServerOperationType.NOTIFICATION_SENT
+            ));
+
+        }
         return notifications
                 .concatMap(new Function<byte[], ObservableSource<Integer>>() {
                     @Override
