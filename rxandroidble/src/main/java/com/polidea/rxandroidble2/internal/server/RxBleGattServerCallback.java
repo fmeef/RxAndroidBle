@@ -168,7 +168,9 @@ public class RxBleGattServerCallback {
                                         null
                                 )
                                 .subscribe();
-                            } else if (connectionInfo.getReadDescriptorOutput().hasObservers()) {
+                            }
+
+                            if (connectionInfo.getReadDescriptorOutput().hasObservers()) {
                                     connectionInfo.prepareDescriptorTransaction(
                                             descriptor,
                                             requestId,
@@ -202,19 +204,23 @@ public class RxBleGattServerCallback {
                                 RxBleServerConnectionInternal.Output<byte[]> longWriteOutput
                                         = connectionInfo.openLongWriteDescriptorOutput(requestId, descriptor);
                                 longWriteOutput.valueRelay.accept(value); //TODO: offset?
-                            } else if (descriptor.getUuid().compareTo(RxBleServer.CLIENT_CONFIG) == 0) {
-                                serverState.setNotifications(descriptor.getCharacteristic().getUuid(), value);
-                                connectionInfo.blindAck(requestId, BluetoothGatt.GATT_SUCCESS, null)
-                                        .subscribe();
-                            } else if (connectionInfo.getWriteDescriptorOutput().hasObservers()) {
-                                connectionInfo.prepareDescriptorTransaction(
-                                        descriptor,
-                                        requestId,
-                                        offset,
-                                        device,
-                                        connectionInfo.getWriteDescriptorOutput().valueRelay,
-                                        value
-                                );
+                            }  else {
+                                if (descriptor.getUuid().compareTo(RxBleServer.CLIENT_CONFIG) == 0) {
+                                    serverState.setNotifications(descriptor.getCharacteristic().getUuid(), value);
+                                    connectionInfo.blindAck(requestId, BluetoothGatt.GATT_SUCCESS, null)
+                                            .subscribe();
+                                }
+
+                                if (connectionInfo.getWriteDescriptorOutput().hasObservers()) {
+                                    connectionInfo.prepareDescriptorTransaction(
+                                            descriptor,
+                                            requestId,
+                                            offset,
+                                            device,
+                                            connectionInfo.getWriteDescriptorOutput().valueRelay,
+                                            value
+                                    );
+                                }
                             }
                         }
                     });
