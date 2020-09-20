@@ -17,12 +17,6 @@ public class RxBleServerStateImpl implements RxBleServerState {
     private final ServerConfig serverConfig;
     private final ConcurrentHashMap<UUID, NotificationStatus> notificationState = new ConcurrentHashMap<>();
 
-    enum NotificationStatus {
-        NOTIFICATIONS_INDICATIONS_DISABLED,
-        NOTIFICATIONS_ENABLED,
-        INDICATIONS_ENABLED
-    }
-
     @Inject
     public RxBleServerStateImpl(
             ServerConfig serverConfig
@@ -71,5 +65,17 @@ public class RxBleServerStateImpl implements RxBleServerState {
         } else if (Arrays.equals(value, BluetoothGattDescriptor.DISABLE_NOTIFICATION_VALUE)) {
             disableNotifications(characteristic);
         }
+    }
+
+    @Override
+    public boolean getNotifications(UUID uuid) {
+        NotificationStatus status = notificationState.get(uuid);
+        return status == NotificationStatus.NOTIFICATIONS_ENABLED;
+    }
+
+    @Override
+    public boolean getIndications(UUID uuid) {
+        NotificationStatus status = notificationState.get(uuid);
+        return status == NotificationStatus.INDICATIONS_ENABLED;
     }
 }
