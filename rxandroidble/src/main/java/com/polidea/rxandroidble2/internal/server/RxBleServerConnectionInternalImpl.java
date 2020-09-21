@@ -230,6 +230,26 @@ public class RxBleServerConnectionInternalImpl implements RxBleServerConnectionI
     }
 
     @Override
+    public Single<Integer> indicationSingle(BluetoothGattCharacteristic characteristic, byte[] value) {
+        NotifyCharacteristicChangedOperation operation = operationsProvider.provideNotifyOperation(
+                characteristic,
+                value,
+                true
+        );
+        return operationQueue.queue(operation).firstOrError();
+    }
+
+    @Override
+    public Single<Integer> notificationSingle(BluetoothGattCharacteristic characteristic, byte[] value) {
+        NotifyCharacteristicChangedOperation operation = operationsProvider.provideNotifyOperation(
+                characteristic,
+                value,
+                false
+        );
+        return operationQueue.queue(operation).firstOrError();
+    }
+
+    @Override
     public Observable<Integer> setupIndication(BluetoothGattCharacteristic characteristic, Observable<byte[]> indications) {
         return setupNotifications(characteristic, indications, true);
     }

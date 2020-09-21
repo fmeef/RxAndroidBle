@@ -11,6 +11,7 @@ import com.polidea.rxandroidble2.internal.util.GattServerTransaction;
 import java.util.UUID;
 
 import io.reactivex.Observable;
+import io.reactivex.Single;
 
 /**
  * BLE connection handle for a single devices connected to the GATT server
@@ -32,6 +33,10 @@ public interface RxBleServerConnection {
     Observable<GattServerTransaction<BluetoothGattDescriptor>> getOnDescriptorReadRequest(BluetoothGattDescriptor descriptor);
 
     Observable<GattServerTransaction<BluetoothGattDescriptor>> getOnDescriptorWriteRequest(BluetoothGattDescriptor descriptor);
+
+    Single<Integer> indicationSingle(BluetoothGattCharacteristic characteristic, byte[] value);
+
+    Single<Integer> notificationSingle(BluetoothGattCharacteristic characteristic, byte[] value);
 
     Observable<Integer> getOnNotification();
 
