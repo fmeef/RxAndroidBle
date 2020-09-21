@@ -18,26 +18,30 @@ import com.polidea.rxandroidble2.internal.util.QueueReleasingEmitterWrapper;
 import io.reactivex.ObservableEmitter;
 import io.reactivex.Single;
 
-public abstract class NotifyCharacteristicChangedOperation extends QueueOperation<Integer> {
+public class NotifyCharacteristicChangedOperation extends QueueOperation<Integer> {
 
     private final BluetoothGattServerProvider serverProvider;
     private final BluetoothGattCharacteristic characteristic;
     private final TimeoutConfiguration timeoutConfiguration;
     private final RxBleServerConnectionInternal connection;
     private final byte[] value;
+    private final boolean isIndication;
+
 
     public NotifyCharacteristicChangedOperation(
             BluetoothGattServerProvider serverProvider,
             BluetoothGattCharacteristic characteristic,
             TimeoutConfiguration timeoutConfiguration,
             RxBleServerConnectionInternal connection,
-            byte[] value
+            byte[] value,
+            boolean isindication
             ) {
         this.serverProvider = serverProvider;
         this.characteristic = characteristic;
         this.timeoutConfiguration = timeoutConfiguration;
         this.connection = connection;
         this.value = value;
+        this.isIndication = isindication;
     }
 
 
@@ -64,14 +68,12 @@ public abstract class NotifyCharacteristicChangedOperation extends QueueOperatio
                     .subscribe(emitterWrapper);
 
             characteristic.setValue(value);
-            if (!server.notifyCharacteristicChanged(connection.getDevice(), characteristic, isIndication())) {
+            if (!server.notifyCharacteristicChanged(connection.getDevice(), characteristic, isIndication)) {
                 emitterWrapper.cancel();
                 emitter.onError(new BleGattServerException(server, connection.getDevice(), BleGattServerOperationType.CONNECTION_STATE));
             }
         }
     }
-
-    public abstract boolean isIndication();
 
     private Single<Integer> getCompleted() {
         return connection.getOnNotification().firstOrError();

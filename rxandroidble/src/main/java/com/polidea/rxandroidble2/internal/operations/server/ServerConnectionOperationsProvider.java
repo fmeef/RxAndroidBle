@@ -14,13 +14,9 @@ public interface ServerConnectionOperationsProvider {
 
     ServerDisconnectOperation provideDisconnectOperation(BluetoothDevice device);
 
-    CharacteristicNotificationOperation provideCharacteristicNotificationOperation(
+    NotifyCharacteristicChangedOperation provideNotifyOperation(
             BluetoothGattCharacteristic characteristic,
-            byte[] value
-    );
-
-    CharacteristicIndicationOperation provideCharacteristicIndicationOperation(
-            BluetoothGattCharacteristic characteristic,
-            byte[] value
+            byte[] value,
+            boolean isIndication
     );
 }
