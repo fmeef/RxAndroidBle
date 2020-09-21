@@ -9,6 +9,7 @@ import androidx.annotation.NonNull;
 import com.jakewharton.rxrelay2.PublishRelay;
 import com.polidea.rxandroidble2.RxBleConnection;
 import com.polidea.rxandroidble2.RxBleServer;
+import com.polidea.rxandroidble2.RxBleServerConnection;
 import com.polidea.rxandroidble2.ServerComponent;
 import com.polidea.rxandroidble2.ServerConfig;
 import com.polidea.rxandroidble2.ServerResponseTransaction;
@@ -38,7 +39,7 @@ import io.reactivex.functions.BiFunction;
 import io.reactivex.functions.Function;
 import io.reactivex.functions.Predicate;
 
-public class RxBleServerConnectionInternalImpl implements RxBleServerConnectionInternal {
+public class RxBleServerConnectionInternalImpl implements RxBleServerConnectionInternal, RxBleServerConnection {
     private final Scheduler connectionScheduler;
     private final ServerConnectionOperationsProvider operationsProvider;
     private final ServerConnectionOperationQueue operationQueue;
@@ -456,5 +457,10 @@ public class RxBleServerConnectionInternalImpl implements RxBleServerConnectionI
                 0,
                 value
         ));
+    }
+
+    @Override
+    public RxBleServerConnection getConnection() {
+        return this;
     }
 }

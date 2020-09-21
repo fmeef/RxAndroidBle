@@ -4,7 +4,6 @@ import android.bluetooth.BluetoothDevice;
 
 import com.polidea.rxandroidble2.exceptions.BleScanException;
 import com.polidea.rxandroidble2.internal.connection.ServerConnector;
-import com.polidea.rxandroidble2.internal.server.RxBleServerConnectionInternal;
 import com.polidea.rxandroidble2.internal.util.RxBleAdapterWrapper;
 import com.polidea.rxandroidble2.internal.util.ServerStateObservable;
 
@@ -70,12 +69,12 @@ public class RxBleServerImpl extends RxBleServer {
     }
 
     @Override
-    public RxBleServerConnectionInternal getConnection(BluetoothDevice device) {
+    public RxBleServerConnection getConnection(BluetoothDevice device) {
         return serverConnector.getConnection(device);
     }
 
     @Override
-    public Observable<RxBleServerConnectionInternal> openServer() {
+    public Observable<RxBleServerConnection> openServer() {
         return serverConnector.subscribeToConnections(); //TODO:
     }
 

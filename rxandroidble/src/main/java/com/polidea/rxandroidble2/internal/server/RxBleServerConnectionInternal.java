@@ -7,6 +7,7 @@ import android.bluetooth.BluetoothGattDescriptor;
 import androidx.annotation.NonNull;
 
 import com.jakewharton.rxrelay2.PublishRelay;
+import com.polidea.rxandroidble2.RxBleServerConnection;
 import com.polidea.rxandroidble2.ServerConnectionScope;
 import com.polidea.rxandroidble2.exceptions.BleGattServerException;
 import com.polidea.rxandroidble2.internal.util.GattServerTransaction;
@@ -81,6 +82,8 @@ public interface RxBleServerConnectionInternal {
     Observable<Integer> getOnNotification();
 
     void disconnect();
+
+    RxBleServerConnection getConnection();
 
     <T> Observable<T> observeDisconnect();
 
