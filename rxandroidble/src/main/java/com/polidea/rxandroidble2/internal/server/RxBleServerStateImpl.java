@@ -62,7 +62,7 @@ public class RxBleServerStateImpl implements RxBleServerState {
             enableNotifications(characteristic);
         } else if (Arrays.equals(value, BluetoothGattDescriptor.ENABLE_INDICATION_VALUE)) {
             enableIndications(characteristic);
-        } else if (Arrays.equals(value, BluetoothGattDescriptor.DISABLE_NOTIFICATION_VALUE)) {
+        } else {
             disableNotifications(characteristic);
         }
     }

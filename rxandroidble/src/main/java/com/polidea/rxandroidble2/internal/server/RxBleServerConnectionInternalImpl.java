@@ -3,7 +3,6 @@ package com.polidea.rxandroidble2.internal.server;
 import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothGattCharacteristic;
 import android.bluetooth.BluetoothGattDescriptor;
-import android.util.Log;
 
 import androidx.annotation.NonNull;
 
@@ -258,6 +257,7 @@ public class RxBleServerConnectionInternalImpl implements RxBleServerConnectionI
     public Observable<Integer> setupNotifications(
             final BluetoothGattCharacteristic characteristic, final Observable<byte[]> notifications
     ) {
+
         final BluetoothGattDescriptor clientconfig = characteristic.getDescriptor(RxBleServer.CLIENT_CONFIG);
         if (clientconfig == null) {
             return Observable.error(new BleGattServerException(
@@ -275,14 +275,13 @@ public class RxBleServerConnectionInternalImpl implements RxBleServerConnectionI
                                     .takeWhile(new Predicate<byte[]>() {
                                         @Override
                                         public boolean test(byte[] bytes) throws Exception {
+
                                             return serverState.getNotifications(characteristic.getUuid());
                                         }
                                     })
                                     .concatMap(new Function<byte[], ObservableSource<? extends Integer>>() {
                                         @Override
                                         public ObservableSource<? extends Integer> apply(byte[] bytes) throws Exception {
-                                            Log.v("debug", "scheduling CharacteristicNotificationOperation length "
-                                                    + bytes.length);
                                             CharacteristicNotificationOperation operation
                                                     = operationsProvider.provideCharacteristicNotificationOperation(
                                                     characteristic,
