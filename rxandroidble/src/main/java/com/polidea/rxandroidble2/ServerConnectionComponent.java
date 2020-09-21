@@ -47,8 +47,11 @@ public interface ServerConnectionComponent {
     @Module(subcomponents = {ServerTransactionComponent.class})
     abstract class ConnectionModule {
         @Binds
+        abstract RxBleServerConnectionInternal bindRxBleServerConnectionInternal(RxBleServerConnectionInternalImpl rxBleServerConnection);
+
+        @Binds
         @ServerConnectionScope
-        abstract RxBleServerConnectionInternal bindRxBleServerConnection(RxBleServerConnectionInternalImpl rxBleServerConnection);
+        abstract RxBleServerConnection bindRxBleServerConnection(RxBleServerConnectionInternalImpl connection);
 
         @Binds
         abstract ServerConnectionOperationQueue bindServerConnectionOperationQueue(ServerConnectionOperationQueueImpl queue);
@@ -99,10 +102,8 @@ public interface ServerConnectionComponent {
 
     }
 
-    @ServerConnectionScope
     Set<ConnectionSubscriptionWatcher> connectionSubscriptionWatchers();
 
-    @ServerConnectionScope
-    RxBleServerConnectionInternal serverConnection();
+    RxBleServerConnectionInternal serverConnectionInternal();
 
 }
