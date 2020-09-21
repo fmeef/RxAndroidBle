@@ -3,7 +3,6 @@ package com.polidea.rxandroidble2.internal.operations.server;
 import android.bluetooth.BluetoothGattCharacteristic;
 import android.bluetooth.BluetoothGattServer;
 import android.os.DeadObjectException;
-import android.util.Log;
 
 import com.polidea.rxandroidble2.exceptions.BleException;
 import com.polidea.rxandroidble2.exceptions.BleGattServerException;
@@ -54,7 +53,7 @@ public abstract class NotifyCharacteristicChangedOperation extends QueueOperatio
             emitterWrapper.cancel();
             emitter.onError(new BleGattServerException(server, connection.getDevice(), BleGattServerOperationType.CONNECTION_STATE));
         } else {
-            Log.v("debug", "NotifyCharacteristicChanged");
+
             getCompleted()
                     .timeout(
                             timeoutConfiguration.timeout,
