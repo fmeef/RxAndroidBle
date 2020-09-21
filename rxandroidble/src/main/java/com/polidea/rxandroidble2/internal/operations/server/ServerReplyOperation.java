@@ -4,7 +4,6 @@ import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothGatt;
 import android.bluetooth.BluetoothGattServer;
 import android.os.DeadObjectException;
-import android.util.Log;
 
 import com.polidea.rxandroidble2.ServerComponent;
 import com.polidea.rxandroidble2.exceptions.BleException;
@@ -57,7 +56,7 @@ public class ServerReplyOperation extends QueueOperation<Boolean> {
 
     @Override
     protected void protectedRun(ObservableEmitter<Boolean> emitter, QueueReleaseInterface queueReleaseInterface) throws Throwable {
-        Log.v("debug", "serverResponseTransaction id: " + requestID);
+
         final QueueReleasingEmitterWrapper<Boolean> emitterWrapper = new QueueReleasingEmitterWrapper<>(emitter, queueReleaseInterface);
         Observable.fromCallable(new Callable<Boolean>() {
             @Override
