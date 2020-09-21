@@ -14,6 +14,7 @@ import android.util.Pair;
 
 import com.polidea.rxandroidble2.RxBleConnection;
 import com.polidea.rxandroidble2.RxBleServer;
+import com.polidea.rxandroidble2.RxBleServerConnection;
 import com.polidea.rxandroidble2.ServerComponent;
 import com.polidea.rxandroidble2.ServerConfig;
 import com.polidea.rxandroidble2.ServerConnectionComponent;
@@ -27,6 +28,7 @@ import com.polidea.rxandroidble2.internal.server.RxBleServerConnectionInternal;
 import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.Callable;
+import java.util.concurrent.ConcurrentHashMap;
 
 import bleshadow.javax.inject.Inject;
 import bleshadow.javax.inject.Named;
@@ -48,6 +50,7 @@ public class ServerConnectorImpl implements ServerConnector {
     private final ServerConnectionComponent.Builder connectionComponentBuilder;
     private final RxBleGattServerCallback rxBleGattServerCallback;
     private final ServerConfig serverConfig;
+    private final ConcurrentHashMap<BluetoothDevice, RxBleServerConnection> localConnectionmap = new ConcurrentHashMap<>();
 
     @Inject
     public ServerConnectorImpl(
@@ -111,28 +114,29 @@ public class ServerConnectorImpl implements ServerConnector {
         return true;
     }
 
-    public Single<RxBleServerConnectionInternal> createConnection(final BluetoothDevice device, final Timeout timeout) {
-        return Single.fromCallable(new Callable<RxBleServerConnectionInternal>() {
+    public Single<RxBleServerConnection> createConnection(final BluetoothDevice device, final Timeout timeout) {
+        return Single.fromCallable(new Callable<RxBleServerConnection>() {
             @Override
-            public RxBleServerConnectionInternal call() throws Exception {
-                RxBleServerConnectionInternal connection = connectionComponentBuilder
+            public RxBleServerConnection call() throws Exception {
+                final ServerConnectionComponent component = connectionComponentBuilder
                         .bluetoothDevice(device)
                         .operationTimeout(timeout)
-                        .build()
-                        .serverConnection();
-                gattServerProvider.updateConnection(device, connection);
-                return connection;
+                        .build();
+
+                RxBleServerConnectionInternal internal = component.serverConnectionInternal();
+                gattServerProvider.updateConnection(device, internal);
+                return internal.getConnection();
             }
         });
     }
 
     @Override
-    public RxBleServerConnectionInternal getConnection(BluetoothDevice device) {
-        return gattServerProvider.getConnection(device);
+    public RxBleServerConnection getConnection(BluetoothDevice device) {
+        return localConnectionmap.get(device);
     }
 
     @Override
-    public Observable<RxBleServerConnectionInternal> subscribeToConnections() {
+    public Observable<RxBleServerConnection> subscribeToConnections() {
         if (gattServerProvider.getBluetoothGatt() == null) {
             BluetoothGattServer bluetoothGattServer = bluetoothManager.openGattServer(
                     context,
@@ -165,19 +169,19 @@ public class ServerConnectorImpl implements ServerConnector {
                 })
                 .flatMap(
                         new Function<Pair<BluetoothDevice, RxBleConnection.RxBleConnectionState>,
-                                ObservableSource<RxBleServerConnectionInternal>>() {
+                                ObservableSource<RxBleServerConnection>>() {
                     @Override
-                    public ObservableSource<RxBleServerConnectionInternal> apply(
+                    public ObservableSource<RxBleServerConnection> apply(
                             Pair<BluetoothDevice, RxBleConnection.RxBleConnectionState> p
                     ) throws Exception {
                         return createConnection(p.first, serverConfig.getOperationTimeout())
                                 .toObservable();
                     }
                 })
-                .map(new Function<RxBleServerConnectionInternal, RxBleServerConnectionInternal>() {
+                .map(new Function<RxBleServerConnection, RxBleServerConnection>() {
                     @SuppressLint("CheckResult")
                     @Override
-                    public RxBleServerConnectionInternal apply(final RxBleServerConnectionInternal connection) throws Exception {
+                    public RxBleServerConnection apply(final RxBleServerConnection connection) throws Exception {
                         connection.observeDisconnect().doOnError(new Consumer<Throwable>() {
                             @Override
                             public void accept(Throwable throwable) throws Exception {
