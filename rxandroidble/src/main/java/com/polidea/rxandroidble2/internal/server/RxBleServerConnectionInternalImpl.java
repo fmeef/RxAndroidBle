@@ -129,11 +129,6 @@ public class RxBleServerConnectionInternalImpl implements RxBleServerConnectionI
     }
 
     @NonNull
-    public PublishRelay<RxBleConnection.RxBleConnectionState> getConnectionStatePublishRelay() {
-        return connectionStatePublishRelay;
-    }
-
-    @NonNull
     @Override
     public Output<Integer> getNotificationPublishRelay() {
         return notificationPublishRelay;
@@ -225,26 +220,6 @@ public class RxBleServerConnectionInternalImpl implements RxBleServerConnectionI
     }
 
     @Override
-    public Single<byte[]> getLongWriteCharacteristicObservable(Integer requestid) {
-        LongWriteClosableOutput<byte[]> output = characteristicMultiIndex.get(requestid);
-        if (output != null) {
-            return output.out.delay(0, TimeUnit.SECONDS, connectionScheduler);
-        } else {
-            return Single.never();
-        }
-    }
-
-    @Override
-    public Single<byte[]> getLongWriteDescriptorObservable(Integer requestid) {
-        LongWriteClosableOutput<byte[]> output = descriptorMultiIndex.get(requestid);
-        if (output != null) {
-            return output.out.delay(0, TimeUnit.SECONDS, connectionScheduler);
-        } else {
-            return Single.never();
-        }
-    }
-
-    @Override
     public void resetDescriptorMap() {
         descriptorMultiIndex.clear();
     }
@@ -322,7 +297,6 @@ public class RxBleServerConnectionInternalImpl implements RxBleServerConnectionI
 
     @Override
     public Observable<Integer> getOnMtuChanged() {
-
         return withDisconnectionHandling(getChangedMtuOutput())
                 .delay(0, TimeUnit.SECONDS, connectionScheduler);
     }
