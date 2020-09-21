@@ -59,25 +59,9 @@ public interface RxBleServerConnectionInternal {
 
     Single<byte[]> closeLongWriteDescriptorOutput(Integer requestid);
 
-    Single<byte[]> getLongWriteCharacteristicObservable(Integer requestid);
-
-    Single<byte[]> getLongWriteDescriptorObservable(Integer requestsid);
-
     void resetDescriptorMap();
 
     void resetCharacteristicMap();
-
-    Observable<Integer> setupNotifications(BluetoothGattCharacteristic characteristic, Observable<byte[]> notifications);
-
-    Observable<Integer> getOnMtuChanged();
-
-    Observable<GattServerTransaction<UUID>> getOnCharacteristicReadRequest(BluetoothGattCharacteristic characteristic);
-
-    Observable<GattServerTransaction<UUID>> getOnCharacteristicWriteRequest(BluetoothGattCharacteristic characteristic);
-
-    Observable<GattServerTransaction<BluetoothGattDescriptor>> getOnDescriptorReadRequest(BluetoothGattDescriptor descriptor);
-
-    Observable<GattServerTransaction<BluetoothGattDescriptor>> getOnDescriptorWriteRequest(BluetoothGattDescriptor descriptor);
 
     Observable<Integer> getOnNotification();
 
