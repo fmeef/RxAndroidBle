@@ -18,7 +18,7 @@ import com.polidea.rxandroidble2.exceptions.BleDisconnectedException;
 import com.polidea.rxandroidble2.exceptions.BleException;
 import com.polidea.rxandroidble2.exceptions.BleGattServerException;
 import com.polidea.rxandroidble2.exceptions.BleGattServerOperationType;
-import com.polidea.rxandroidble2.internal.operations.server.CharacteristicNotificationOperation;
+import com.polidea.rxandroidble2.internal.operations.server.NotifyCharacteristicChangedOperation;
 import com.polidea.rxandroidble2.internal.operations.server.ServerConnectionOperationsProvider;
 import com.polidea.rxandroidble2.internal.serialization.ServerConnectionOperationQueue;
 import com.polidea.rxandroidble2.internal.util.GattServerTransaction;
@@ -255,8 +255,19 @@ public class RxBleServerConnectionInternalImpl implements RxBleServerConnectionI
     }
 
     @Override
+    public Observable<Integer> setupIndication(BluetoothGattCharacteristic characteristic, Observable<byte[]> indications) {
+        return setupNotifications(characteristic, indications, true);
+    }
+
+    @Override
+    public Observable<Integer> setupNotifications(BluetoothGattCharacteristic characteristic, Observable<byte[]> notifications) {
+        return setupNotifications(characteristic, notifications, false);
+    }
+
     public Observable<Integer> setupNotifications(
-            final BluetoothGattCharacteristic characteristic, final Observable<byte[]> notifications
+            final BluetoothGattCharacteristic characteristic,
+            final Observable<byte[]> notifications,
+            final boolean isIndication
     ) {
 
         final BluetoothGattDescriptor clientconfig = characteristic.getDescriptor(RxBleServer.CLIENT_CONFIG);
@@ -283,10 +294,11 @@ public class RxBleServerConnectionInternalImpl implements RxBleServerConnectionI
                                     .concatMap(new Function<byte[], ObservableSource<? extends Integer>>() {
                                         @Override
                                         public ObservableSource<? extends Integer> apply(byte[] bytes) throws Exception {
-                                            CharacteristicNotificationOperation operation
-                                                    = operationsProvider.provideCharacteristicNotificationOperation(
+                                            NotifyCharacteristicChangedOperation operation
+                                                    = operationsProvider.provideNotifyOperation(
                                                     characteristic,
-                                                    bytes
+                                                    bytes,
+                                                    isIndication
                                             );
                                             return operationQueue.queue(operation);
                                         }
