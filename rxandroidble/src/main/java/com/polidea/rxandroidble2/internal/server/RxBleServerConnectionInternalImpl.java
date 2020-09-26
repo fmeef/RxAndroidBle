@@ -274,9 +274,9 @@ public class RxBleServerConnectionInternalImpl implements RxBleServerConnectionI
             ));
         }
         return getOnDescriptorWriteRequest(clientconfig)
-                .flatMap(new Function<GattServerTransaction<BluetoothGattDescriptor>, ObservableSource<Integer>>() {
+                .flatMap(new Function<ServerResponseTransaction, ObservableSource<Integer>>() {
                     @Override
-                    public ObservableSource<Integer> apply(GattServerTransaction<BluetoothGattDescriptor> transaction) throws Exception {
+                    public ObservableSource<Integer> apply(ServerResponseTransaction transaction) throws Exception {
                         if (Arrays.equals(transaction.getValue(), BluetoothGattDescriptor.ENABLE_NOTIFICATION_VALUE)) {
                             return notifications
                                     .takeWhile(new Predicate<byte[]>() {
@@ -322,9 +322,13 @@ public class RxBleServerConnectionInternalImpl implements RxBleServerConnectionI
     }
 
     @Override
-    @NonNull
-    public ServerDisconnectionRouter getDisconnectionRouter() {
-        return disconnectionRouter;
+    public void onGattConnectionStateException(BleGattServerException exception) {
+        disconnectionRouter.onGattConnectionStateException(exception);
+    }
+
+    @Override
+    public void onDisconnectedException(BleDisconnectedException exception) {
+        disconnectionRouter.onDisconnectedException(exception);
     }
 
     /**
@@ -338,7 +342,7 @@ public class RxBleServerConnectionInternalImpl implements RxBleServerConnectionI
     }
 
     @Override
-    public Observable<GattServerTransaction<UUID>> getOnCharacteristicReadRequest(final BluetoothGattCharacteristic characteristic) {
+    public Observable<ServerResponseTransaction> getOnCharacteristicReadRequest(final BluetoothGattCharacteristic characteristic) {
         return withDisconnectionHandling(getReadCharacteristicOutput())
                 .filter(new Predicate<GattServerTransaction<UUID>>() {
                     @Override
@@ -346,11 +350,17 @@ public class RxBleServerConnectionInternalImpl implements RxBleServerConnectionI
                         return uuidGattServerTransaction.getPayload().compareTo(characteristic.getUuid()) == 0;
                     }
                 })
+                .map(new Function<GattServerTransaction<UUID>, ServerResponseTransaction>() {
+                    @Override
+                    public ServerResponseTransaction apply(GattServerTransaction<UUID> uuidGattServerTransaction) throws Exception {
+                        return uuidGattServerTransaction.getTransaction();
+                    }
+                })
                 .delay(0, TimeUnit.SECONDS, connectionScheduler);
     }
 
     @Override
-    public Observable<GattServerTransaction<UUID>> getOnCharacteristicWriteRequest(final BluetoothGattCharacteristic characteristic) {
+    public Observable<ServerResponseTransaction> getOnCharacteristicWriteRequest(final BluetoothGattCharacteristic characteristic) {
         return withDisconnectionHandling(getWriteCharacteristicOutput())
                 .filter(new Predicate<GattServerTransaction<UUID>>() {
                     @Override
@@ -358,12 +368,17 @@ public class RxBleServerConnectionInternalImpl implements RxBleServerConnectionI
                         return uuidGattServerTransaction.getPayload().compareTo(characteristic.getUuid()) == 0;
                     }
                 })
-                .subscribeOn(connectionScheduler)
+                .map(new Function<GattServerTransaction<UUID>, ServerResponseTransaction>() {
+                    @Override
+                    public ServerResponseTransaction apply(GattServerTransaction<UUID> uuidGattServerTransaction) throws Exception {
+                        return uuidGattServerTransaction.getTransaction();
+                    }
+                })
                 .delay(0, TimeUnit.SECONDS, connectionScheduler);
     }
 
     @Override
-    public Observable<GattServerTransaction<BluetoothGattDescriptor>> getOnDescriptorReadRequest(final BluetoothGattDescriptor descriptor) {
+    public Observable<ServerResponseTransaction> getOnDescriptorReadRequest(final BluetoothGattDescriptor descriptor) {
         return withDisconnectionHandling(getReadDescriptorOutput())
                 .filter(new Predicate<GattServerTransaction<BluetoothGattDescriptor>>() {
                     @Override
@@ -373,11 +388,17 @@ public class RxBleServerConnectionInternalImpl implements RxBleServerConnectionI
                                 .compareTo(descriptor.getUuid()) == 0;
                     }
                 })
+                .map(new Function<GattServerTransaction<BluetoothGattDescriptor>, ServerResponseTransaction>() {
+                    @Override
+                    public ServerResponseTransaction apply(GattServerTransaction<BluetoothGattDescriptor> transaction) throws Exception {
+                        return transaction.getTransaction();
+                    }
+                })
                 .delay(0, TimeUnit.SECONDS, connectionScheduler);
     }
 
     @Override
-    public Observable<GattServerTransaction<BluetoothGattDescriptor>> getOnDescriptorWriteRequest(
+    public Observable<ServerResponseTransaction> getOnDescriptorWriteRequest(
             final BluetoothGattDescriptor descriptor
     ) {
         return withDisconnectionHandling(getWriteDescriptorOutput())
@@ -387,6 +408,12 @@ public class RxBleServerConnectionInternalImpl implements RxBleServerConnectionI
                         return transaction.getPayload().getUuid().compareTo(descriptor.getUuid()) == 0
                                 && transaction.getPayload().getCharacteristic().getUuid()
                                 .compareTo(descriptor.getCharacteristic().getUuid()) == 0;
+                    }
+                })
+                .map(new Function<GattServerTransaction<BluetoothGattDescriptor>, ServerResponseTransaction>() {
+                    @Override
+                    public ServerResponseTransaction apply(GattServerTransaction<BluetoothGattDescriptor> transaction) throws Exception {
+                        return transaction.getTransaction();
                     }
                 })
                 .delay(0, TimeUnit.SECONDS, connectionScheduler);
