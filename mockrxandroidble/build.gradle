@@ -35,6 +35,7 @@ dependencies {
     testImplementation rootProject.ext.libs.groovy
     testImplementation rootProject.ext.libs.spock
     testImplementation rootProject.ext.libs.robolectric
+    implementation rootProject.ext.libs.rxrelay
     testImplementation(rootProject.ext.libs.electricspock) {
         exclude group: 'org.robolectric', module: 'android-all'
     }

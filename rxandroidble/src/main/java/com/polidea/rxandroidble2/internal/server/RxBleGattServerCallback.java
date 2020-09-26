@@ -55,14 +55,14 @@ public class RxBleGattServerCallback {
                         public void accept(RxBleServerConnectionInternal connectionInfo) throws Exception {
                             if (newState == BluetoothProfile.STATE_DISCONNECTED
                                     || newState == BluetoothProfile.STATE_DISCONNECTING) {
-                                connectionInfo.getDisconnectionRouter().onDisconnectedException(
+                                connectionInfo.onDisconnectedException(
                                         new BleDisconnectedException(device.getAddress(), status)
                                 );
                             } else {
                                 if (status != BluetoothGatt.GATT_SUCCESS) {
                                     RxBleLog.e("GattServer state change failed %i", status);
                                     //TODO: is this the same as client
-                                    connectionInfo.getDisconnectionRouter().onGattConnectionStateException(
+                                    connectionInfo.onGattConnectionStateException(
                                             new BleGattServerException(status, device, BleGattServerOperationType.CONNECTION_STATE)
                                     );
                                 }

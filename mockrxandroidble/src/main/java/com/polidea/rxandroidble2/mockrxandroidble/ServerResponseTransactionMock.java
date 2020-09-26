@@ -13,17 +13,20 @@ public class ServerResponseTransactionMock implements
     private final int mOffset;
     private final int mRequestid;
     private final byte[] mValue;
+    private final boolean returnval;
 
     public ServerResponseTransactionMock(
             int requestID,
             int offset,
             byte[] value,
-            BluetoothDevice device
+            BluetoothDevice device,
+            boolean returnval
     ) {
         mRequestid = requestID;
         mOffset = offset;
         mValue = value;
         mDevice = device;
+        this.returnval = returnval;
     }
 
     @Override
@@ -38,7 +41,7 @@ public class ServerResponseTransactionMock implements
 
     @Override
     public Observable<Boolean> sendReply(int status, int offset, byte[] value) {
-        return Observable.just(true);
+        return Observable.just(returnval);
     }
 
     @Override

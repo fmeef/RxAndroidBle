@@ -1,6 +1,5 @@
 package com.polidea.rxandroidble2.internal.util;
 
-import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothGattCharacteristic;
 import android.bluetooth.BluetoothGattDescriptor;
 
@@ -10,9 +9,7 @@ import com.polidea.rxandroidble2.ServerResponseTransaction;
 
 import java.util.UUID;
 
-import io.reactivex.Observable;
-
-public class GattServerTransaction<T> implements ServerResponseTransaction {
+public class GattServerTransaction<T> {
 
     public final T first;
     private final ServerResponseTransaction second;
@@ -22,35 +19,8 @@ public class GattServerTransaction<T> implements ServerResponseTransaction {
         this.second = second;
     }
 
-    @Override
-    public int getRequestID() {
-        return second.getRequestID();
-    }
-
-    @Override
-    public int compareTo(ServerResponseTransaction o) {
-        return second.compareTo(o);
-    }
-
-    @Override
-    public Observable<Boolean> sendReply(int status, int offset, byte[] value) {
-
-        return second.sendReply(status, offset, value);
-    }
-
-    @Override
-    public byte[] getValue() {
-        return second.getValue();
-    }
-
-    @Override
-    public BluetoothDevice getRemoteDevice() {
-        return second.getRemoteDevice();
-    }
-
-    @Override
-    public int getOffset() {
-        return second.getOffset();
+    public ServerResponseTransaction getTransaction() {
+        return second;
     }
 
     @Override
