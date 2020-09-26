@@ -6,10 +6,6 @@ import android.bluetooth.BluetoothGattDescriptor;
 
 import androidx.annotation.NonNull;
 
-import com.polidea.rxandroidble2.internal.util.GattServerTransaction;
-
-import java.util.UUID;
-
 import io.reactivex.Observable;
 import io.reactivex.Single;
 
@@ -26,13 +22,13 @@ public interface RxBleServerConnection {
 
     Observable<Integer> getOnMtuChanged();
 
-    Observable<GattServerTransaction<UUID>> getOnCharacteristicReadRequest(BluetoothGattCharacteristic characteristic);
+    Observable<ServerResponseTransaction> getOnCharacteristicReadRequest(BluetoothGattCharacteristic characteristic);
 
-    Observable<GattServerTransaction<UUID>> getOnCharacteristicWriteRequest(BluetoothGattCharacteristic characteristic);
+    Observable<ServerResponseTransaction> getOnCharacteristicWriteRequest(BluetoothGattCharacteristic characteristic);
 
-    Observable<GattServerTransaction<BluetoothGattDescriptor>> getOnDescriptorReadRequest(BluetoothGattDescriptor descriptor);
+    Observable<ServerResponseTransaction> getOnDescriptorReadRequest(BluetoothGattDescriptor descriptor);
 
-    Observable<GattServerTransaction<BluetoothGattDescriptor>> getOnDescriptorWriteRequest(BluetoothGattDescriptor descriptor);
+    Observable<ServerResponseTransaction> getOnDescriptorWriteRequest(BluetoothGattDescriptor descriptor);
 
     Single<Integer> indicationSingle(BluetoothGattCharacteristic characteristic, byte[] value);
 

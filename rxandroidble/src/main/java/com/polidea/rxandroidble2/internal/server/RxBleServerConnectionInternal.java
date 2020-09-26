@@ -9,6 +9,7 @@ import androidx.annotation.NonNull;
 import com.jakewharton.rxrelay2.PublishRelay;
 import com.polidea.rxandroidble2.RxBleServerConnection;
 import com.polidea.rxandroidble2.ServerConnectionScope;
+import com.polidea.rxandroidble2.exceptions.BleDisconnectedException;
 import com.polidea.rxandroidble2.exceptions.BleGattServerException;
 import com.polidea.rxandroidble2.internal.util.GattServerTransaction;
 
@@ -46,8 +47,9 @@ public interface RxBleServerConnectionInternal {
     @NonNull
     BluetoothDevice getDevice();
 
-    @NonNull
-    ServerDisconnectionRouter getDisconnectionRouter();
+    void onGattConnectionStateException(BleGattServerException exception);
+
+    void onDisconnectedException(BleDisconnectedException exception);
 
     @NonNull
     Output<byte[]> openLongWriteCharacteristicOutput(Integer requestid, BluetoothGattCharacteristic characteristic);

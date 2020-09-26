@@ -20,7 +20,7 @@ public class ServerTransactionFactoryMock implements ServerTransactionFactory {
         return Observable.fromCallable(new Callable<ServerResponseTransaction>() {
             @Override
             public ServerResponseTransaction call() throws Exception {
-                ServerResponseTransaction transaction = new ServerResponseTransactionMock(requestID, offset, value, device);
+                ServerResponseTransaction transaction = new ServerResponseTransactionMock(requestID, offset, value, device, true);
                 return transaction;
             }
         });
