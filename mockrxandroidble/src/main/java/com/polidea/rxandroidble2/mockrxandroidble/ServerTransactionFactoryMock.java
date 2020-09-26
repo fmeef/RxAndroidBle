@@ -10,6 +10,13 @@ import java.util.concurrent.Callable;
 import io.reactivex.Observable;
 
 public class ServerTransactionFactoryMock implements ServerTransactionFactory {
+
+    private final boolean response;
+
+    public ServerTransactionFactoryMock(boolean response) {
+        this.response = response;
+    }
+
     @Override
     public Observable<ServerResponseTransaction> prepareCharacteristicTransaction(
             final byte[] value,
@@ -20,7 +27,7 @@ public class ServerTransactionFactoryMock implements ServerTransactionFactory {
         return Observable.fromCallable(new Callable<ServerResponseTransaction>() {
             @Override
             public ServerResponseTransaction call() throws Exception {
-                ServerResponseTransaction transaction = new ServerResponseTransactionMock(requestID, offset, value, device, true);
+                ServerResponseTransaction transaction = new ServerResponseTransactionMock(requestID, offset, value, device, response);
                 return transaction;
             }
         });

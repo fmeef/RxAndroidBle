@@ -99,23 +99,23 @@ public interface RxBleServerConnectionInternal {
 
     class Output<T> {
 
-        final PublishRelay<T> valueRelay;
-        final PublishRelay<BleGattServerException> errorRelay;
+        public final PublishRelay<T> valueRelay;
+        public final PublishRelay<BleGattServerException> errorRelay;
 
         public Output() {
             this.valueRelay = PublishRelay.create();
             this.errorRelay = PublishRelay.create();
         }
 
-        boolean hasObservers() {
+        public boolean hasObservers() {
             return valueRelay.hasObservers() || errorRelay.hasObservers();
         }
     }
 
    class LongWriteClosableOutput<T> extends Output<T> {
 
-        final Subject<T> valueRelay;
-        final SingleSubject<T> out;
+        public final Subject<T> valueRelay;
+        public final SingleSubject<T> out;
 
         public LongWriteClosableOutput() {
             super();

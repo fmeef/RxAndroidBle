@@ -6,22 +6,40 @@ import android.bluetooth.BluetoothGattDescriptor;
 
 import androidx.annotation.NonNull;
 
+import com.jakewharton.rxrelay2.BehaviorRelay;
 import com.jakewharton.rxrelay2.PublishRelay;
 import com.polidea.rxandroidble2.RxBleConnection;
+import com.polidea.rxandroidble2.RxBleServer;
 import com.polidea.rxandroidble2.RxBleServerConnection;
 import com.polidea.rxandroidble2.ServerResponseTransaction;
 import com.polidea.rxandroidble2.exceptions.BleDisconnectedException;
+import com.polidea.rxandroidble2.exceptions.BleException;
 import com.polidea.rxandroidble2.exceptions.BleGattServerException;
+import com.polidea.rxandroidble2.exceptions.BleGattServerOperationType;
+import com.polidea.rxandroidble2.internal.server.MultiIndex;
+import com.polidea.rxandroidble2.internal.server.MultiIndexImpl;
 import com.polidea.rxandroidble2.internal.server.RxBleServerConnectionInternal;
+import com.polidea.rxandroidble2.internal.server.RxBleServerState;
 import com.polidea.rxandroidble2.internal.util.GattServerTransaction;
 
+import java.util.Arrays;
+import java.util.Queue;
 import java.util.UUID;
 
 import io.reactivex.Observable;
+import io.reactivex.ObservableSource;
 import io.reactivex.Single;
+import io.reactivex.disposables.CompositeDisposable;
+import io.reactivex.disposables.Disposable;
+import io.reactivex.functions.BiFunction;
+import io.reactivex.functions.Function;
+import io.reactivex.functions.Predicate;
 
 public class RxBleServerConnectionMock implements RxBleServerConnection, RxBleServerConnectionInternal {
 
+
+    private final BluetoothDevice device;
+    private final RxBleServerState serverState;
 
     private final Output<GattServerTransaction<UUID>> readCharacteristicOutput =
             new Output<>();
@@ -38,25 +56,108 @@ public class RxBleServerConnectionMock implements RxBleServerConnection, RxBleSe
     private final Output<Integer> changedMtuOutput =
             new Output<>();
 
+    private final Queue<Integer> notificationResults;
+    private final Queue<Integer> indicationResults;
 
-    public RxBleServerConnectionMock() {
+    private final MultiIndex<Integer, BluetoothGattCharacteristic, LongWriteClosableOutput<byte[]>>
+            characteristicMultiIndex = new MultiIndexImpl<>();
+    private final MultiIndex<Integer, BluetoothGattDescriptor, LongWriteClosableOutput<byte[]>>
+            descriptorMultiIndex = new MultiIndexImpl<>();
 
+    private final BehaviorRelay<BleException> disconnectionBehaviorRelay = BehaviorRelay.create();
+    private final Observable<Object> disconnectionObservable;
+    private final Observable<BleException> disconnectionExceptionObservable;
+
+    private final CompositeDisposable compositeDisposable = new CompositeDisposable();
+
+    private final ServerTransactionFactoryMock serverTransactionFactory = new ServerTransactionFactoryMock(true);
+
+    private final Function<BleException, Observable<?>> errorMapper = new Function<BleException, Observable<?>>() {
+        @Override
+        public Observable<?> apply(BleException bleGattException) {
+            return Observable.error(bleGattException);
+        }
+    };
+
+    public RxBleServerConnectionMock(
+            BluetoothDevice device,
+            RxBleServerState serverState,
+            Queue<Integer> notificationResults,
+            Queue<Integer> indicationResults
+    ) {
+        this.device = device;
+        this.serverState = serverState;
+        this.notificationResults = notificationResults;
+        this.indicationResults = indicationResults;
+        disconnectionExceptionObservable = disconnectionBehaviorRelay
+                .firstElement()
+                .toObservable()
+                .replay()
+                .autoConnect(0);
+        disconnectionObservable = disconnectionExceptionObservable
+                .flatMap(new Function<BleException, ObservableSource<?>>() {
+                    @Override
+                    public ObservableSource<?> apply(BleException e) throws Exception {
+                        return Observable.error(e);
+                    }
+                });
+    }
+
+    private <T> Observable<T> withDisconnectionHandling(Output<T> output) {
+        //noinspection unchecked
+        return Observable.merge(
+                output.valueRelay,
+                (Observable<T>) output.errorRelay.flatMap(errorMapper)
+        );
     }
 
     @NonNull
     @Override
     public BluetoothDevice getDevice() {
-        return null;
+        return device;
+    }
+
+    public Observable<Integer> setupNotifications(
+        final BluetoothGattCharacteristic characteristic,
+        final Observable<byte[]> notifications,
+        final boolean isIndication
+    ) {
+        final BluetoothGattDescriptor clientConfig = characteristic.getDescriptor(RxBleServer.CLIENT_CONFIG);
+        if (clientConfig == null) {
+            return Observable.error(new BleGattServerException(
+                    null,
+                    device,
+                    BleGattServerOperationType.NOTIFICATION_SENT
+            ));
+        }
+
+        return getOnDescriptorWriteRequest(clientConfig)
+                .flatMap(new Function<ServerResponseTransaction, ObservableSource<Integer>>() {
+                    @Override
+                    public ObservableSource<Integer> apply(ServerResponseTransaction transaction) throws Exception {
+                        return notifications.takeWhile(new Predicate<byte[]>() {
+                            @Override
+                            public boolean test(byte[] bytes) throws Exception {
+                                return serverState.getNotifications(characteristic.getUuid());
+                            }
+                        }).map(new Function<byte[], Integer>() {
+                            @Override
+                            public Integer apply(byte[] bytes) throws Exception {
+                                return notificationResults.remove();
+                            }
+                        });
+                    }
+                });
     }
 
     @Override
     public Observable<Integer> setupNotifications(BluetoothGattCharacteristic characteristic, Observable<byte[]> notifications) {
-        return null;
+        return setupNotifications(characteristic, notifications, false);
     }
 
     @Override
     public Observable<Integer> setupIndication(BluetoothGattCharacteristic characteristic, Observable<byte[]> indications) {
-        return null;
+        return setupNotifications(characteristic, indications, true);
     }
 
     @Override
@@ -68,53 +169,78 @@ public class RxBleServerConnectionMock implements RxBleServerConnection, RxBleSe
     public Observable<ServerResponseTransaction> getOnCharacteristicReadRequest(
             BluetoothGattCharacteristic characteristic
     ) {
-        return null;
+        return withDisconnectionHandling(readCharacteristicOutput)
+                .map(new Function<GattServerTransaction<UUID>, ServerResponseTransaction>() {
+                    @Override
+                    public ServerResponseTransaction apply(GattServerTransaction<UUID> uuidGattServerTransaction) throws Exception {
+                        return uuidGattServerTransaction.getTransaction();
+                    }
+                });
     }
 
     @Override
     public Observable<ServerResponseTransaction> getOnCharacteristicWriteRequest(
             BluetoothGattCharacteristic characteristic
     ) {
-        return null;
+        return withDisconnectionHandling(writeCharacteristicOutput)
+                .map(new Function<GattServerTransaction<UUID>, ServerResponseTransaction>() {
+                    @Override
+                    public ServerResponseTransaction apply(GattServerTransaction<UUID> uuidGattServerTransaction) throws Exception {
+                        return uuidGattServerTransaction.getTransaction();
+                    }
+                });
     }
 
     @Override
     public Observable<ServerResponseTransaction> getOnDescriptorReadRequest(
             BluetoothGattDescriptor descriptor
     ) {
-        return null;
+        return withDisconnectionHandling(readDescriptorOutput)
+                .map(new Function<GattServerTransaction<BluetoothGattDescriptor>, ServerResponseTransaction>() {
+                    @Override
+                    public ServerResponseTransaction apply(GattServerTransaction<BluetoothGattDescriptor> transaction) throws Exception {
+                        return transaction.getTransaction();
+                    }
+                });
     }
 
     @Override
     public Observable<ServerResponseTransaction> getOnDescriptorWriteRequest(
             BluetoothGattDescriptor descriptor
     ) {
-        return null;
+        return withDisconnectionHandling(readDescriptorOutput)
+                .map(new Function<GattServerTransaction<BluetoothGattDescriptor>, ServerResponseTransaction>() {
+                    @Override
+                    public ServerResponseTransaction apply(GattServerTransaction<BluetoothGattDescriptor> transaction) throws Exception {
+                        return transaction.getTransaction();
+                    }
+                });
     }
 
     @Override
     public Single<Integer> indicationSingle(BluetoothGattCharacteristic characteristic, byte[] value) {
-        return null;
+        return Single.just(indicationResults.remove());
     }
 
     @Override
     public Single<Integer> notificationSingle(BluetoothGattCharacteristic characteristic, byte[] value) {
-        return null;
+        return Single.just(notificationResults.remove());
     }
 
     @Override
     public Observable<Integer> getOnNotification() {
-        return null;
+        return Observable.fromIterable(notificationResults);
     }
 
     @Override
     public void disconnect() {
-
+        disconnectionBehaviorRelay.accept(new BleDisconnectedException(device.getAddress(), 0));
     }
 
     @Override
     public <T> Observable<T> observeDisconnect() {
-        return null;
+        //noinspection unchecked
+        return (Observable<T>) disconnectionObservable;
     }
 
     @Override
@@ -160,71 +286,146 @@ public class RxBleServerConnectionMock implements RxBleServerConnection, RxBleSe
 
     @Override
     public void onGattConnectionStateException(BleGattServerException exception) {
-
+        disconnectionBehaviorRelay.accept(exception);
     }
 
     @Override
     public void onDisconnectedException(BleDisconnectedException exception) {
-
+        disconnectionBehaviorRelay.accept(exception);
     }
 
     @NonNull
     @Override
     public Output<byte[]> openLongWriteCharacteristicOutput(Integer requestid, BluetoothGattCharacteristic characteristic) {
-        return null;
+        LongWriteClosableOutput<byte[]> output = characteristicMultiIndex.get(requestid);
+        if (output == null) {
+            output = new LongWriteClosableOutput<>();
+            output.valueRelay
+                    .reduce(new BiFunction<byte[], byte[], byte[]>() {
+                        @Override
+                        public byte[] apply(byte[] first, byte[] second) throws Exception {
+                            byte[] both = Arrays.copyOf(first, first.length + second.length);
+                            System.arraycopy(second, 0, both, first.length, second.length);
+                            return both;
+                        }
+                    })
+                    .toSingle()
+                    .subscribe(output.out);
+            characteristicMultiIndex.put(requestid, output);
+            characteristicMultiIndex.putMulti(characteristic, output);
+        }
+        return output;
     }
 
     @NonNull
     @Override
     public Output<byte[]> openLongWriteDescriptorOutput(Integer requestid, BluetoothGattDescriptor descriptor) {
-        return null;
+        LongWriteClosableOutput<byte[]> output = descriptorMultiIndex.get(requestid);
+        if (output == null) {
+            output = new LongWriteClosableOutput<>();
+            output.valueRelay
+                    .reduce(new BiFunction<byte[], byte[], byte[]>() {
+                        @Override
+                        public byte[] apply(byte[] first, byte[] second) throws Exception {
+                            byte[] both = Arrays.copyOf(first, first.length + second.length);
+                            System.arraycopy(second, 0, both, first.length, second.length);
+                            return both;
+                        }
+                    })
+                    .toSingle()
+                    .subscribe(output.out);
+            descriptorMultiIndex.put(requestid, output);
+            descriptorMultiIndex.putMulti(descriptor, output);
+        }
+        return output;
     }
 
     @Override
     public Single<byte[]> closeLongWriteCharacteristicOutput(Integer requestid) {
-        return null;
+        LongWriteClosableOutput<byte[]> output = characteristicMultiIndex.get(requestid);
+        if (output != null) {
+            output.valueRelay.onComplete();
+            characteristicMultiIndex.remove(requestid);
+            return output.out;
+        }
+        return Single.never();
     }
 
     @Override
     public Single<byte[]> closeLongWriteDescriptorOutput(Integer requestid) {
-        return null;
+        LongWriteClosableOutput<byte[]> output = descriptorMultiIndex.get(requestid);
+        if (output != null) {
+            output.valueRelay.onComplete();
+            characteristicMultiIndex.remove(requestid);
+            return output.out;
+        }
+        return Single.never();
     }
 
     @Override
     public void resetDescriptorMap() {
-
+        descriptorMultiIndex.clear();
     }
 
     @Override
     public void resetCharacteristicMap() {
-
+        characteristicMultiIndex.clear();
     }
 
     @Override
     public RxBleServerConnection getConnection() {
-        return null;
+        return this;
     }
 
     @Override
     public void prepareDescriptorTransaction(
-            BluetoothGattDescriptor descriptor,
+            final BluetoothGattDescriptor descriptor,
             int requestID,
             int offset,
             BluetoothDevice device,
             PublishRelay<GattServerTransaction<BluetoothGattDescriptor>> valueRelay,
             byte[] value
     ) {
+        Disposable disposable = serverTransactionFactory.prepareCharacteristicTransaction(
+                value,
+                requestID,
+                offset,
+                device
+        )
+                .map(new Function<ServerResponseTransaction, GattServerTransaction<BluetoothGattDescriptor>>() {
+                    @Override
+                    public GattServerTransaction<BluetoothGattDescriptor> apply(
+                            ServerResponseTransaction serverResponseTransaction) throws Exception {
+                        return new GattServerTransaction<>(descriptor, serverResponseTransaction);
+                    }
+                })
+                .subscribe(valueRelay);
+        compositeDisposable.add(disposable);
 
     }
 
     @Override
     public void prepareCharacteristicTransaction(
-            BluetoothGattCharacteristic descriptor,
+            final BluetoothGattCharacteristic descriptor,
             int requestID,
             int offset,
             BluetoothDevice device,
-            PublishRelay<GattServerTransaction<UUID>> valueRelay,
+            final PublishRelay<GattServerTransaction<UUID>> valueRelay,
             byte[] value) {
-
+        Disposable disposable = serverTransactionFactory.prepareCharacteristicTransaction(
+                value,
+                requestID,
+                offset,
+                device
+        )
+                .map(new Function<ServerResponseTransaction, GattServerTransaction<UUID>>() {
+                    @Override
+                    public GattServerTransaction<UUID> apply(
+                            ServerResponseTransaction serverResponseTransaction) throws Exception {
+                        return new GattServerTransaction<>(descriptor.getUuid(), serverResponseTransaction);
+                    }
+                })
+                .subscribe(valueRelay);
+        compositeDisposable.add(disposable);
     }
 }
