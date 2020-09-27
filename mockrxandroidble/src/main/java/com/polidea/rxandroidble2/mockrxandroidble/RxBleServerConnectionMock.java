@@ -1,10 +1,12 @@
 package com.polidea.rxandroidble2.mockrxandroidble;
 
 import android.bluetooth.BluetoothDevice;
+import android.bluetooth.BluetoothGatt;
 import android.bluetooth.BluetoothGattCharacteristic;
 import android.bluetooth.BluetoothGattDescriptor;
 
 import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 
 import com.jakewharton.rxrelay2.BehaviorRelay;
 import com.jakewharton.rxrelay2.PublishRelay;
@@ -79,11 +81,11 @@ public class RxBleServerConnectionMock implements RxBleServerConnection, RxBleSe
         }
     };
 
-    public RxBleServerConnectionMock(
+    private RxBleServerConnectionMock(
             BluetoothDevice device,
             RxBleServerState serverState,
-            Queue<Integer> notificationResults,
-            Queue<Integer> indicationResults
+            @Nullable Queue<Integer> notificationResults,
+            @Nullable Queue<Integer> indicationResults
     ) {
         this.device = device;
         this.serverState = serverState;
@@ -143,7 +145,11 @@ public class RxBleServerConnectionMock implements RxBleServerConnection, RxBleSe
                         }).map(new Function<byte[], Integer>() {
                             @Override
                             public Integer apply(byte[] bytes) throws Exception {
-                                return notificationResults.remove();
+                                if (notificationResults != null) {
+                                    return notificationResults.remove();
+                                } else {
+                                    return BluetoothGatt.GATT_SUCCESS;
+                                }
                             }
                         });
                     }
@@ -219,17 +225,29 @@ public class RxBleServerConnectionMock implements RxBleServerConnection, RxBleSe
 
     @Override
     public Single<Integer> indicationSingle(BluetoothGattCharacteristic characteristic, byte[] value) {
-        return Single.just(indicationResults.remove());
+        if (indicationResults != null) {
+            return Single.just(indicationResults.remove());
+        } else {
+            return Single.just(BluetoothGatt.GATT_SUCCESS);
+        }
     }
 
     @Override
     public Single<Integer> notificationSingle(BluetoothGattCharacteristic characteristic, byte[] value) {
-        return Single.just(notificationResults.remove());
+        if (notificationResults != null) {
+            return Single.just(notificationResults.remove());
+        } else {
+            return Single.just(BluetoothGatt.GATT_SUCCESS);
+        }
     }
 
     @Override
     public Observable<Integer> getOnNotification() {
-        return Observable.fromIterable(notificationResults);
+        if (notificationResults != null) {
+            return Observable.fromIterable(notificationResults);
+        } else {
+            return Observable.just(BluetoothGatt.GATT_SUCCESS).repeat();
+        }
     }
 
     @Override
@@ -427,5 +445,50 @@ public class RxBleServerConnectionMock implements RxBleServerConnection, RxBleSe
                 })
                 .subscribe(valueRelay);
         compositeDisposable.add(disposable);
+    }
+
+
+    public static class Builder {
+        private BluetoothDevice device;
+        private Queue<Integer> notificationResults;
+        private Queue<Integer> indicationResults;
+        private RxBleServerState serverState;
+
+        public Builder setBluetoothDevice(BluetoothDevice device) {
+            this.device = device;
+            return this;
+        }
+
+        public Builder setNotificationResults(Queue<Integer> notificationResults) {
+            this.notificationResults = notificationResults;
+            return this;
+        }
+
+        public Builder setIndicationResults(Queue<Integer> indicationResults) {
+            this.indicationResults = indicationResults;
+            return this;
+        }
+
+        public Builder setServerState(RxBleServerState serverState) {
+            this.serverState = serverState;
+            return this;
+        }
+
+        public RxBleServerConnectionMock build() {
+            if (serverState == null) {
+                throw new IllegalArgumentException("serverstate must be specified with setServerState");
+            }
+
+            if (device == null) {
+                throw new IllegalArgumentException("BluetoothDevice must be specififed with setBluetoothDevice");
+            }
+
+            return new RxBleServerConnectionMock(
+                    device,
+                    serverState,
+                    notificationResults,
+                    indicationResults
+            );
+        }
     }
 }
