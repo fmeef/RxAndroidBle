@@ -13,7 +13,11 @@ public class ServerConfig {
     private final Set<BluetoothPhy> phySet = new TreeSet<>();
     private final Timeout operationTimeout;
 
-    public ServerConfig(Timeout operationTimeout) {
+    public static ServerConfig newInstance(Timeout operationTimeout) {
+        return new ServerConfig(operationTimeout);
+    }
+
+    private ServerConfig(Timeout operationTimeout) {
         this.operationTimeout = operationTimeout;
     }
 
@@ -23,20 +27,24 @@ public class ServerConfig {
         PHY_LE_CODED
     }
 
-    public void addPhy(BluetoothPhy phy) {
+    public ServerConfig addPhy(BluetoothPhy phy) {
         phySet.add(phy);
+        return this;
     }
 
-    public void removePhy(BluetoothPhy phy) {
+    public ServerConfig removePhy(BluetoothPhy phy) {
         phySet.remove(phy);
+        return this;
     }
 
-    public void addService(BluetoothGattService service) {
+    public ServerConfig addService(BluetoothGattService service) {
         serviceList.put(service.getUuid(), service);
+        return this;
     }
 
-    public void removeService(BluetoothGattService service) {
+    public ServerConfig removeService(BluetoothGattService service) {
         serviceList.remove(service.getUuid());
+        return this;
     }
 
     public Timeout getOperationTimeout() {
@@ -50,4 +58,5 @@ public class ServerConfig {
     public Set<BluetoothPhy> getPhySet() {
         return phySet;
     }
+
 }
