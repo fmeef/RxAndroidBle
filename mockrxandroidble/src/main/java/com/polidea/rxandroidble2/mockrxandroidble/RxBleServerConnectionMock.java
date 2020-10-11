@@ -28,6 +28,7 @@ import java.util.Arrays;
 import java.util.Queue;
 import java.util.UUID;
 
+import io.reactivex.Completable;
 import io.reactivex.Observable;
 import io.reactivex.ObservableSource;
 import io.reactivex.Single;
@@ -119,14 +120,14 @@ public class RxBleServerConnectionMock implements RxBleServerConnection, RxBleSe
         return device;
     }
 
-    public Observable<Integer> setupNotifications(
+    public Completable setupNotifications(
         final BluetoothGattCharacteristic characteristic,
         final Observable<byte[]> notifications,
         final boolean isIndication
     ) {
         final BluetoothGattDescriptor clientConfig = characteristic.getDescriptor(RxBleServer.CLIENT_CONFIG);
         if (clientConfig == null) {
-            return Observable.error(new BleGattServerException(
+            return Completable.error(new BleGattServerException(
                     null,
                     device,
                     BleGattServerOperationType.NOTIFICATION_SENT
@@ -142,27 +143,40 @@ public class RxBleServerConnectionMock implements RxBleServerConnection, RxBleSe
                             public boolean test(byte[] bytes) throws Exception {
                                 return serverState.getNotifications(characteristic.getUuid());
                             }
-                        }).map(new Function<byte[], Integer>() {
+                        }).flatMap(new Function<byte[], ObservableSource<Integer>>() {
                             @Override
-                            public Integer apply(byte[] bytes) throws Exception {
-                                if (notificationResults != null) {
-                                    return notificationResults.remove();
+                            public ObservableSource<Integer> apply(byte[] bytes) throws Exception {
+                                if (isIndication) {
+                                    if (indicationResults.remove() != BluetoothGatt.GATT_SUCCESS) {
+                                        return Observable.error(new BleGattServerException(
+                                                null,
+                                                device,
+                                                BleGattServerOperationType.NOTIFICATION_SENT
+                                        ));
+                                    }
                                 } else {
-                                    return BluetoothGatt.GATT_SUCCESS;
+                                    if (notificationResults.remove() != BluetoothGatt.GATT_SUCCESS) {
+                                        return Observable.error(new BleGattServerException(
+                                                null,
+                                                device,
+                                                BleGattServerOperationType.NOTIFICATION_SENT
+                                        ));
+                                    }
                                 }
+                                return Observable.empty();
                             }
                         });
                     }
-                });
+                }).ignoreElements();
     }
 
     @Override
-    public Observable<Integer> setupNotifications(BluetoothGattCharacteristic characteristic, Observable<byte[]> notifications) {
+    public Completable setupNotifications(BluetoothGattCharacteristic characteristic, Observable<byte[]> notifications) {
         return setupNotifications(characteristic, notifications, false);
     }
 
     @Override
-    public Observable<Integer> setupIndication(BluetoothGattCharacteristic characteristic, Observable<byte[]> indications) {
+    public Completable setupIndication(BluetoothGattCharacteristic characteristic, Observable<byte[]> indications) {
         return setupNotifications(characteristic, indications, true);
     }
 

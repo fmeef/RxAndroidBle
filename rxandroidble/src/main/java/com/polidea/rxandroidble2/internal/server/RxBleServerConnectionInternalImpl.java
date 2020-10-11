@@ -1,6 +1,7 @@
 package com.polidea.rxandroidble2.internal.server;
 
 import android.bluetooth.BluetoothDevice;
+import android.bluetooth.BluetoothGatt;
 import android.bluetooth.BluetoothGattCharacteristic;
 import android.bluetooth.BluetoothGattDescriptor;
 
@@ -29,6 +30,7 @@ import java.util.concurrent.TimeUnit;
 
 import bleshadow.javax.inject.Inject;
 import bleshadow.javax.inject.Named;
+import io.reactivex.Completable;
 import io.reactivex.Observable;
 import io.reactivex.ObservableSource;
 import io.reactivex.Scheduler;
@@ -250,16 +252,16 @@ public class RxBleServerConnectionInternalImpl implements RxBleServerConnectionI
     }
 
     @Override
-    public Observable<Integer> setupIndication(BluetoothGattCharacteristic characteristic, Observable<byte[]> indications) {
+    public Completable setupIndication(BluetoothGattCharacteristic characteristic, Observable<byte[]> indications) {
         return setupNotifications(characteristic, indications, true);
     }
 
     @Override
-    public Observable<Integer> setupNotifications(BluetoothGattCharacteristic characteristic, Observable<byte[]> notifications) {
+    public Completable setupNotifications(BluetoothGattCharacteristic characteristic, Observable<byte[]> notifications) {
         return setupNotifications(characteristic, notifications, false);
     }
 
-    public Observable<Integer> setupNotifications(
+    public Completable setupNotifications(
             final BluetoothGattCharacteristic characteristic,
             final Observable<byte[]> notifications,
             final boolean isIndication
@@ -267,7 +269,7 @@ public class RxBleServerConnectionInternalImpl implements RxBleServerConnectionI
 
         final BluetoothGattDescriptor clientconfig = characteristic.getDescriptor(RxBleServer.CLIENT_CONFIG);
         if (clientconfig == null) {
-            return Observable.error(new BleGattServerException(
+            return Completable.error(new BleGattServerException(
                     gattServerProvider.getBluetoothGatt(),
                     device,
                     BleGattServerOperationType.NOTIFICATION_SENT
@@ -295,7 +297,21 @@ public class RxBleServerConnectionInternalImpl implements RxBleServerConnectionI
                                                     bytes,
                                                     isIndication
                                             );
-                                            return operationQueue.queue(operation);
+                                            return operationQueue.queue(operation)
+                                                    .flatMap(new Function<Integer, ObservableSource<Integer>>() {
+                                                        @Override
+                                                        public ObservableSource<Integer> apply(Integer integer) throws Exception {
+                                                            if (integer != BluetoothGatt.GATT_SUCCESS) {
+                                                                return Observable.error(new BleGattServerException(
+                                                                        gattServerProvider.getBluetoothGatt(),
+                                                                        device,
+                                                                        BleGattServerOperationType.NOTIFICATION_SENT
+                                                                ));
+                                                            } else {
+                                                                return Observable.just(integer);
+                                                            }
+                                                        }
+                                                    });
                                         }
 
                                     });
@@ -303,7 +319,9 @@ public class RxBleServerConnectionInternalImpl implements RxBleServerConnectionI
                             return Observable.empty();
                         }
                     }
-                }).delay(0, TimeUnit.SECONDS, connectionScheduler);
+                })
+                .ignoreElements()
+                .delay(0, TimeUnit.SECONDS, connectionScheduler);
     }
 
     private <T> Observable<T> withDisconnectionHandling(Output<T> output) {
