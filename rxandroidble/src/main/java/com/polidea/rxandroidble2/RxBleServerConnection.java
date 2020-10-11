@@ -6,6 +6,7 @@ import android.bluetooth.BluetoothGattDescriptor;
 
 import androidx.annotation.NonNull;
 
+import io.reactivex.Completable;
 import io.reactivex.Observable;
 import io.reactivex.Single;
 
@@ -16,9 +17,9 @@ public interface RxBleServerConnection {
     @NonNull
     BluetoothDevice getDevice();
 
-    Observable<Integer> setupNotifications(BluetoothGattCharacteristic characteristic, Observable<byte[]> notifications);
+    Completable setupNotifications(BluetoothGattCharacteristic characteristic, Observable<byte[]> notifications);
 
-    Observable<Integer> setupIndication(BluetoothGattCharacteristic characteristic, Observable<byte[]> indications);
+    Completable setupIndication(BluetoothGattCharacteristic characteristic, Observable<byte[]> indications);
 
     Observable<Integer> getOnMtuChanged();
 
