@@ -2,7 +2,6 @@ package com.polidea.rxandroidble2.internal.server;
 
 import android.bluetooth.BluetoothGattDescriptor;
 
-import com.polidea.rxandroidble2.ServerConfig;
 import com.polidea.rxandroidble2.ServerScope;
 
 import java.util.Arrays;
@@ -14,14 +13,11 @@ import bleshadow.javax.inject.Inject;
 @ServerScope
 public class RxBleServerStateImpl implements RxBleServerState {
 
-    private final ServerConfig serverConfig;
     private final ConcurrentHashMap<UUID, NotificationStatus> notificationState = new ConcurrentHashMap<>();
 
     @Inject
     public RxBleServerStateImpl(
-            ServerConfig serverConfig
     ) {
-        this.serverConfig = serverConfig;
     }
 
     @Override

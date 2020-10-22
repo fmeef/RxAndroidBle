@@ -12,7 +12,6 @@ import com.polidea.rxandroidble2.RxBleConnection;
 import com.polidea.rxandroidble2.RxBleServer;
 import com.polidea.rxandroidble2.RxBleServerConnection;
 import com.polidea.rxandroidble2.ServerComponent;
-import com.polidea.rxandroidble2.ServerConfig;
 import com.polidea.rxandroidble2.ServerResponseTransaction;
 import com.polidea.rxandroidble2.ServerTransactionFactory;
 import com.polidea.rxandroidble2.exceptions.BleDisconnectedException;
@@ -53,7 +52,6 @@ public class RxBleServerConnectionInternalImpl implements RxBleServerConnectionI
     descriptorMultiIndex = new MultiIndexImpl<>();
     final ServerTransactionFactory serverTransactionFactory;
     private final CompositeDisposable compositeDisposable = new CompositeDisposable();
-    private final ServerConfig serverConfig;
     private final BluetoothGattServerProvider gattServerProvider;
     private final RxBleServerState serverState;
 
@@ -72,7 +70,6 @@ public class RxBleServerConnectionInternalImpl implements RxBleServerConnectionI
         BluetoothDevice device,
         ServerDisconnectionRouter disconnectionRouter,
         ServerTransactionFactory serverTransactionFactory,
-        ServerConfig serverConfig,
         BluetoothGattServerProvider serverProvider,
         RxBleServerState serverState
 
@@ -83,7 +80,6 @@ public class RxBleServerConnectionInternalImpl implements RxBleServerConnectionI
         this.operationQueue = operationQueue;
         this.disconnectionRouter = disconnectionRouter;
         this.serverTransactionFactory = serverTransactionFactory;
-        this.serverConfig = serverConfig;
         this.gattServerProvider = serverProvider;
         this.serverState = serverState;
     }
