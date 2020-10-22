@@ -85,9 +85,6 @@ public interface ServerComponent {
         ServerComponent build();
 
         @BindsInstance
-        Builder serverConfig(ServerConfig config);
-
-        @BindsInstance
         Builder applicationContext(Context context);
     }
 
