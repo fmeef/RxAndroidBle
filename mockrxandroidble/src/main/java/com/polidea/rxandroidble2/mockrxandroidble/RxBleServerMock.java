@@ -4,6 +4,7 @@ import android.bluetooth.BluetoothDevice;
 
 import com.polidea.rxandroidble2.RxBleServer;
 import com.polidea.rxandroidble2.RxBleServerConnection;
+import com.polidea.rxandroidble2.ServerConfig;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -29,7 +30,7 @@ public class RxBleServerMock extends RxBleServer {
     }
 
     @Override
-    public Observable<RxBleServerConnection> openServer() {
+    public Observable<RxBleServerConnection> openServer(ServerConfig config) {
         return null;
     }
 

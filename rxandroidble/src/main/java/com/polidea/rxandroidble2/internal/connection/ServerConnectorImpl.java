@@ -49,7 +49,6 @@ public class ServerConnectorImpl implements ServerConnector {
     private final BluetoothManager bluetoothManager;
     private final ServerConnectionComponent.Builder connectionComponentBuilder;
     private final RxBleGattServerCallback rxBleGattServerCallback;
-    private final ServerConfig serverConfig;
     private final ConcurrentHashMap<BluetoothDevice, RxBleServerConnection> localConnectionmap = new ConcurrentHashMap<>();
 
     @Inject
@@ -59,8 +58,7 @@ public class ServerConnectorImpl implements ServerConnector {
             final BluetoothManager bluetoothManager,
             final @Named(ServerComponent.NamedSchedulers.BLUETOOTH_SERVER) Scheduler callbackScheduler,
             ServerConnectionComponent.Builder connectionComponentBuilder,
-            RxBleGattServerCallback rxBleGattServerCallback,
-            ServerConfig serverConfig
+            RxBleGattServerCallback rxBleGattServerCallback
             ) {
         this.context = context;
         this.gattServerProvider = gattServerProvider;
@@ -68,7 +66,6 @@ public class ServerConnectorImpl implements ServerConnector {
         this.callbackScheduler = callbackScheduler;
         this.connectionComponentBuilder = connectionComponentBuilder;
         this.rxBleGattServerCallback = rxBleGattServerCallback;
-        this.serverConfig = serverConfig;
     }
 
     private boolean initializeServer(ServerConfig config) {
@@ -136,7 +133,7 @@ public class ServerConnectorImpl implements ServerConnector {
     }
 
     @Override
-    public Observable<RxBleServerConnection> subscribeToConnections() {
+    public Observable<RxBleServerConnection> subscribeToConnections(final ServerConfig serverConfig) {
         if (gattServerProvider.getBluetoothGatt() == null) {
             BluetoothGattServer bluetoothGattServer = bluetoothManager.openGattServer(
                     context,
