@@ -18,7 +18,6 @@ import io.reactivex.Scheduler;
 @ServerConnectionScope
 public class ServerConnectionOperationsProviderImpl implements ServerConnectionOperationsProvider {
 
-    private final BluetoothGattServerProvider bluetoothGattServer;
     private final Scheduler gattServerScheduler;
     private final BluetoothDevice bluetoothDevice;
     private final RxBleGattServerCallback callback;
@@ -30,7 +29,6 @@ public class ServerConnectionOperationsProviderImpl implements ServerConnectionO
     @Inject
     public ServerConnectionOperationsProviderImpl(
             @Named(ServerComponent.NamedSchedulers.BLUETOOTH_CONNECTION) Scheduler gattServerScheduler,
-            BluetoothGattServerProvider bluetoothGattServer,
             BluetoothDevice bluetoothDevice,
             RxBleGattServerCallback callback,
             BluetoothManager bluetoothManager,
@@ -38,7 +36,6 @@ public class ServerConnectionOperationsProviderImpl implements ServerConnectionO
             BluetoothGattServerProvider serverProvider
     ) {
         this.gattServerScheduler = gattServerScheduler;
-        this.bluetoothGattServer = bluetoothGattServer;
         this.bluetoothDevice = bluetoothDevice;
         this.callback = callback;
         this.bluetoothManager = bluetoothManager;
@@ -59,7 +56,7 @@ public class ServerConnectionOperationsProviderImpl implements ServerConnectionO
         return new ServerReplyOperation(
                 gattServerScheduler,
                 timeoutConfiguration,
-                bluetoothGattServer.getBluetoothGatt(),
+                serverProvider.getBluetoothGatt(),
                 device,
                 requestID,
                 status,
@@ -70,7 +67,7 @@ public class ServerConnectionOperationsProviderImpl implements ServerConnectionO
 
     public ServerDisconnectOperation provideDisconnectOperation(BluetoothDevice device) {
         return new ServerDisconnectOperation(
-                bluetoothGattServer,
+                serverProvider,
                 device,
                 callback,
                 gattServerScheduler,
@@ -86,7 +83,7 @@ public class ServerConnectionOperationsProviderImpl implements ServerConnectionO
             boolean isIndication
     ) {
         return new NotifyCharacteristicChangedOperation(
-                bluetoothGattServer,
+                serverProvider,
                 characteristic,
                 timeoutConfiguration,
                 serverProvider.getConnection(bluetoothDevice),

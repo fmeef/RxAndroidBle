@@ -66,7 +66,6 @@ public class NotifyCharacteristicChangedOperation extends QueueOperation<Integer
                     )
                     .toObservable()
                     .subscribe(emitterWrapper);
-
             characteristic.setValue(value);
             if (!server.notifyCharacteristicChanged(connection.getDevice(), characteristic, isIndication)) {
                 emitterWrapper.cancel();
