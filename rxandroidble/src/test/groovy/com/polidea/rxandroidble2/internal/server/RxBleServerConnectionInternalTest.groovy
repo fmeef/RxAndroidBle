@@ -117,6 +117,12 @@ public class RxBleServerConnectionInternalTest extends Specification {
         indicationres.assertComplete()
     }
 
+
+
+    def "notifications complete when enabled"() {
+
+    }
+
     def "longWriteOutput emits correct value"() {
         when:
         prepCharacteristicLongWriteOutput()

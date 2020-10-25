@@ -57,7 +57,7 @@ public class NotifyCharacteristicChangedOperation extends QueueOperation<Integer
             emitterWrapper.cancel();
             emitter.onError(new BleGattServerException(server, connection.getDevice(), BleGattServerOperationType.CONNECTION_STATE));
         } else {
-
+            RxBleLog.d("running notifycharacteristic");
             getCompleted()
                     .timeout(
                             timeoutConfiguration.timeout,

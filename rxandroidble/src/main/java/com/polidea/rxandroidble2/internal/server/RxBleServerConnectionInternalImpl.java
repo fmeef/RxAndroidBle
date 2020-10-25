@@ -257,21 +257,45 @@ public class RxBleServerConnectionInternalImpl implements RxBleServerConnectionI
                     BleGattServerOperationType.NOTIFICATION_SENT
             ));
         }
-        if (serverState.getIndications(characteristic.getUuid())) {
+        if (serverState.getNotifications(characteristic.getUuid())) {
             return setupNotifications(characteristic, indications, true);
         } else {
-            return getOnDescriptorReadRequest(clientconfig)
-                    .takeWhile(new Predicate<ServerResponseTransaction>() {
-                        @Override
-                        public boolean test(
-                                @io.reactivex.annotations.NonNull ServerResponseTransaction serverResponseTransaction
-                        ) throws Exception {
-                            return Arrays.equals(serverResponseTransaction.getValue(), BluetoothGattDescriptor.ENABLE_NOTIFICATION_VALUE);
-                        }
-                    }).ignoreElements()
+            return setupNotificationsDelay(characteristic, indications, clientconfig)
                     .andThen(setupNotifications(characteristic, indications, true));
 
         }
+    }
+
+    private Completable setupNotificationsDelay(
+            final BluetoothGattCharacteristic characteristic,
+            final Observable<byte[]> notifications,
+            final BluetoothGattDescriptor clientconfig
+    ) {
+        return withDisconnectionHandling(getWriteDescriptorOutput())
+                .filter(new Predicate<GattServerTransaction<BluetoothGattDescriptor>>() {
+                    @Override
+                    public boolean test(GattServerTransaction<BluetoothGattDescriptor> transaction) throws Exception {
+                        return transaction.getPayload().getUuid().compareTo(clientconfig.getUuid()) == 0
+                                && transaction.getPayload().getCharacteristic().getUuid()
+                                .compareTo(clientconfig.getCharacteristic().getUuid()) == 0;
+                    }
+                })
+                .map(new Function<GattServerTransaction<BluetoothGattDescriptor>, ServerResponseTransaction>() {
+                    @Override
+                    public ServerResponseTransaction apply(
+                            GattServerTransaction<BluetoothGattDescriptor> transaction
+                    ) throws Exception {
+                        return transaction.getTransaction();
+                    }
+                })
+                .takeWhile(new Predicate<ServerResponseTransaction>() {
+                    @Override
+                    public boolean test(
+                            @io.reactivex.annotations.NonNull ServerResponseTransaction serverResponseTransaction
+                    ) throws Exception {
+                        return Arrays.equals(serverResponseTransaction.getValue(), BluetoothGattDescriptor.DISABLE_NOTIFICATION_VALUE);
+                    }
+                }).ignoreElements();
     }
 
     @Override
@@ -287,15 +311,7 @@ public class RxBleServerConnectionInternalImpl implements RxBleServerConnectionI
         if (serverState.getNotifications(characteristic.getUuid())) {
             return setupNotifications(characteristic, notifications, false);
         } else {
-            return getOnDescriptorReadRequest(clientconfig)
-                    .takeWhile(new Predicate<ServerResponseTransaction>() {
-                        @Override
-                        public boolean test(
-                                @io.reactivex.annotations.NonNull ServerResponseTransaction serverResponseTransaction
-                        ) throws Exception {
-                            return Arrays.equals(serverResponseTransaction.getValue(), BluetoothGattDescriptor.ENABLE_NOTIFICATION_VALUE);
-                        }
-                    }).ignoreElements()
+            return setupNotificationsDelay(characteristic, notifications, clientconfig)
                     .andThen(setupNotifications(characteristic, notifications, false));
 
         }
@@ -307,13 +323,6 @@ public class RxBleServerConnectionInternalImpl implements RxBleServerConnectionI
             final boolean isIndication
     ) {
         return notifications
-                        .takeWhile(new Predicate<byte[]>() {
-                            @Override
-                            public boolean test(byte[] bytes) throws Exception {
-
-                                return serverState.getNotifications(characteristic.getUuid());
-                            }
-                        })
                         .concatMap(new Function<byte[], ObservableSource<? extends Integer>>() {
                             @Override
                             public ObservableSource<? extends Integer> apply(byte[] bytes) throws Exception {
@@ -340,8 +349,7 @@ public class RxBleServerConnectionInternalImpl implements RxBleServerConnectionI
                                         });
                             }
 
-                        }).ignoreElements()
-                .delay(0, TimeUnit.SECONDS, connectionScheduler);
+                        }).ignoreElements();
     }
 
     private <T> Observable<T> withDisconnectionHandling(Output<T> output) {
