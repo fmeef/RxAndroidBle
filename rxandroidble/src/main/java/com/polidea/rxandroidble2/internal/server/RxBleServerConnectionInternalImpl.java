@@ -248,21 +248,7 @@ public class RxBleServerConnectionInternalImpl implements RxBleServerConnectionI
     }
 
     @Override
-    public Completable setupIndication(BluetoothGattCharacteristic characteristic, Observable<byte[]> indications) {
-        return setupNotifications(characteristic, indications, true);
-    }
-
-    @Override
-    public Completable setupNotifications(BluetoothGattCharacteristic characteristic, Observable<byte[]> notifications) {
-        return setupNotifications(characteristic, notifications, false);
-    }
-
-    public Completable setupNotifications(
-            final BluetoothGattCharacteristic characteristic,
-            final Observable<byte[]> notifications,
-            final boolean isIndication
-    ) {
-
+    public Completable setupIndication(final BluetoothGattCharacteristic characteristic, final Observable<byte[]> indications) {
         final BluetoothGattDescriptor clientconfig = characteristic.getDescriptor(RxBleServer.CLIENT_CONFIG);
         if (clientconfig == null) {
             return Completable.error(new BleGattServerException(
@@ -271,52 +257,90 @@ public class RxBleServerConnectionInternalImpl implements RxBleServerConnectionI
                     BleGattServerOperationType.NOTIFICATION_SENT
             ));
         }
-        return getOnDescriptorWriteRequest(clientconfig)
-                .flatMap(new Function<ServerResponseTransaction, ObservableSource<Integer>>() {
-                    @Override
-                    public ObservableSource<Integer> apply(ServerResponseTransaction transaction) throws Exception {
-                        if (Arrays.equals(transaction.getValue(), BluetoothGattDescriptor.ENABLE_NOTIFICATION_VALUE)) {
-                            return notifications
-                                    .takeWhile(new Predicate<byte[]>() {
-                                        @Override
-                                        public boolean test(byte[] bytes) throws Exception {
-
-                                            return serverState.getNotifications(characteristic.getUuid());
-                                        }
-                                    })
-                                    .concatMap(new Function<byte[], ObservableSource<? extends Integer>>() {
-                                        @Override
-                                        public ObservableSource<? extends Integer> apply(byte[] bytes) throws Exception {
-                                            NotifyCharacteristicChangedOperation operation
-                                                    = operationsProvider.provideNotifyOperation(
-                                                    characteristic,
-                                                    bytes,
-                                                    isIndication
-                                            );
-                                            return operationQueue.queue(operation)
-                                                    .flatMap(new Function<Integer, ObservableSource<Integer>>() {
-                                                        @Override
-                                                        public ObservableSource<Integer> apply(Integer integer) throws Exception {
-                                                            if (integer != BluetoothGatt.GATT_SUCCESS) {
-                                                                return Observable.error(new BleGattServerException(
-                                                                        gattServerProvider.getBluetoothGatt(),
-                                                                        device,
-                                                                        BleGattServerOperationType.NOTIFICATION_SENT
-                                                                ));
-                                                            } else {
-                                                                return Observable.just(integer);
-                                                            }
-                                                        }
-                                                    });
-                                        }
-
-                                    });
-                        } else {
-                            return Observable.empty();
+        if (serverState.getIndications(characteristic.getUuid())) {
+            return setupNotifications(characteristic, indications, true);
+        } else {
+            return getOnDescriptorReadRequest(clientconfig)
+                    .takeWhile(new Predicate<ServerResponseTransaction>() {
+                        @Override
+                        public boolean test(
+                                @io.reactivex.annotations.NonNull ServerResponseTransaction serverResponseTransaction
+                        ) throws Exception {
+                            return Arrays.equals(serverResponseTransaction.getValue(), BluetoothGattDescriptor.ENABLE_NOTIFICATION_VALUE);
                         }
-                    }
-                })
-                .ignoreElements()
+                    }).ignoreElements()
+                    .andThen(setupNotifications(characteristic, indications, true));
+
+        }
+    }
+
+    @Override
+    public Completable setupNotifications(final BluetoothGattCharacteristic characteristic, final Observable<byte[]> notifications) {
+        final BluetoothGattDescriptor clientconfig = characteristic.getDescriptor(RxBleServer.CLIENT_CONFIG);
+        if (clientconfig == null) {
+            return Completable.error(new BleGattServerException(
+                    gattServerProvider.getBluetoothGatt(),
+                    device,
+                    BleGattServerOperationType.NOTIFICATION_SENT
+            ));
+        }
+        if (serverState.getNotifications(characteristic.getUuid())) {
+            return setupNotifications(characteristic, notifications, false);
+        } else {
+            return getOnDescriptorReadRequest(clientconfig)
+                    .takeWhile(new Predicate<ServerResponseTransaction>() {
+                        @Override
+                        public boolean test(
+                                @io.reactivex.annotations.NonNull ServerResponseTransaction serverResponseTransaction
+                        ) throws Exception {
+                            return Arrays.equals(serverResponseTransaction.getValue(), BluetoothGattDescriptor.ENABLE_NOTIFICATION_VALUE);
+                        }
+                    }).ignoreElements()
+                    .andThen(setupNotifications(characteristic, notifications, false));
+
+        }
+    }
+
+    public Completable setupNotifications(
+            final BluetoothGattCharacteristic characteristic,
+            final Observable<byte[]> notifications,
+            final boolean isIndication
+    ) {
+        return notifications
+                        .takeWhile(new Predicate<byte[]>() {
+                            @Override
+                            public boolean test(byte[] bytes) throws Exception {
+
+                                return serverState.getNotifications(characteristic.getUuid());
+                            }
+                        })
+                        .concatMap(new Function<byte[], ObservableSource<? extends Integer>>() {
+                            @Override
+                            public ObservableSource<? extends Integer> apply(byte[] bytes) throws Exception {
+                                NotifyCharacteristicChangedOperation operation
+                                        = operationsProvider.provideNotifyOperation(
+                                        characteristic,
+                                        bytes,
+                                        isIndication
+                                );
+                                return operationQueue.queue(operation)
+                                        .flatMap(new Function<Integer, ObservableSource<Integer>>() {
+                                            @Override
+                                            public ObservableSource<Integer> apply(Integer integer) throws Exception {
+                                                if (integer != BluetoothGatt.GATT_SUCCESS) {
+                                                    return Observable.error(new BleGattServerException(
+                                                            gattServerProvider.getBluetoothGatt(),
+                                                            device,
+                                                            BleGattServerOperationType.NOTIFICATION_SENT
+                                                    ));
+                                                } else {
+                                                    return Observable.just(integer);
+                                                }
+                                            }
+                                        });
+                            }
+
+                        }).ignoreElements()
                 .delay(0, TimeUnit.SECONDS, connectionScheduler);
     }
 
