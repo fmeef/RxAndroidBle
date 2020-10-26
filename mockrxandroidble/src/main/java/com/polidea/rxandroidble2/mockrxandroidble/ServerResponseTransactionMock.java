@@ -4,7 +4,7 @@ import android.bluetooth.BluetoothDevice;
 
 import com.polidea.rxandroidble2.ServerResponseTransaction;
 
-import io.reactivex.Observable;
+import io.reactivex.Completable;
 
 public class ServerResponseTransactionMock implements
         ServerResponseTransaction, Comparable<ServerResponseTransaction> {
@@ -40,8 +40,8 @@ public class ServerResponseTransactionMock implements
     }
 
     @Override
-    public Observable<Boolean> sendReply(int status, int offset, byte[] value) {
-        return Observable.just(returnval);
+    public Completable sendReply(int status, int offset, byte[] value) {
+        return Completable.complete();
     }
 
     @Override
