@@ -4,6 +4,7 @@ import android.bluetooth.BluetoothDevice;
 
 import androidx.annotation.NonNull;
 
+import com.polidea.rxandroidble2.internal.RxBleLog;
 import com.polidea.rxandroidble2.internal.operations.server.ServerConnectionOperationsProvider;
 import com.polidea.rxandroidble2.internal.serialization.ServerConnectionOperationQueue;
 
@@ -45,6 +46,7 @@ public class ServerResponseTransactionImpl implements ServerResponseTransaction,
 
     @Override
     public Observable<Boolean> sendReply(int status, int offset, byte[] value) {
+        RxBleLog.d("sendReply to remote: " + remoteDevice.getAddress());
         return operationQueue.queue(operationsProvider.provideReplyOperation(
                 remoteDevice,
                 requestID,

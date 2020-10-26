@@ -129,8 +129,10 @@ public class RxBleGattServerCallback {
                     .subscribe(new Consumer<RxBleServerConnectionInternal>() {
                         @Override
                         public void accept(RxBleServerConnectionInternal connectionInfo) throws Exception {
-
+                            RxBleLog.d("onCharacteristicWriteRequest characteristic: " + characteristic.getUuid()
+                                    + " device: " + device.getAddress());
                             if (preparedWrite) {
+                                RxBleLog.d("characteristic long write");
                                 RxBleServerConnectionInternal.Output<byte[]> longWriteOuput
                                         = connectionInfo.openLongWriteCharacteristicOutput(requestId, characteristic);
                                 longWriteOuput.valueRelay.accept(value);
@@ -293,10 +295,10 @@ public class RxBleGattServerCallback {
     private synchronized Single<RxBleServerConnectionInternal> getOrCreateConnectionInfo(final BluetoothDevice device) {
         RxBleServerConnectionInternal connection = gattServerProvider.getConnection(device);
         if (connection == null) {
-            RxBleLog.e(TAG, "attempted to get nonexistent connection");
+            RxBleLog.e("attempted to get nonexistent connection");
             return Single.never();
         } else {
-            RxBleLog.e(TAG, "returned connection");
+            RxBleLog.d("returned connection");
             return Single.just(connection);
         }
     }
