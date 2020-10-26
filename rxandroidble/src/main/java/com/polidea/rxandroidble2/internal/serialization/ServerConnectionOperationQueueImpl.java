@@ -1,9 +1,7 @@
 package com.polidea.rxandroidble2.internal.serialization;
 
-import android.bluetooth.BluetoothDevice;
-
 import com.polidea.rxandroidble2.ServerComponent;
-import com.polidea.rxandroidble2.ServerConnectionScope;
+import com.polidea.rxandroidble2.ServerScope;
 import com.polidea.rxandroidble2.exceptions.BleDisconnectedException;
 import com.polidea.rxandroidble2.exceptions.BleException;
 import com.polidea.rxandroidble2.internal.RxBleLog;
@@ -17,13 +15,10 @@ import io.reactivex.Observable;
 import io.reactivex.Scheduler;
 import io.reactivex.observers.DisposableObserver;
 
-import static com.polidea.rxandroidble2.internal.logger.LoggerUtil.commonMacMessage;
-
-@ServerConnectionScope
+@ServerScope
 public class ServerConnectionOperationQueueImpl extends OperationQueueBase implements
         ServerConnectionOperationQueue, ServerOperationQueue, ConnectionSubscriptionWatcher {
 
-    private final BluetoothDevice device;
     private final DisconnectionRouterOutput disconnectionRouterOutput;
     private DisposableObserver<BleException> disconnectionThrowableSubscription;
     private BleException disconnectionException = null;
@@ -32,13 +27,11 @@ public class ServerConnectionOperationQueueImpl extends OperationQueueBase imple
     @Inject
     public ServerConnectionOperationQueueImpl(
             @Named(ServerComponent.NamedSchedulers.BLUETOOTH_SERVER) final Scheduler callbackScheduler,
-            BluetoothDevice device,
             final DisconnectionRouterOutput disconnectionRouterOutput
 
     ) {
         super(callbackScheduler);
         this.disconnectionRouterOutput = disconnectionRouterOutput;
-        this.device = device;
     }
 
     @Override
@@ -52,7 +45,7 @@ public class ServerConnectionOperationQueueImpl extends OperationQueueBase imple
             // already terminated
             return;
         }
-        RxBleLog.d(disconnectException, "Connection operations queue to be terminated (%s)", commonMacMessage(device.getAddress()));
+        RxBleLog.d(disconnectException, "Connection operations queue to be terminated");
         shouldRun = false;
         disconnectionException = disconnectException;
     }
@@ -82,6 +75,6 @@ public class ServerConnectionOperationQueueImpl extends OperationQueueBase imple
     public void onConnectionUnsubscribed() {
         disconnectionThrowableSubscription.dispose();
         disconnectionThrowableSubscription = null;
-        terminate(new BleDisconnectedException(device.getAddress(), BleDisconnectedException.UNKNOWN_STATUS));
+        terminate(new BleDisconnectedException("server"));
     }
 }
