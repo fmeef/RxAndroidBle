@@ -4,12 +4,15 @@ import android.bluetooth.BluetoothDevice;
 
 import androidx.annotation.NonNull;
 
+import com.polidea.rxandroidble2.exceptions.BleException;
 import com.polidea.rxandroidble2.internal.RxBleLog;
 import com.polidea.rxandroidble2.internal.operations.server.ServerConnectionOperationsProvider;
 import com.polidea.rxandroidble2.internal.serialization.ServerConnectionOperationQueue;
 
 import bleshadow.javax.inject.Inject;
-import io.reactivex.Observable;
+import io.reactivex.Completable;
+import io.reactivex.CompletableSource;
+import io.reactivex.functions.Function;
 
 @ServerTransactionScope
 public class ServerResponseTransactionImpl implements ServerResponseTransaction, Comparable<ServerResponseTransaction> {
@@ -45,7 +48,7 @@ public class ServerResponseTransactionImpl implements ServerResponseTransaction,
     }
 
     @Override
-    public Observable<Boolean> sendReply(int status, int offset, byte[] value) {
+    public Completable sendReply(int status, int offset, byte[] value) {
         RxBleLog.d("sendReply to remote: " + remoteDevice.getAddress());
         return operationQueue.queue(operationsProvider.provideReplyOperation(
                 remoteDevice,
@@ -53,7 +56,16 @@ public class ServerResponseTransactionImpl implements ServerResponseTransaction,
                 status,
                 offset,
                 value
-        ));
+        )).flatMapCompletable(new Function<Boolean, CompletableSource>() {
+            @Override
+            public CompletableSource apply(@io.reactivex.annotations.NonNull Boolean aBoolean) throws Exception {
+                if (aBoolean) {
+                    return Completable.complete();
+                } else {
+                    return Completable.error(new BleException("reply failed"));
+                }
+            }
+        });
     }
 
     @NonNull
