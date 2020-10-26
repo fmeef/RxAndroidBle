@@ -19,7 +19,7 @@ import io.reactivex.functions.Predicate;
 
 public class RxBleServerImpl extends RxBleServer {
     @Deprecated
-    public static final String TAG = "RxBleCglient";
+    public static final String TAG = "RxBleServer";
     private final RxBleAdapterWrapper rxBleAdapterWrapper;
     private final Observable<RxBleAdapterStateObservable.BleAdapterState> rxBleAdapterStateObservable;
     private final Lazy<ServerStateObservable> lazyServerStateObservable;

@@ -1,10 +1,8 @@
 package com.polidea.rxandroidble2.internal.server;
 
-import android.bluetooth.BluetoothDevice;
-
 import com.jakewharton.rxrelay2.BehaviorRelay;
 import com.polidea.rxandroidble2.RxBleAdapterStateObservable;
-import com.polidea.rxandroidble2.ServerConnectionScope;
+import com.polidea.rxandroidble2.ServerScope;
 import com.polidea.rxandroidble2.exceptions.BleDisconnectedException;
 import com.polidea.rxandroidble2.exceptions.BleException;
 import com.polidea.rxandroidble2.exceptions.BleGattServerException;
@@ -22,7 +20,7 @@ import io.reactivex.functions.Consumer;
 import io.reactivex.functions.Function;
 import io.reactivex.functions.Predicate;
 
-@ServerConnectionScope
+@ServerScope
 public class ServerDisconnectionRouter implements DisconnectionRouterInput<BleGattServerException>, DisconnectionRouterOutput {
     private final BehaviorRelay<BleException> bleExceptionBehaviorRelay = BehaviorRelay.create();
     private final Observable<BleException> firstDisconnectionValueObs;
@@ -30,7 +28,6 @@ public class ServerDisconnectionRouter implements DisconnectionRouterInput<BleGa
 
     @Inject
     ServerDisconnectionRouter(
-            final BluetoothDevice bluetoothDevice,
             final RxBleAdapterWrapper adapterWrapper,
             final Observable<RxBleAdapterStateObservable.BleAdapterState> adapterStateObservable
             ) {
@@ -38,7 +35,7 @@ public class ServerDisconnectionRouter implements DisconnectionRouterInput<BleGa
                 .map(new Function<Boolean, BleException>() {
                     @Override
                     public BleException apply(Boolean isAdapterUsable) {
-                        return BleDisconnectedException.adapterDisabled(bluetoothDevice.getAddress());
+                        return BleDisconnectedException.adapterDisabled("changethis");
                     }
                 })
                 .doOnNext(new Consumer<BleException>() {
