@@ -2,9 +2,6 @@ package com.polidea.rxandroidble2.exceptions;
 
 import android.annotation.SuppressLint;
 import android.bluetooth.BluetoothDevice;
-import android.bluetooth.BluetoothGattServer;
-
-import androidx.annotation.Nullable;
 
 import com.polidea.rxandroidble2.utils.GattStatusParser;
 
@@ -15,15 +12,17 @@ public class BleGattServerException extends BleException {
     private final BluetoothDevice device;
 
     public BleGattServerException(int status, BluetoothDevice device, BleGattServerOperationType bleGattOperationType) {
-        super(createMessage(null, status, bleGattOperationType));
+        super(createMessage(status, bleGattOperationType));
         this.status = status;
         this.device = device;
         this.bleGattOperationType = bleGattOperationType;
     }
 
-    public BleGattServerException(BluetoothGattServer gatt,
-                                  BluetoothDevice device,
-                                  BleGattServerOperationType bleGattOperationType) {
+    public BleGattServerException(
+            BluetoothDevice device,
+            BleGattServerOperationType bleGattOperationType,
+            String reason
+    ) {
         this(UNKNOWN_STATUS, device, bleGattOperationType);
     }
 
@@ -36,11 +35,7 @@ public class BleGattServerException extends BleException {
     }
 
     @SuppressLint("DefaultLocale")
-    private static String createMessage(@Nullable BluetoothGattServer gatt, int status, BleGattServerOperationType bleGattOperationType) {
-        if (status == UNKNOWN_STATUS) {
-            return "GATT Server exception (unknown)";
-        }
-
+    private static String createMessage(int status, BleGattServerOperationType bleGattOperationType) {
         final String statusDescription = GattStatusParser.getGattCallbackStatusDescription(status);
         final String link
                 = "https://android.googlesource.com/platform/external/bluetooth/bluedroid/+/android-5.1.0_r1/stack/include/gatt_api.h";

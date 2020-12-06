@@ -68,7 +68,7 @@ public class ServerReplyOperation extends QueueOperation<Boolean> {
 
     @Override
     protected BleException provideException(DeadObjectException deadObjectException) {
-        return new BleGattServerException(bluetoothGattServer, device, BleGattServerOperationType.REPLY);
+        return new BleGattServerException(device, BleGattServerOperationType.REPLY, "ServerReplyOperation failed");
     }
 
     @SuppressWarnings("unused")
@@ -78,9 +78,9 @@ public class ServerReplyOperation extends QueueOperation<Boolean> {
             Scheduler timeoutScheduler
     ) {
         return Single.error(new BleGattServerCallbackTimeoutException(
-                bluetoothGattServer,
                 device,
-                BleGattServerOperationType.REPLY
+                BleGattServerOperationType.REPLY,
+                "ServerReplyOperation timed out"
         ));
     }
 
