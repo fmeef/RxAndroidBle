@@ -128,9 +128,9 @@ public class RxBleServerConnectionMock implements RxBleServerConnection, RxBleSe
         final BluetoothGattDescriptor clientConfig = characteristic.getDescriptor(RxBleServer.CLIENT_CONFIG);
         if (clientConfig == null) {
             return Completable.error(new BleGattServerException(
-                    null,
                     device,
-                    BleGattServerOperationType.NOTIFICATION_SENT
+                    BleGattServerOperationType.NOTIFICATION_SENT,
+                    "clientConfig is null"
             ));
         }
 
@@ -149,17 +149,17 @@ public class RxBleServerConnectionMock implements RxBleServerConnection, RxBleSe
                                 if (isIndication) {
                                     if (indicationResults.remove() != BluetoothGatt.GATT_SUCCESS) {
                                         return Observable.error(new BleGattServerException(
-                                                null,
                                                 device,
-                                                BleGattServerOperationType.NOTIFICATION_SENT
+                                                BleGattServerOperationType.NOTIFICATION_SENT,
+                                                "GATT_FAILURE"
                                         ));
                                     }
                                 } else {
                                     if (notificationResults.remove() != BluetoothGatt.GATT_SUCCESS) {
                                         return Observable.error(new BleGattServerException(
-                                                null,
                                                 device,
-                                                BleGattServerOperationType.NOTIFICATION_SENT
+                                                BleGattServerOperationType.NOTIFICATION_SENT,
+                                                "GATT_FAILURE"
                                         ));
                                     }
                                 }

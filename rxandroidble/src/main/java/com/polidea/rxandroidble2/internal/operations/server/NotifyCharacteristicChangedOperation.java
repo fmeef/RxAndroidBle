@@ -55,7 +55,12 @@ public class NotifyCharacteristicChangedOperation extends QueueOperation<Integer
         if (server == null) {
             RxBleLog.w("NotificationSendOperation encountered null gatt server");
             emitterWrapper.cancel();
-            emitter.onError(new BleGattServerException(server, connection.getDevice(), BleGattServerOperationType.CONNECTION_STATE));
+            emitter.onError(new BleGattServerException(
+                    connection.getDevice(),
+                    BleGattServerOperationType.CONNECTION_STATE,
+                    "server handle was null in NotifyCharacteristicChangedOperation"
+                    )
+            );
         } else {
             RxBleLog.d("running notifycharacteristic");
             getCompleted()
@@ -69,7 +74,11 @@ public class NotifyCharacteristicChangedOperation extends QueueOperation<Integer
             characteristic.setValue(value);
             if (!server.notifyCharacteristicChanged(connection.getDevice(), characteristic, isIndication)) {
                 emitterWrapper.cancel();
-                emitter.onError(new BleGattServerException(server, connection.getDevice(), BleGattServerOperationType.CONNECTION_STATE));
+                emitter.onError(new BleGattServerException(
+                        connection.getDevice(),
+                        BleGattServerOperationType.CONNECTION_STATE,
+                        "NotifyCharacteristicChangedOperation failed"
+                ));
             }
         }
     }
