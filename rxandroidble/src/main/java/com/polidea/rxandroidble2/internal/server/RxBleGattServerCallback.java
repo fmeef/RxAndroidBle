@@ -63,7 +63,12 @@ public class RxBleGattServerCallback {
                                     RxBleLog.e("GattServer state change failed %i", status);
                                     //TODO: is this the same as client
                                     connectionInfo.onGattConnectionStateException(
-                                            new BleGattServerException(status, device, BleGattServerOperationType.CONNECTION_STATE)
+                                            new BleGattServerException(
+                                                    status,
+                                                    device,
+                                                    BleGattServerOperationType.CONNECTION_STATE,
+                                                    "onConnectionStateChange GATT_FAILURE"
+                                            )
                                     );
                                 }
                             }
