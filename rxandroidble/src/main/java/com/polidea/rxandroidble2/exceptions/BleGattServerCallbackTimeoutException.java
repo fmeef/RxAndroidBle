@@ -11,9 +11,11 @@ import android.bluetooth.BluetoothGattServer;
  */
 public class BleGattServerCallbackTimeoutException extends BleGattServerException {
 
-    public BleGattServerCallbackTimeoutException(BluetoothGattServer gatt,
+    public BleGattServerCallbackTimeoutException(
                                                  BluetoothDevice device,
-                                                 BleGattServerOperationType bleGattOperationType) {
-        super(gatt, device, bleGattOperationType);
+                                                 BleGattServerOperationType bleGattOperationType,
+                                                 String reason
+    ) {
+        super(device, bleGattOperationType, reason);
     }
 }

@@ -13,7 +13,7 @@ public class BleGattServerDescriptorException extends BleGattServerException {
             int status,
             BleGattServerOperationType bleGattOperationType
     ) {
-        super(status, device, bleGattOperationType);
+        super(status, device, bleGattOperationType, "descriptor exception");
         this.descriptor = descriptor;
     }
 }

@@ -252,9 +252,9 @@ public class RxBleServerConnectionInternalImpl implements RxBleServerConnectionI
         final BluetoothGattDescriptor clientconfig = characteristic.getDescriptor(RxBleServer.CLIENT_CONFIG);
         if (clientconfig == null) {
             return Completable.error(new BleGattServerException(
-                    gattServerProvider.getBluetoothGatt(),
                     device,
-                    BleGattServerOperationType.NOTIFICATION_SENT
+                    BleGattServerOperationType.NOTIFICATION_SENT,
+                    "client config was null when setting up indication"
             ));
         }
         if (serverState.getNotifications(characteristic.getUuid())) {
@@ -303,9 +303,9 @@ public class RxBleServerConnectionInternalImpl implements RxBleServerConnectionI
         final BluetoothGattDescriptor clientconfig = characteristic.getDescriptor(RxBleServer.CLIENT_CONFIG);
         if (clientconfig == null) {
             return Completable.error(new BleGattServerException(
-                    gattServerProvider.getBluetoothGatt(),
                     device,
-                    BleGattServerOperationType.NOTIFICATION_SENT
+                    BleGattServerOperationType.NOTIFICATION_SENT,
+                    "client config was null when setting up notifications"
             ));
         }
         if (serverState.getNotifications(characteristic.getUuid())) {
@@ -338,9 +338,9 @@ public class RxBleServerConnectionInternalImpl implements RxBleServerConnectionI
                                             public ObservableSource<Integer> apply(Integer integer) throws Exception {
                                                 if (integer != BluetoothGatt.GATT_SUCCESS) {
                                                     return Observable.error(new BleGattServerException(
-                                                            gattServerProvider.getBluetoothGatt(),
                                                             device,
-                                                            BleGattServerOperationType.NOTIFICATION_SENT
+                                                            BleGattServerOperationType.NOTIFICATION_SENT,
+                                                            "setupNotifications did did not return GATT_SUCCESS"
                                                     ));
                                                 } else {
                                                     return Observable.just(integer);

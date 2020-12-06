@@ -13,7 +13,7 @@ public class BleGattServerCharacteristicException extends BleGattServerException
             int status,
             BleGattServerOperationType bleGattOperationType
     ) {
-        super(status, device, bleGattOperationType);
+        super(status, device, bleGattOperationType, "characteristic exception");
         this.characteristic = characteristic;
     }
 }
