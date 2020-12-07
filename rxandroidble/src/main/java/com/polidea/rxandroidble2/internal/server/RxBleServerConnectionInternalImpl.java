@@ -24,12 +24,15 @@ import com.polidea.rxandroidble2.internal.operations.server.ServerConnectionOper
 import com.polidea.rxandroidble2.internal.serialization.ServerConnectionOperationQueue;
 import com.polidea.rxandroidble2.internal.util.GattServerTransaction;
 
+import org.reactivestreams.Publisher;
+
 import java.util.Arrays;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 
 import bleshadow.javax.inject.Inject;
 import bleshadow.javax.inject.Named;
+import io.reactivex.BackpressureStrategy;
 import io.reactivex.Completable;
 import io.reactivex.CompletableSource;
 import io.reactivex.Flowable;
@@ -325,9 +328,9 @@ public class RxBleServerConnectionInternalImpl implements RxBleServerConnectionI
         RxBleLog.d("setupNotifictions: " + characteristic.getUuid());
         return notifications
                 .subscribeOn(connectionScheduler)
-                .concatMapCompletable(new Function<byte[], CompletableSource>() {
+                .concatMap(new Function<byte[], Publisher<Integer>>() {
                             @Override
-                            public CompletableSource apply(@io.reactivex.annotations.NonNull byte[] bytes) throws Exception {
+                            public Publisher<Integer> apply(@io.reactivex.annotations.NonNull byte[] bytes) throws Exception {
                                 RxBleLog.d("processing bytes length: " + bytes.length);
                                 NotifyCharacteristicChangedOperation operation
                                         = operationsProvider.provideNotifyOperation(
@@ -335,23 +338,40 @@ public class RxBleServerConnectionInternalImpl implements RxBleServerConnectionI
                                         bytes,
                                         isIndication
                                 );
-                                return operationQueue.queue(operation)
-                                        .flatMapCompletable(new Function<Integer, CompletableSource>() {
-                                            @Override
-                                            public CompletableSource apply(Integer integer) throws Exception {
-                                                if (integer != BluetoothGatt.GATT_SUCCESS) {
-                                                    return Completable.error(new BleGattServerException(
-                                                            device,
-                                                            BleGattServerOperationType.NOTIFICATION_SENT,
-                                                            "setupNotifications did did not return GATT_SUCCESS"
-                                                    ));
-                                                } else {
-                                                    return Completable.complete();
-                                                }
-                                            }
-                                        });
+                                return operationQueue.queue(operation).toFlowable(BackpressureStrategy.BUFFER);
                             }
-                        });
+                        })
+                .reduce(new BiFunction<Integer, Integer, Integer>() {
+                    @io.reactivex.annotations.NonNull
+                    @Override
+                    public Integer apply(
+                            @io.reactivex.annotations.NonNull Integer integer,
+                            @io.reactivex.annotations.NonNull Integer integer2
+                    ) throws Exception {
+                        if (integer != BluetoothGatt.GATT_SUCCESS) {
+                            return integer;
+                        } else if (integer2 != BluetoothGatt.GATT_SUCCESS) {
+                            return integer2;
+                        } else {
+                            return BluetoothGatt.GATT_SUCCESS;
+                        }
+                    }
+                })
+                .flatMapCompletable(new Function<Integer, CompletableSource>() {
+                    @Override
+                    public CompletableSource apply(@io.reactivex.annotations.NonNull Integer integer) throws Exception {
+                        if (integer == BluetoothGatt.GATT_SUCCESS) {
+                            return Completable.complete();
+                        } else {
+                            return Completable.error(new BleGattServerException(
+                                    integer,
+                                    device,
+                                    BleGattServerOperationType.NOTIFICATION_SENT,
+                                    "failed to send notification"
+                            ));
+                        }
+                    }
+                });
     }
 
     private <T> Observable<T> withDisconnectionHandling(Output<T> output) {
