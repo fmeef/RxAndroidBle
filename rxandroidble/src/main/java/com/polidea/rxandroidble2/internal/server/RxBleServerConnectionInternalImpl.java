@@ -18,12 +18,11 @@ import com.polidea.rxandroidble2.exceptions.BleDisconnectedException;
 import com.polidea.rxandroidble2.exceptions.BleException;
 import com.polidea.rxandroidble2.exceptions.BleGattServerException;
 import com.polidea.rxandroidble2.exceptions.BleGattServerOperationType;
+import com.polidea.rxandroidble2.internal.RxBleLog;
 import com.polidea.rxandroidble2.internal.operations.server.NotifyCharacteristicChangedOperation;
 import com.polidea.rxandroidble2.internal.operations.server.ServerConnectionOperationsProvider;
 import com.polidea.rxandroidble2.internal.serialization.ServerConnectionOperationQueue;
 import com.polidea.rxandroidble2.internal.util.GattServerTransaction;
-
-import org.reactivestreams.Publisher;
 
 import java.util.Arrays;
 import java.util.UUID;
@@ -31,11 +30,10 @@ import java.util.concurrent.TimeUnit;
 
 import bleshadow.javax.inject.Inject;
 import bleshadow.javax.inject.Named;
-import io.reactivex.BackpressureStrategy;
 import io.reactivex.Completable;
+import io.reactivex.CompletableSource;
 import io.reactivex.Flowable;
 import io.reactivex.Observable;
-import io.reactivex.ObservableSource;
 import io.reactivex.Scheduler;
 import io.reactivex.Single;
 import io.reactivex.disposables.CompositeDisposable;
@@ -324,10 +322,12 @@ public class RxBleServerConnectionInternalImpl implements RxBleServerConnectionI
             final Flowable<byte[]> notifications,
             final boolean isIndication
     ) {
+        RxBleLog.d("setupNotifictions: " + characteristic.getUuid());
         return notifications
-                        .concatMap(new Function<byte[], Publisher<?>>() {
+                        .concatMapCompletable(new Function<byte[], CompletableSource>() {
                             @Override
-                            public Publisher<?> apply(@io.reactivex.annotations.NonNull byte[] bytes) throws Exception {
+                            public CompletableSource apply(@io.reactivex.annotations.NonNull byte[] bytes) throws Exception {
+                                RxBleLog.d("processing bytes length: " + bytes.length);
                                 NotifyCharacteristicChangedOperation operation
                                         = operationsProvider.provideNotifyOperation(
                                         characteristic,
@@ -335,22 +335,22 @@ public class RxBleServerConnectionInternalImpl implements RxBleServerConnectionI
                                         isIndication
                                 );
                                 return operationQueue.queue(operation)
-                                        .flatMap(new Function<Integer, ObservableSource<Integer>>() {
+                                        .flatMapCompletable(new Function<Integer, CompletableSource>() {
                                             @Override
-                                            public ObservableSource<Integer> apply(Integer integer) throws Exception {
+                                            public CompletableSource apply(Integer integer) throws Exception {
                                                 if (integer != BluetoothGatt.GATT_SUCCESS) {
-                                                    return Observable.error(new BleGattServerException(
+                                                    return Completable.error(new BleGattServerException(
                                                             device,
                                                             BleGattServerOperationType.NOTIFICATION_SENT,
                                                             "setupNotifications did did not return GATT_SUCCESS"
                                                     ));
                                                 } else {
-                                                    return Observable.just(integer);
+                                                    return Completable.complete();
                                                 }
                                             }
-                                        }).toFlowable(BackpressureStrategy.BUFFER);
+                                        });
                             }
-                        }).ignoreElements();
+                        });
     }
 
     private <T> Observable<T> withDisconnectionHandling(Output<T> output) {
