@@ -24,8 +24,6 @@ import com.polidea.rxandroidble2.internal.server.RxBleServerConnectionInternal;
 import com.polidea.rxandroidble2.internal.server.RxBleServerState;
 import com.polidea.rxandroidble2.internal.util.GattServerTransaction;
 
-import org.reactivestreams.Publisher;
-
 import java.util.Arrays;
 import java.util.Queue;
 import java.util.UUID;
@@ -125,7 +123,7 @@ public class RxBleServerConnectionMock implements RxBleServerConnection, RxBleSe
 
     public Completable setupNotifications(
         final BluetoothGattCharacteristic characteristic,
-        final Single<Flowable<byte[]>> notifications,
+        final Flowable<byte[]> notifications,
         final boolean isIndication
     ) {
         final BluetoothGattDescriptor clientConfig = characteristic.getDescriptor(RxBleServer.CLIENT_CONFIG);
@@ -141,17 +139,7 @@ public class RxBleServerConnectionMock implements RxBleServerConnection, RxBleSe
                 .flatMap(new Function<ServerResponseTransaction, ObservableSource<Integer>>() {
                     @Override
                     public ObservableSource<Integer> apply(ServerResponseTransaction transaction) throws Exception {
-                        return notifications
-                                .toFlowable()
-                                .flatMap(new Function<Flowable<byte[]>, Publisher<byte[]>>() {
-                                    @Override
-                                    public Publisher<byte[]> apply(
-                                            @io.reactivex.annotations.NonNull Flowable<byte[]> flowable
-                                    ) throws Exception {
-                                        return flowable;
-                                    }
-                                })
-                                .takeWhile(new Predicate<byte[]>() {
+                        return notifications.takeWhile(new Predicate<byte[]>() {
                             @Override
                             public boolean test(byte[] bytes) throws Exception {
                                 return serverState.getNotifications(characteristic.getUuid());
@@ -184,12 +172,12 @@ public class RxBleServerConnectionMock implements RxBleServerConnection, RxBleSe
     }
 
     @Override
-    public Completable setupNotifications(BluetoothGattCharacteristic characteristic, Single<Flowable<byte[]>> notifications) {
+    public Completable setupNotifications(BluetoothGattCharacteristic characteristic, Flowable<byte[]> notifications) {
         return setupNotifications(characteristic, notifications, false);
     }
 
     @Override
-    public Completable setupIndication(BluetoothGattCharacteristic characteristic, Single<Flowable<byte[]>> indications) {
+    public Completable setupIndication(BluetoothGattCharacteristic characteristic, Flowable<byte[]> indications) {
         return setupNotifications(characteristic, indications, true);
     }
 

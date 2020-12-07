@@ -24,8 +24,6 @@ import com.polidea.rxandroidble2.internal.operations.server.ServerConnectionOper
 import com.polidea.rxandroidble2.internal.serialization.ServerConnectionOperationQueue;
 import com.polidea.rxandroidble2.internal.util.GattServerTransaction;
 
-import org.reactivestreams.Publisher;
-
 import java.util.Arrays;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
@@ -252,7 +250,7 @@ public class RxBleServerConnectionInternalImpl implements RxBleServerConnectionI
     }
 
     @Override
-    public Completable setupIndication(final BluetoothGattCharacteristic characteristic, final Single<Flowable<byte[]>> indications) {
+    public Completable setupIndication(final BluetoothGattCharacteristic characteristic, final Flowable<byte[]> indications) {
         final BluetoothGattDescriptor clientconfig = characteristic.getDescriptor(RxBleServer.CLIENT_CONFIG);
         if (clientconfig == null) {
             return Completable.error(new BleGattServerException(
@@ -301,8 +299,7 @@ public class RxBleServerConnectionInternalImpl implements RxBleServerConnectionI
     }
 
     @Override
-    public Completable setupNotifications(final BluetoothGattCharacteristic characteristic,
-                                          final Single<Flowable<byte[]>> notifications) {
+    public Completable setupNotifications(final BluetoothGattCharacteristic characteristic, final Flowable<byte[]> notifications) {
         final BluetoothGattDescriptor clientconfig = characteristic.getDescriptor(RxBleServer.CLIENT_CONFIG);
         if (clientconfig == null) {
             return Completable.error(new BleGattServerException(
@@ -322,20 +319,13 @@ public class RxBleServerConnectionInternalImpl implements RxBleServerConnectionI
 
     public Completable setupNotifications(
             final BluetoothGattCharacteristic characteristic,
-            final Single<Flowable<byte[]>> notifications,
+            final Flowable<byte[]> notifications,
             final boolean isIndication
     ) {
         RxBleLog.d("setupNotifictions: " + characteristic.getUuid());
         return notifications
-                .toFlowable()
-                .flatMap(new Function<Flowable<byte[]>, Publisher<byte[]>>() {
-                    @Override
-                    public Publisher<byte[]> apply(@io.reactivex.annotations.NonNull Flowable<byte[]> flowable) throws Exception {
-                        return flowable;
-                    }
-                })
                 .subscribeOn(connectionScheduler)
-                    .concatMapCompletable(new Function<byte[], CompletableSource>() {
+                .concatMapCompletable(new Function<byte[], CompletableSource>() {
                             @Override
                             public CompletableSource apply(@io.reactivex.annotations.NonNull byte[] bytes) throws Exception {
                                 RxBleLog.d("processing bytes length: " + bytes.length);

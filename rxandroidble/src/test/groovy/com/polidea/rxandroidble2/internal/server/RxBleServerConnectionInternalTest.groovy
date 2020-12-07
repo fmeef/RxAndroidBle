@@ -14,6 +14,7 @@ import io.reactivex.annotations.NonNull
 import io.reactivex.functions.Predicate
 import io.reactivex.observers.TestObserver
 import io.reactivex.schedulers.TestScheduler
+import io.reactivex.subscribers.TestSubscriber
 import spock.lang.Specification
 
 import java.util.concurrent.TimeUnit
@@ -92,8 +93,8 @@ public class RxBleServerConnectionInternalTest extends Specification {
         BluetoothGattCharacteristic ch = Mock(BluetoothGattCharacteristic)
 
         when:
-        def notif = Single.just(Flowable.just(data).repeat(4))
-        def indicationnotif = Single.just(Flowable.just(data).repeat(4))
+        def notif = Flowable.just(data).repeat(4);
+        def indicationnotif = Flowable.just(data).repeat(4)
         TestObserver res = objectUnderTest.setupNotifications(ch, notif).test();
         TestObserver indicationres = objectUnderTest.setupIndication(ch, indicationnotif).test()
         for (int i=0;i<4*2;i++) {
