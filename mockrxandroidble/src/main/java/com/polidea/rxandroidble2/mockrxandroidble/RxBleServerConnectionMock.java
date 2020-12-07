@@ -29,6 +29,7 @@ import java.util.Queue;
 import java.util.UUID;
 
 import io.reactivex.Completable;
+import io.reactivex.Flowable;
 import io.reactivex.Observable;
 import io.reactivex.ObservableSource;
 import io.reactivex.Single;
@@ -122,7 +123,7 @@ public class RxBleServerConnectionMock implements RxBleServerConnection, RxBleSe
 
     public Completable setupNotifications(
         final BluetoothGattCharacteristic characteristic,
-        final Observable<byte[]> notifications,
+        final Flowable<byte[]> notifications,
         final boolean isIndication
     ) {
         final BluetoothGattDescriptor clientConfig = characteristic.getDescriptor(RxBleServer.CLIENT_CONFIG);
@@ -143,7 +144,7 @@ public class RxBleServerConnectionMock implements RxBleServerConnection, RxBleSe
                             public boolean test(byte[] bytes) throws Exception {
                                 return serverState.getNotifications(characteristic.getUuid());
                             }
-                        }).flatMap(new Function<byte[], ObservableSource<Integer>>() {
+                        }).toObservable().flatMap(new Function<byte[], ObservableSource<Integer>>() {
                             @Override
                             public ObservableSource<Integer> apply(byte[] bytes) throws Exception {
                                 if (isIndication) {
@@ -171,12 +172,12 @@ public class RxBleServerConnectionMock implements RxBleServerConnection, RxBleSe
     }
 
     @Override
-    public Completable setupNotifications(BluetoothGattCharacteristic characteristic, Observable<byte[]> notifications) {
+    public Completable setupNotifications(BluetoothGattCharacteristic characteristic, Flowable<byte[]> notifications) {
         return setupNotifications(characteristic, notifications, false);
     }
 
     @Override
-    public Completable setupIndication(BluetoothGattCharacteristic characteristic, Observable<byte[]> indications) {
+    public Completable setupIndication(BluetoothGattCharacteristic characteristic, Flowable<byte[]> indications) {
         return setupNotifications(characteristic, indications, true);
     }
 
