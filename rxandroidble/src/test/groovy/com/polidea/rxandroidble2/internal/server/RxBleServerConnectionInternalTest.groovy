@@ -99,8 +99,8 @@ public class RxBleServerConnectionInternalTest extends Specification {
         TestObserver indicationres = objectUnderTest.setupIndication(ch, indicationnotif).test()
         for (int i=0;i<4*2;i++) {
             objectUnderTest.getNotificationPublishRelay().valueRelay.accept(BluetoothGatt.GATT_SUCCESS)
+            advanceTimeForWritesToComplete(1)
         }
-        advanceTimeForWritesToComplete(8)
 
         then:
 

@@ -324,7 +324,8 @@ public class RxBleServerConnectionInternalImpl implements RxBleServerConnectionI
     ) {
         RxBleLog.d("setupNotifictions: " + characteristic.getUuid());
         return notifications
-                        .concatMapCompletable(new Function<byte[], CompletableSource>() {
+                .subscribeOn(connectionScheduler)
+                .concatMapCompletable(new Function<byte[], CompletableSource>() {
                             @Override
                             public CompletableSource apply(@io.reactivex.annotations.NonNull byte[] bytes) throws Exception {
                                 RxBleLog.d("processing bytes length: " + bytes.length);
