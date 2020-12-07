@@ -23,13 +23,17 @@ import com.polidea.rxandroidble2.internal.operations.server.ServerConnectionOper
 import com.polidea.rxandroidble2.internal.serialization.ServerConnectionOperationQueue;
 import com.polidea.rxandroidble2.internal.util.GattServerTransaction;
 
+import org.reactivestreams.Publisher;
+
 import java.util.Arrays;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 
 import bleshadow.javax.inject.Inject;
 import bleshadow.javax.inject.Named;
+import io.reactivex.BackpressureStrategy;
 import io.reactivex.Completable;
+import io.reactivex.Flowable;
 import io.reactivex.Observable;
 import io.reactivex.ObservableSource;
 import io.reactivex.Scheduler;
@@ -248,7 +252,7 @@ public class RxBleServerConnectionInternalImpl implements RxBleServerConnectionI
     }
 
     @Override
-    public Completable setupIndication(final BluetoothGattCharacteristic characteristic, final Observable<byte[]> indications) {
+    public Completable setupIndication(final BluetoothGattCharacteristic characteristic, final Flowable<byte[]> indications) {
         final BluetoothGattDescriptor clientconfig = characteristic.getDescriptor(RxBleServer.CLIENT_CONFIG);
         if (clientconfig == null) {
             return Completable.error(new BleGattServerException(
@@ -260,15 +264,13 @@ public class RxBleServerConnectionInternalImpl implements RxBleServerConnectionI
         if (serverState.getNotifications(characteristic.getUuid())) {
             return setupNotifications(characteristic, indications, true);
         } else {
-            return setupNotificationsDelay(characteristic, indications, clientconfig)
+            return setupNotificationsDelay(clientconfig)
                     .andThen(setupNotifications(characteristic, indications, true));
 
         }
     }
 
     private Completable setupNotificationsDelay(
-            final BluetoothGattCharacteristic characteristic,
-            final Observable<byte[]> notifications,
             final BluetoothGattDescriptor clientconfig
     ) {
         return withDisconnectionHandling(getWriteDescriptorOutput())
@@ -299,7 +301,7 @@ public class RxBleServerConnectionInternalImpl implements RxBleServerConnectionI
     }
 
     @Override
-    public Completable setupNotifications(final BluetoothGattCharacteristic characteristic, final Observable<byte[]> notifications) {
+    public Completable setupNotifications(final BluetoothGattCharacteristic characteristic, final Flowable<byte[]> notifications) {
         final BluetoothGattDescriptor clientconfig = characteristic.getDescriptor(RxBleServer.CLIENT_CONFIG);
         if (clientconfig == null) {
             return Completable.error(new BleGattServerException(
@@ -311,7 +313,7 @@ public class RxBleServerConnectionInternalImpl implements RxBleServerConnectionI
         if (serverState.getNotifications(characteristic.getUuid())) {
             return setupNotifications(characteristic, notifications, false);
         } else {
-            return setupNotificationsDelay(characteristic, notifications, clientconfig)
+            return setupNotificationsDelay(clientconfig)
                     .andThen(setupNotifications(characteristic, notifications, false));
 
         }
@@ -319,13 +321,13 @@ public class RxBleServerConnectionInternalImpl implements RxBleServerConnectionI
 
     public Completable setupNotifications(
             final BluetoothGattCharacteristic characteristic,
-            final Observable<byte[]> notifications,
+            final Flowable<byte[]> notifications,
             final boolean isIndication
     ) {
         return notifications
-                        .concatMap(new Function<byte[], ObservableSource<? extends Integer>>() {
+                        .concatMap(new Function<byte[], Publisher<?>>() {
                             @Override
-                            public ObservableSource<? extends Integer> apply(byte[] bytes) throws Exception {
+                            public Publisher<?> apply(@io.reactivex.annotations.NonNull byte[] bytes) throws Exception {
                                 NotifyCharacteristicChangedOperation operation
                                         = operationsProvider.provideNotifyOperation(
                                         characteristic,
@@ -346,9 +348,8 @@ public class RxBleServerConnectionInternalImpl implements RxBleServerConnectionI
                                                     return Observable.just(integer);
                                                 }
                                             }
-                                        });
+                                        }).toFlowable(BackpressureStrategy.BUFFER);
                             }
-
                         }).ignoreElements();
     }
 
