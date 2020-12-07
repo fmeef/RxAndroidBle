@@ -18,9 +18,10 @@ public interface RxBleServerConnection {
     @NonNull
     BluetoothDevice getDevice();
 
-    Completable setupNotifications(BluetoothGattCharacteristic characteristic, Flowable<byte[]> notifications);
+    Completable setupNotifications(BluetoothGattCharacteristic characteristic,
+                                   Single<Flowable<byte[]>> notifications);
 
-    Completable setupIndication(BluetoothGattCharacteristic characteristic, Flowable<byte[]> indications);
+    Completable setupIndication(BluetoothGattCharacteristic characteristic, Single<Flowable<byte[]>> indications);
 
     Observable<Integer> getOnMtuChanged();
 
