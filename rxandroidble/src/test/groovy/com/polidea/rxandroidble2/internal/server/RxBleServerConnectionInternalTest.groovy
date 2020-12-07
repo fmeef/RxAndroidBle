@@ -7,12 +7,14 @@ import com.polidea.rxandroidble2.internal.operations.server.ServerConnectionOper
 import com.polidea.rxandroidble2.internal.operations.server.ServerConnectionOperationsProviderImpl
 import com.polidea.rxandroidble2.internal.serialization.ServerConnectionOperationQueue
 import com.polidea.rxandroidble2.internal.util.MockOperationTimeoutConfiguration
+import io.reactivex.Flowable
 import io.reactivex.Observable
 import io.reactivex.Single
 import io.reactivex.annotations.NonNull
 import io.reactivex.functions.Predicate
 import io.reactivex.observers.TestObserver
 import io.reactivex.schedulers.TestScheduler
+import io.reactivex.subscribers.TestSubscriber
 import spock.lang.Specification
 
 import java.util.concurrent.TimeUnit
@@ -91,8 +93,8 @@ public class RxBleServerConnectionInternalTest extends Specification {
         BluetoothGattCharacteristic ch = Mock(BluetoothGattCharacteristic)
 
         when:
-        def notif = Observable.just(data).repeat(4);
-        def indicationnotif = Observable.just(data).repeat(4)
+        def notif = Flowable.just(data).repeat(4);
+        def indicationnotif = Flowable.just(data).repeat(4)
         TestObserver res = objectUnderTest.setupNotifications(ch, notif).test();
         TestObserver indicationres = objectUnderTest.setupIndication(ch, indicationnotif).test()
         for (int i=0;i<4*2;i++) {
