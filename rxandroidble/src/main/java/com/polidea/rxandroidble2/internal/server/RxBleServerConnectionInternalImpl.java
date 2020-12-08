@@ -254,26 +254,17 @@ public class RxBleServerConnectionInternalImpl implements RxBleServerConnectionI
 
     @Override
     public Completable setupIndication(final BluetoothGattCharacteristic characteristic, final Flowable<byte[]> indications) {
-        final BluetoothGattDescriptor clientconfig = characteristic.getDescriptor(RxBleServer.CLIENT_CONFIG);
-        if (clientconfig == null) {
-            return Completable.error(new BleGattServerException(
-                    device,
-                    BleGattServerOperationType.NOTIFICATION_SENT,
-                    "client config was null when setting up indication"
-            ));
-        }
-        if (serverState.getNotifications(characteristic.getUuid())) {
-            return setupNotifications(characteristic, indications, true);
-        } else {
-            return setupNotificationsDelay(clientconfig)
-                    .andThen(setupNotifications(characteristic, indications, true));
-
-        }
+        return setupNotifications(characteristic, indications, true);
     }
 
     private Completable setupNotificationsDelay(
-            final BluetoothGattDescriptor clientconfig
+            final BluetoothGattDescriptor clientconfig,
+            final BluetoothGattCharacteristic characteristic
     ) {
+        if (serverState.getNotifications(characteristic.getUuid())) {
+            return Completable.complete();
+        }
+
         return withDisconnectionHandling(getWriteDescriptorOutput())
                 .filter(new Predicate<GattServerTransaction<BluetoothGattDescriptor>>() {
                     @Override
@@ -283,41 +274,20 @@ public class RxBleServerConnectionInternalImpl implements RxBleServerConnectionI
                                 .compareTo(clientconfig.getCharacteristic().getUuid()) == 0;
                     }
                 })
-                .map(new Function<GattServerTransaction<BluetoothGattDescriptor>, ServerResponseTransaction>() {
-                    @Override
-                    public ServerResponseTransaction apply(
-                            GattServerTransaction<BluetoothGattDescriptor> transaction
-                    ) throws Exception {
-                        return transaction.getTransaction();
-                    }
-                })
-                .takeWhile(new Predicate<ServerResponseTransaction>() {
+                .takeWhile(new Predicate<GattServerTransaction<BluetoothGattDescriptor>>() {
                     @Override
                     public boolean test(
-                            @io.reactivex.annotations.NonNull ServerResponseTransaction serverResponseTransaction
+                            @io.reactivex.annotations.NonNull GattServerTransaction<BluetoothGattDescriptor> transaction
                     ) throws Exception {
-                        return Arrays.equals(serverResponseTransaction.getValue(), BluetoothGattDescriptor.DISABLE_NOTIFICATION_VALUE);
+                        return Arrays.equals(transaction.getTransaction().getValue(), BluetoothGattDescriptor.DISABLE_NOTIFICATION_VALUE);
                     }
-                }).ignoreElements();
+                })
+                .ignoreElements();
     }
 
     @Override
     public Completable setupNotifications(final BluetoothGattCharacteristic characteristic, final Flowable<byte[]> notifications) {
-        final BluetoothGattDescriptor clientconfig = characteristic.getDescriptor(RxBleServer.CLIENT_CONFIG);
-        if (clientconfig == null) {
-            return Completable.error(new BleGattServerException(
-                    device,
-                    BleGattServerOperationType.NOTIFICATION_SENT,
-                    "client config was null when setting up notifications"
-            ));
-        }
-        if (serverState.getNotifications(characteristic.getUuid())) {
-            return setupNotifications(characteristic, notifications, false);
-        } else {
-            return setupNotificationsDelay(clientconfig)
-                    .andThen(setupNotifications(characteristic, notifications, false));
-
-        }
+        return setupNotifications(characteristic, notifications, false);
     }
 
     public Completable setupNotifications(
@@ -326,6 +296,14 @@ public class RxBleServerConnectionInternalImpl implements RxBleServerConnectionI
             final boolean isIndication
     ) {
         RxBleLog.d("setupNotifictions: " + characteristic.getUuid());
+        final BluetoothGattDescriptor clientconfig = characteristic.getDescriptor(RxBleServer.CLIENT_CONFIG);
+        if (clientconfig == null) {
+            return Completable.error(new BleGattServerException(
+                    device,
+                    BleGattServerOperationType.NOTIFICATION_SENT,
+                    "client config was null when setting up notifications"
+            ));
+        }
         return notifications
                 .subscribeOn(connectionScheduler)
                 .concatMap(new Function<byte[], Publisher<Integer>>() {
@@ -338,7 +316,9 @@ public class RxBleServerConnectionInternalImpl implements RxBleServerConnectionI
                                         bytes,
                                         isIndication
                                 );
-                                return operationQueue.queue(operation).toFlowable(BackpressureStrategy.BUFFER);
+                                return setupNotificationsDelay(clientconfig, characteristic)
+                                         .andThen(operationQueue.queue(operation)).toFlowable(BackpressureStrategy.BUFFER);
+
                             }
                         })
                 .reduce(new BiFunction<Integer, Integer, Integer>() {
