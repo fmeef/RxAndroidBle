@@ -163,11 +163,11 @@ public class RxBleGattServerCallback {
                                             final int offset,
                                             final BluetoothGattDescriptor descriptor) {
             super.onDescriptorReadRequest(device, requestId, offset, descriptor);
-
             Disposable d = getOrCreateConnectionInfo(device)
                     .subscribe(new Consumer<RxBleServerConnectionInternal>() {
                         @Override
                         public void accept(RxBleServerConnectionInternal connectionInfo) throws Exception {
+                            RxBleLog.d("onDescriptorReadRequest: " + descriptor.getUuid());
                             if (descriptor.getUuid().compareTo(RxBleServer.CLIENT_CONFIG) == 0) {
                                 connectionInfo.blindAck(
                                         requestId,
@@ -207,7 +207,9 @@ public class RxBleGattServerCallback {
                     .subscribe(new Consumer<RxBleServerConnectionInternal>() {
                         @Override
                         public void accept(RxBleServerConnectionInternal connectionInfo) throws Exception {
+                            RxBleLog.d("onDescriptorWriteRequest: " + descriptor.getUuid());
                             if (preparedWrite) {
+                                RxBleLog.d("onDescriptorWriteRequest: invoking preparedWrite");
                                 RxBleServerConnectionInternal.Output<byte[]> longWriteOutput
                                         = connectionInfo.openLongWriteDescriptorOutput(requestId, descriptor);
                                 longWriteOutput.valueRelay.accept(value); //TODO: offset?

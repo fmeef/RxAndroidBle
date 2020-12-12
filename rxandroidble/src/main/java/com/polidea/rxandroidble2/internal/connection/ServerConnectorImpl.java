@@ -72,6 +72,7 @@ public class ServerConnectorImpl implements ServerConnector {
     private boolean initializeServer(ServerConfig config) {
         BluetoothGattServer server = gattServerProvider.getBluetoothGatt();
         if (server == null) {
+            RxBleLog.e("error: gatt server handle null. aborting setup");
             return false;
         }
 

@@ -168,12 +168,14 @@ public interface ServerComponent {
 
         @Provides
         @Named(NamedSchedulers.BLUETOOTH_CONNECTION)
+        @ServerScope
         static Scheduler provideBluetoothConnectionScheduler() {
             return RxJavaPlugins.createSingleScheduler(new RxBleThreadFactory());
         }
 
         @Provides
         @Named(NamedSchedulers.TIMEOUT)
+        @ServerScope
         static Scheduler providesBluetoothTimeoutScheduler() {
             return RxJavaPlugins.createSingleScheduler(new RxBleThreadFactory());
         }
@@ -181,19 +183,23 @@ public interface ServerComponent {
 
         @Provides
         @Named(ServerComponent.NamedExecutors.BLUETOOTH_INTERACTION)
+        @ServerScope
         static ExecutorService provideBluetoothInteractionExecutorService() {
             return Executors.newSingleThreadExecutor();
         }
 
         @Provides
+        @ServerScope
         static BluetoothGattServer provideBluetoothGattServer(BluetoothGattServerProvider bluetoothGattServerProvider) {
             return bluetoothGattServerProvider.getBluetoothGatt();
         }
 
         @Binds
+        @ServerScope
         abstract Observable<RxBleAdapterStateObservable.BleAdapterState> bindStateObs(RxBleAdapterStateObservable stateObservable);
 
         @Binds
+        @ServerScope
         abstract DisconnectionRouterOutput bindDisconnectionRouterOutput(ServerDisconnectionRouter disconnectionRouter);
 
         @Binds
@@ -214,6 +220,7 @@ public interface ServerComponent {
         abstract RxBleServerState bindServerState(RxBleServerStateImpl serverState);
 
         @Binds
+        @ServerScope
         abstract ServerOperationQueue bindServerOperationQueue(ServerOperationQueueImpl operationQueue);
     }
 
