@@ -285,6 +285,7 @@ public class RxBleServerConnectionInternalImpl implements RxBleServerConnectionI
             final BluetoothGattCharacteristic characteristic
     ) {
         if (serverState.getNotifications(characteristic.getUuid())) {
+            RxBleLog.d("immediate start notification/indication");
             return Completable.complete();
         }
 
@@ -297,15 +298,20 @@ public class RxBleServerConnectionInternalImpl implements RxBleServerConnectionI
                                 .compareTo(clientconfig.getCharacteristic().getUuid()) == 0;
                     }
                 })
-                .takeWhile(new Predicate<GattServerTransaction<BluetoothGattDescriptor>>() {
+                .flatMapCompletable(new Function<GattServerTransaction<BluetoothGattDescriptor>, CompletableSource>() {
                     @Override
-                    public boolean test(
-                            @io.reactivex.annotations.NonNull GattServerTransaction<BluetoothGattDescriptor> transaction
+                    public CompletableSource apply(
+                            @io.reactivex.annotations.NonNull GattServerTransaction<BluetoothGattDescriptor> trans
                     ) throws Exception {
-                        return Arrays.equals(transaction.getTransaction().getValue(), BluetoothGattDescriptor.DISABLE_NOTIFICATION_VALUE);
+                        if (Arrays.equals(trans.getPayload().getValue(), BluetoothGattDescriptor.ENABLE_NOTIFICATION_VALUE)) {
+                            RxBleLog.d("clientconfig notifications enabled, completing");
+                            return Completable.complete();
+                        } else {
+                            RxBleLog.d("waiting on clientconfig for characteristic " + trans.getPayload().getCharacteristic());
+                            return Completable.never();
+                        }
                     }
-                })
-                .ignoreElements();
+                });
     }
 
     @Override
