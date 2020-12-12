@@ -1,10 +1,10 @@
 package com.polidea.rxandroidble2;
 
 import android.bluetooth.BluetoothDevice;
-import android.bluetooth.BluetoothGattCharacteristic;
-import android.bluetooth.BluetoothGattDescriptor;
 
 import androidx.annotation.NonNull;
+
+import java.util.UUID;
 
 import io.reactivex.Completable;
 import io.reactivex.Flowable;
@@ -18,23 +18,23 @@ public interface RxBleServerConnection {
     @NonNull
     BluetoothDevice getDevice();
 
-    Completable setupNotifications(BluetoothGattCharacteristic characteristic, Flowable<byte[]> notifications);
+    Completable setupNotifications(UUID characteristic, Flowable<byte[]> notifications);
 
-    Completable setupIndication(BluetoothGattCharacteristic characteristic, Flowable<byte[]> indications);
+    Completable setupIndication(UUID characteristic, Flowable<byte[]> indications);
 
     Observable<Integer> getOnMtuChanged();
 
-    Observable<ServerResponseTransaction> getOnCharacteristicReadRequest(BluetoothGattCharacteristic characteristic);
+    Observable<ServerResponseTransaction> getOnCharacteristicReadRequest(UUID characteristic);
 
-    Observable<ServerResponseTransaction> getOnCharacteristicWriteRequest(BluetoothGattCharacteristic characteristic);
+    Observable<ServerResponseTransaction> getOnCharacteristicWriteRequest(UUID characteristic);
 
-    Observable<ServerResponseTransaction> getOnDescriptorReadRequest(BluetoothGattDescriptor descriptor);
+    Observable<ServerResponseTransaction> getOnDescriptorReadRequest(UUID descriptor);
 
-    Observable<ServerResponseTransaction> getOnDescriptorWriteRequest(BluetoothGattDescriptor descriptor);
+    Observable<ServerResponseTransaction> getOnDescriptorWriteRequest(UUID descriptor);
 
-    Single<Integer> indicationSingle(BluetoothGattCharacteristic characteristic, byte[] value);
+    Single<Integer> indicationSingle(UUID characteristic, byte[] value);
 
-    Single<Integer> notificationSingle(BluetoothGattCharacteristic characteristic, byte[] value);
+    Single<Integer> notificationSingle(UUID characteristic, byte[] value);
 
     Observable<Integer> getOnNotification();
 
