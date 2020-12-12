@@ -8,6 +8,7 @@ import androidx.annotation.Nullable;
 
 import com.polidea.rxandroidble2.RxBleServer;
 import com.polidea.rxandroidble2.ServerScope;
+import com.polidea.rxandroidble2.internal.RxBleLog;
 
 import java.util.Arrays;
 import java.util.List;
@@ -51,6 +52,7 @@ public class RxBleServerStateImpl implements RxBleServerState {
         for (BluetoothGattCharacteristic characteristic : service.getCharacteristics()) {
             if ((characteristic.getProperties() & BluetoothGattCharacteristic.PROPERTY_NOTIFY) == 0
                     || (characteristic.getProperties() & BluetoothGattCharacteristic.PROPERTY_INDICATE) == 0) {
+                RxBleLog.d("setting CLIENT_CONFIG for characteristic " + characteristic.getUuid());
                 characteristic.addDescriptor(new BluetoothGattDescriptor(
                         RxBleServer.CLIENT_CONFIG,
                         BluetoothGattDescriptor.PERMISSION_WRITE | BluetoothGattDescriptor.PERMISSION_READ
