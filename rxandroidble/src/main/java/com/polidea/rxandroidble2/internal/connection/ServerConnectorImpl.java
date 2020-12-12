@@ -2,8 +2,6 @@ package com.polidea.rxandroidble2.internal.connection;
 
 import android.annotation.SuppressLint;
 import android.bluetooth.BluetoothDevice;
-import android.bluetooth.BluetoothGattCharacteristic;
-import android.bluetooth.BluetoothGattDescriptor;
 import android.bluetooth.BluetoothGattServer;
 import android.bluetooth.BluetoothGattService;
 import android.bluetooth.BluetoothManager;
@@ -13,7 +11,6 @@ import android.util.Log;
 import android.util.Pair;
 
 import com.polidea.rxandroidble2.RxBleConnection;
-import com.polidea.rxandroidble2.RxBleServer;
 import com.polidea.rxandroidble2.RxBleServerConnection;
 import com.polidea.rxandroidble2.ServerComponent;
 import com.polidea.rxandroidble2.ServerConfig;
@@ -24,6 +21,7 @@ import com.polidea.rxandroidble2.internal.RxBleLog;
 import com.polidea.rxandroidble2.internal.server.BluetoothGattServerProvider;
 import com.polidea.rxandroidble2.internal.server.RxBleGattServerCallback;
 import com.polidea.rxandroidble2.internal.server.RxBleServerConnectionInternal;
+import com.polidea.rxandroidble2.internal.server.RxBleServerState;
 
 import java.util.Map;
 import java.util.UUID;
@@ -49,6 +47,7 @@ public class ServerConnectorImpl implements ServerConnector {
     private final BluetoothManager bluetoothManager;
     private final ServerConnectionComponent.Builder connectionComponentBuilder;
     private final RxBleGattServerCallback rxBleGattServerCallback;
+    private final RxBleServerState serverState;
     private final ConcurrentHashMap<BluetoothDevice, RxBleServerConnection> localConnectionmap = new ConcurrentHashMap<>();
 
     @Inject
@@ -58,7 +57,8 @@ public class ServerConnectorImpl implements ServerConnector {
             final BluetoothManager bluetoothManager,
             final @Named(ServerComponent.NamedSchedulers.BLUETOOTH_SERVER) Scheduler callbackScheduler,
             ServerConnectionComponent.Builder connectionComponentBuilder,
-            RxBleGattServerCallback rxBleGattServerCallback
+            RxBleGattServerCallback rxBleGattServerCallback,
+            RxBleServerState serverState
             ) {
         this.context = context;
         this.gattServerProvider = gattServerProvider;
@@ -66,6 +66,7 @@ public class ServerConnectorImpl implements ServerConnector {
         this.callbackScheduler = callbackScheduler;
         this.connectionComponentBuilder = connectionComponentBuilder;
         this.rxBleGattServerCallback = rxBleGattServerCallback;
+        this.serverState = serverState;
     }
 
     private boolean initializeServer(ServerConfig config) {
@@ -96,16 +97,7 @@ public class ServerConnectorImpl implements ServerConnector {
         }
 
         for (Map.Entry<UUID, BluetoothGattService> entry : config.getServices().entrySet()) {
-            for (BluetoothGattCharacteristic characteristic : entry.getValue().getCharacteristics()) {
-                if ((characteristic.getProperties() & BluetoothGattCharacteristic.PROPERTY_NOTIFY) == 0
-                || (characteristic.getProperties() & BluetoothGattCharacteristic.PROPERTY_INDICATE) == 0) {
-                    characteristic.addDescriptor(new BluetoothGattDescriptor(
-                            RxBleServer.CLIENT_CONFIG,
-                            BluetoothGattDescriptor.PERMISSION_WRITE | BluetoothGattDescriptor.PERMISSION_READ
-                    ));
-                }
-            }
-            server.addService(entry.getValue());
+            serverState.registerService(entry.getValue());
         }
 
         return true;

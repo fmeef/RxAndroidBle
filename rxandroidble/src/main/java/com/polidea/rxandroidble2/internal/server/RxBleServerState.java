@@ -1,5 +1,12 @@
 package com.polidea.rxandroidble2.internal.server;
 
+import android.bluetooth.BluetoothGattCharacteristic;
+import android.bluetooth.BluetoothGattDescriptor;
+import android.bluetooth.BluetoothGattService;
+
+import androidx.annotation.Nullable;
+
+import java.util.List;
 import java.util.UUID;
 
 public interface RxBleServerState {
@@ -10,6 +17,15 @@ public interface RxBleServerState {
     boolean getIndications(UUID uuid);
     byte[] getNotificationValue(UUID uuid);
     void setNotifications(UUID characteristic, byte[] value);
+    void registerService(BluetoothGattService service);
+    @Nullable
+    BluetoothGattService getService(UUID uuid);
+    @Nullable
+    BluetoothGattCharacteristic getCharacteristic(UUID uuid);
+    @Nullable
+    BluetoothGattDescriptor getDescriptor(UUID uuid);
+    List<BluetoothGattService> getServiceList();
+
 
     enum NotificationStatus {
         NOTIFICATIONS_INDICATIONS_DISABLED,
