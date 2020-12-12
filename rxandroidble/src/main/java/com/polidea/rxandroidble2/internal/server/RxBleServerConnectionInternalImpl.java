@@ -303,7 +303,7 @@ public class RxBleServerConnectionInternalImpl implements RxBleServerConnectionI
                     public CompletableSource apply(
                             @io.reactivex.annotations.NonNull GattServerTransaction<BluetoothGattDescriptor> trans
                     ) throws Exception {
-                        if (Arrays.equals(trans.getPayload().getValue(), BluetoothGattDescriptor.ENABLE_NOTIFICATION_VALUE)) {
+                        if (Arrays.equals(trans.getTransaction().getValue(), BluetoothGattDescriptor.ENABLE_NOTIFICATION_VALUE)) {
                             RxBleLog.d("clientconfig notifications enabled, completing");
                             return Completable.complete();
                         } else {
