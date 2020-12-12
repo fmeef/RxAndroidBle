@@ -1,10 +1,16 @@
 package com.polidea.rxandroidble2.internal.server;
 
+import android.bluetooth.BluetoothGattCharacteristic;
 import android.bluetooth.BluetoothGattDescriptor;
+import android.bluetooth.BluetoothGattService;
 
+import androidx.annotation.Nullable;
+
+import com.polidea.rxandroidble2.RxBleServer;
 import com.polidea.rxandroidble2.ServerScope;
 
 import java.util.Arrays;
+import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -14,10 +20,15 @@ import bleshadow.javax.inject.Inject;
 public class RxBleServerStateImpl implements RxBleServerState {
 
     private final ConcurrentHashMap<UUID, NotificationStatus> notificationState = new ConcurrentHashMap<>();
+    private final ConcurrentHashMap<UUID, BluetoothGattCharacteristic> characteristicMap = new ConcurrentHashMap<>();
+    private final ConcurrentHashMap<UUID, BluetoothGattDescriptor> descriptorMap = new ConcurrentHashMap<>();
+    private final BluetoothGattServerProvider provider;
 
     @Inject
     public RxBleServerStateImpl(
+            BluetoothGattServerProvider provider
     ) {
+        this.provider = provider;
     }
 
     @Override
@@ -33,6 +44,47 @@ public class RxBleServerStateImpl implements RxBleServerState {
     @Override
     public void disableNotifications(UUID uuid) {
         notificationState.put(uuid, NotificationStatus.NOTIFICATIONS_INDICATIONS_DISABLED);
+    }
+
+    @Override
+    public void registerService(BluetoothGattService service) {
+        for (BluetoothGattCharacteristic characteristic : service.getCharacteristics()) {
+            if ((characteristic.getProperties() & BluetoothGattCharacteristic.PROPERTY_NOTIFY) == 0
+                    || (characteristic.getProperties() & BluetoothGattCharacteristic.PROPERTY_INDICATE) == 0) {
+                characteristic.addDescriptor(new BluetoothGattDescriptor(
+                        RxBleServer.CLIENT_CONFIG,
+                        BluetoothGattDescriptor.PERMISSION_WRITE | BluetoothGattDescriptor.PERMISSION_READ
+                ));
+            }
+            characteristicMap.put(characteristic.getUuid(), characteristic);
+            for (BluetoothGattDescriptor descriptor : characteristic.getDescriptors()) {
+                descriptorMap.put(descriptor.getUuid(), descriptor);
+            }
+        }
+        provider.getBluetoothGatt().addService(service);
+    }
+
+    @Override
+    public BluetoothGattCharacteristic getCharacteristic(UUID uuid) {
+        return characteristicMap.get(uuid);
+    }
+
+    @Override
+    @Nullable
+    public BluetoothGattService getService(UUID uuid) {
+        return provider.getBluetoothGatt().getService(uuid);
+    }
+
+    @Override
+    @Nullable
+    public List<BluetoothGattService> getServiceList() {
+        return provider.getBluetoothGatt().getServices();
+    }
+
+    @Nullable
+    @Override
+    public BluetoothGattDescriptor getDescriptor(UUID uuid) {
+        return descriptorMap.get(uuid);
     }
 
     @Override

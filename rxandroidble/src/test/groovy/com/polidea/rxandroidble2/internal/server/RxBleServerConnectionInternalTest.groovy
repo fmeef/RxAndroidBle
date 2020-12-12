@@ -9,12 +9,10 @@ import com.polidea.rxandroidble2.internal.serialization.ServerConnectionOperatio
 import com.polidea.rxandroidble2.internal.util.MockOperationTimeoutConfiguration
 import io.reactivex.Flowable
 import io.reactivex.Observable
-import io.reactivex.Single
 import io.reactivex.annotations.NonNull
 import io.reactivex.functions.Predicate
 import io.reactivex.observers.TestObserver
 import io.reactivex.schedulers.TestScheduler
-import io.reactivex.subscribers.TestSubscriber
 import spock.lang.Specification
 
 import java.util.concurrent.TimeUnit
@@ -35,7 +33,7 @@ public class RxBleServerConnectionInternalTest extends Specification {
     BluetoothManager bluetoothManager = Mock BluetoothManager
     RxBleGattServerCallback callback = Mock RxBleGattServerCallback
     ServerTransactionFactory serverTransactionFactory = Mock ServerTransactionFactory
-    BluetoothGattCharacteristic characteristic
+    BluetoothGattCharacteristic characteristic = Mock BluetoothGattCharacteristic
     BluetoothGattServerProvider serverProvider = Mock(BluetoothGattServerProvider)
     RxBleServerState serverState = Mock(RxBleServerState)
 
@@ -60,12 +58,6 @@ public class RxBleServerConnectionInternalTest extends Specification {
         for (int i=0;i<finaldata.length;i++) {
             finaldata[i] = data[i % data.length]
         }
-
-        characteristic = new BluetoothGattCharacteristic(
-                testUuid,
-                BluetoothGattCharacteristic.PROPERTY_READ |
-                        BluetoothGattCharacteristic.PROPERTY_NOTIFY,
-                BluetoothGattCharacteristic.PERMISSION_READ)
 
         operationsProvider = new ServerConnectionOperationsProviderImpl(
                 testScheduler,
@@ -95,8 +87,8 @@ public class RxBleServerConnectionInternalTest extends Specification {
         when:
         def notif = Flowable.just(data).repeat(4);
         def indicationnotif = Flowable.just(data).repeat(4)
-        TestObserver res = objectUnderTest.setupNotifications(ch, notif).test();
-        TestObserver indicationres = objectUnderTest.setupIndication(ch, indicationnotif).test()
+        TestObserver res = objectUnderTest.setupNotifications(ch.getUuid(), notif).test();
+        TestObserver indicationres = objectUnderTest.setupIndication(ch.getUuid(), indicationnotif).test()
         for (int i=0;i<4*2;i++) {
             objectUnderTest.getNotificationPublishRelay().valueRelay.accept(BluetoothGatt.GATT_SUCCESS)
             advanceTimeForWritesToComplete(1)
@@ -104,7 +96,8 @@ public class RxBleServerConnectionInternalTest extends Specification {
 
         then:
 
-        2 * ch.getDescriptor(_) >>  new BluetoothGattDescriptor(
+        2 * serverState.getCharacteristic(_) >> characteristic
+        _.getDescriptor(_) >>  new BluetoothGattDescriptor(
                 CLIENT_CONFIG,
                 BluetoothGattDescriptor.PERMISSION_READ_ENCRYPTED  | BluetoothGattDescriptor.PERMISSION_WRITE
         )

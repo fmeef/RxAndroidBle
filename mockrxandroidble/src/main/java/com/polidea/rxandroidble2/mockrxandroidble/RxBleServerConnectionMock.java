@@ -135,7 +135,7 @@ public class RxBleServerConnectionMock implements RxBleServerConnection, RxBleSe
             ));
         }
 
-        return getOnDescriptorWriteRequest(clientConfig)
+        return getOnDescriptorWriteRequest(clientConfig.getUuid())
                 .flatMap(new Function<ServerResponseTransaction, ObservableSource<Integer>>() {
                     @Override
                     public ObservableSource<Integer> apply(ServerResponseTransaction transaction) throws Exception {
@@ -172,12 +172,28 @@ public class RxBleServerConnectionMock implements RxBleServerConnection, RxBleSe
     }
 
     @Override
-    public Completable setupNotifications(BluetoothGattCharacteristic characteristic, Flowable<byte[]> notifications) {
+    public Completable setupNotifications(UUID ch, Flowable<byte[]> notifications) {
+        final BluetoothGattCharacteristic characteristic = serverState.getCharacteristic(ch);
+
+        if (characteristic == null) {
+            return Completable.error(
+                    new BleGattServerException(device, BleGattServerOperationType.NOTIFICATION_SENT, "characteristic not found")
+            );
+        }
+
         return setupNotifications(characteristic, notifications, false);
     }
 
     @Override
-    public Completable setupIndication(BluetoothGattCharacteristic characteristic, Flowable<byte[]> indications) {
+    public Completable setupIndication(UUID ch, Flowable<byte[]> indications) {
+        final BluetoothGattCharacteristic characteristic = serverState.getCharacteristic(ch);
+
+        if (characteristic == null) {
+            return Completable.error(
+                    new BleGattServerException(device, BleGattServerOperationType.NOTIFICATION_SENT, "characteristic not found")
+            );
+        }
+
         return setupNotifications(characteristic, indications, true);
     }
 
@@ -188,7 +204,7 @@ public class RxBleServerConnectionMock implements RxBleServerConnection, RxBleSe
 
     @Override
     public Observable<ServerResponseTransaction> getOnCharacteristicReadRequest(
-            BluetoothGattCharacteristic characteristic
+            UUID characteristic
     ) {
         return withDisconnectionHandling(readCharacteristicOutput)
                 .map(new Function<GattServerTransaction<UUID>, ServerResponseTransaction>() {
@@ -201,8 +217,9 @@ public class RxBleServerConnectionMock implements RxBleServerConnection, RxBleSe
 
     @Override
     public Observable<ServerResponseTransaction> getOnCharacteristicWriteRequest(
-            BluetoothGattCharacteristic characteristic
+            UUID ch
     ) {
+        final BluetoothGattCharacteristic characteristic = serverState.getCharacteristic(ch);
         return withDisconnectionHandling(writeCharacteristicOutput)
                 .map(new Function<GattServerTransaction<UUID>, ServerResponseTransaction>() {
                     @Override
@@ -214,8 +231,9 @@ public class RxBleServerConnectionMock implements RxBleServerConnection, RxBleSe
 
     @Override
     public Observable<ServerResponseTransaction> getOnDescriptorReadRequest(
-            BluetoothGattDescriptor descriptor
+            UUID d
     ) {
+        final BluetoothGattDescriptor descriptor = serverState.getDescriptor(d);
         return withDisconnectionHandling(readDescriptorOutput)
                 .map(new Function<GattServerTransaction<BluetoothGattDescriptor>, ServerResponseTransaction>() {
                     @Override
@@ -227,7 +245,7 @@ public class RxBleServerConnectionMock implements RxBleServerConnection, RxBleSe
 
     @Override
     public Observable<ServerResponseTransaction> getOnDescriptorWriteRequest(
-            BluetoothGattDescriptor descriptor
+            UUID d
     ) {
         return withDisconnectionHandling(readDescriptorOutput)
                 .map(new Function<GattServerTransaction<BluetoothGattDescriptor>, ServerResponseTransaction>() {
@@ -239,7 +257,7 @@ public class RxBleServerConnectionMock implements RxBleServerConnection, RxBleSe
     }
 
     @Override
-    public Single<Integer> indicationSingle(BluetoothGattCharacteristic characteristic, byte[] value) {
+    public Single<Integer> indicationSingle(UUID ch, byte[] value) {
         if (indicationResults != null) {
             return Single.just(indicationResults.remove());
         } else {
@@ -248,7 +266,7 @@ public class RxBleServerConnectionMock implements RxBleServerConnection, RxBleSe
     }
 
     @Override
-    public Single<Integer> notificationSingle(BluetoothGattCharacteristic characteristic, byte[] value) {
+    public Single<Integer> notificationSingle(UUID characteristic, byte[] value) {
         if (notificationResults != null) {
             return Single.just(notificationResults.remove());
         } else {
