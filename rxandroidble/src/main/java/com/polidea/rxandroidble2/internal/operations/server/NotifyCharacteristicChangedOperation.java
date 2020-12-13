@@ -17,6 +17,7 @@ import com.polidea.rxandroidble2.internal.util.QueueReleasingEmitterWrapper;
 
 import io.reactivex.ObservableEmitter;
 import io.reactivex.Single;
+import io.reactivex.functions.Action;
 
 public class NotifyCharacteristicChangedOperation extends QueueOperation<Integer> {
 
@@ -68,7 +69,8 @@ public class NotifyCharacteristicChangedOperation extends QueueOperation<Integer
                     "service for characteristic " + characteristic.getUuid() + " was null"
             ));
         } else {
-            RxBleLog.d("running notifycharacteristic");
+            RxBleLog.d("running notifycharacteristic notification/indication operation device: "
+                    + connection.getDevice());
 
 
             getCompleted()
@@ -78,7 +80,14 @@ public class NotifyCharacteristicChangedOperation extends QueueOperation<Integer
                             timeoutConfiguration.timeoutScheduler
                     )
                     .toObservable()
+                    .doOnComplete(new Action() {
+                        @Override
+                        public void run() throws Exception {
+                            RxBleLog.d("completed notifycharacteristic operation");
+                        }
+                    })
                     .subscribe(emitterWrapper);
+
             characteristic.setValue(value);
             if (!server.notifyCharacteristicChanged(connection.getDevice(), characteristic, isIndication)) {
                 emitterWrapper.onError(new BleGattServerException(
@@ -91,7 +100,8 @@ public class NotifyCharacteristicChangedOperation extends QueueOperation<Integer
     }
 
     private Single<Integer> getCompleted() {
-        return connection.getOnNotification().firstOrError();
+        return connection.getOnNotification()
+                .firstOrError();
     }
 
     @Override
