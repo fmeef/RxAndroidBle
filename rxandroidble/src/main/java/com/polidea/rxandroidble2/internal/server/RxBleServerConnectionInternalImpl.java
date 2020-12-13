@@ -28,6 +28,7 @@ import org.reactivestreams.Publisher;
 
 import java.util.Arrays;
 import java.util.UUID;
+import java.util.concurrent.Callable;
 import java.util.concurrent.TimeUnit;
 
 import bleshadow.javax.inject.Inject;
@@ -298,20 +299,15 @@ public class RxBleServerConnectionInternalImpl implements RxBleServerConnectionI
                                 .compareTo(clientconfig.getCharacteristic().getUuid()) == 0;
                     }
                 })
-                .flatMapCompletable(new Function<GattServerTransaction<BluetoothGattDescriptor>, CompletableSource>() {
+                .takeWhile(new Predicate<GattServerTransaction<BluetoothGattDescriptor>>() {
                     @Override
-                    public CompletableSource apply(
+                    public boolean test(
                             @io.reactivex.annotations.NonNull GattServerTransaction<BluetoothGattDescriptor> trans
                     ) throws Exception {
-                        if (Arrays.equals(trans.getTransaction().getValue(), BluetoothGattDescriptor.ENABLE_NOTIFICATION_VALUE)) {
-                            RxBleLog.d("clientconfig notifications enabled, completing");
-                            return Completable.complete();
-                        } else {
-                            RxBleLog.d("waiting on clientconfig for characteristic " + trans.getPayload().getCharacteristic());
-                            return Completable.never();
-                        }
+                        return Arrays.equals(trans.getTransaction().getValue(), BluetoothGattDescriptor.DISABLE_NOTIFICATION_VALUE);
                     }
-                });
+                })
+                .ignoreElements();
     }
 
     @Override
@@ -347,14 +343,35 @@ public class RxBleServerConnectionInternalImpl implements RxBleServerConnectionI
                             @Override
                             public Publisher<Integer> apply(@io.reactivex.annotations.NonNull byte[] bytes) throws Exception {
                                 RxBleLog.d("processing bytes length: " + bytes.length);
-                                NotifyCharacteristicChangedOperation operation
+                                final NotifyCharacteristicChangedOperation operation
                                         = operationsProvider.provideNotifyOperation(
                                         characteristic,
                                         bytes,
                                         isIndication
                                 );
-                                return setupNotificationsDelay(clientconfig, characteristic)
-                                         .andThen(operationQueue.queue(operation)).toFlowable(BackpressureStrategy.BUFFER);
+                                return Flowable.fromCallable(new Callable<Observable<Integer>>() {
+                                    @Override
+                                    public Observable<Integer> call() throws Exception {
+                                        return operationQueue.queue(operation);
+                                    }
+                                }).delay(new Function<Observable<Integer>, Publisher<Boolean>>() {
+                                    @Override
+                                    public Publisher<Boolean> apply(
+                                            @io.reactivex.annotations.NonNull Observable<Integer> integerObservable
+                                    ) throws Exception {
+                                        return setupNotificationsDelay(clientconfig, characteristic)
+                                                .toSingleDefault(true)
+                                                .toFlowable();
+                                    }
+                                })
+                                        .flatMap(new Function<Observable<Integer>, Publisher<Integer>>() {
+                                            @Override
+                                            public Publisher<Integer> apply(
+                                                    @io.reactivex.annotations.NonNull Observable<Integer> integerObservable
+                                            ) throws Exception {
+                                                return integerObservable.toFlowable(BackpressureStrategy.BUFFER);
+                                            }
+                                        });
 
                             }
                         })
