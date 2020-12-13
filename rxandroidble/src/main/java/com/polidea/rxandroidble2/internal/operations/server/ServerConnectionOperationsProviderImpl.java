@@ -54,7 +54,6 @@ public class ServerConnectionOperationsProviderImpl implements ServerConnectionO
             byte[] value
     ) {
         return new ServerReplyOperation(
-                gattServerScheduler,
                 timeoutConfiguration,
                 serverProvider.getBluetoothGatt(),
                 device,

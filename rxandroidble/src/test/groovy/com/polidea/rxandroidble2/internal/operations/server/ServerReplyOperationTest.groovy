@@ -26,7 +26,6 @@ public class ServerReplyOperationTest extends Specification {
     def setup() {
         device = Mock BluetoothDevice
         objectUnderTest = new ServerReplyOperation(
-                testScheduler,
                 new MockOperationTimeoutConfiguration(timeout.intValue(), testScheduler),
                 mockGattServer,
                 device,

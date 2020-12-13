@@ -33,12 +33,12 @@ import java.util.concurrent.TimeUnit;
 
 import bleshadow.javax.inject.Inject;
 import bleshadow.javax.inject.Named;
+import io.reactivex.BackpressureStrategy;
 import io.reactivex.Completable;
 import io.reactivex.Flowable;
 import io.reactivex.Observable;
 import io.reactivex.Scheduler;
 import io.reactivex.Single;
-import io.reactivex.SingleSource;
 import io.reactivex.disposables.CompositeDisposable;
 import io.reactivex.disposables.Disposable;
 import io.reactivex.functions.Action;
@@ -339,44 +339,46 @@ public class RxBleServerConnectionInternalImpl implements RxBleServerConnectionI
         }
         return notifications
                 .subscribeOn(connectionScheduler)
-                .concatMap(new Function<byte[], Publisher<Integer>>() {
+                .flatMap(new Function<byte[], Publisher<Integer>>() {
                             @Override
-                            public Publisher<Integer> apply(@io.reactivex.annotations.NonNull byte[] bytes) throws Exception {
+                            public Publisher<Integer> apply(@io.reactivex.annotations.NonNull final byte[] bytes) throws Exception {
                                 RxBleLog.d("processing bytes length: " + bytes.length);
-                                final NotifyCharacteristicChangedOperation operation
-                                        = operationsProvider.provideNotifyOperation(
-                                        characteristic,
-                                        bytes,
-                                        isIndication
-                                );
-                                return Flowable.fromCallable(new Callable<Single<Integer>>() {
+                                return Flowable.fromCallable(new Callable<Observable<Integer>>() {
                                     @Override
-                                    public Single<Integer> call() throws Exception {
-                                        return operationQueue.queue(operation).firstOrError();
+                                    public Observable<Integer> call() throws Exception {
+                                        final NotifyCharacteristicChangedOperation operation
+                                                = operationsProvider.provideNotifyOperation(
+                                                characteristic,
+                                                bytes,
+                                                isIndication
+                                        );
+                                        RxBleLog.d("queueing notification/indication");
+                                        return operationQueue.queue(operation);
                                     }
-                                }).delay(new Function<Single<Integer>, Publisher<Boolean>>() {
+                                }).delay(new Function<Observable<Integer>, Publisher<Boolean>>() {
                                     @Override
                                     public Publisher<Boolean> apply(
-                                            @io.reactivex.annotations.NonNull Single<Integer> integerObservable
+                                            @io.reactivex.annotations.NonNull Observable<Integer> integerObservable
                                     ) throws Exception {
                                         return setupNotificationsDelay(clientconfig, characteristic)
-                                                .toSingleDefault(true)
                                                 .toFlowable();
                                     }
-                                }).concatMapSingle(new Function<Single<Integer>, SingleSource<? extends Integer>>() {
+                                }).flatMap(new Function<Observable<Integer>, Publisher<? extends Integer>>() {
                                                     @Override
-                                                    public SingleSource<? extends Integer> apply(
-                                                            @io.reactivex.annotations.NonNull Single<Integer> integerSingle
+                                                    public Publisher<? extends Integer> apply(
+                                                            @io.reactivex.annotations.NonNull Observable<Integer> integerSingle
                                                     ) throws Exception {
-                                                        return integerSingle;
+                                                        return integerSingle.toFlowable(BackpressureStrategy.BUFFER);
                                                     }
-                                                });
+                                                })
+                                        .subscribeOn(connectionScheduler);
 
                             }
-                        })
-                .concatMap(new Function<Integer, Publisher<Integer>>() {
+                })
+                .flatMap(new Function<Integer, Publisher<Integer>>() {
                     @Override
                     public Publisher<Integer> apply(@io.reactivex.annotations.NonNull Integer integer) throws Exception {
+                        RxBleLog.d("notification result: " + integer);
                         if (integer != BluetoothGatt.GATT_SUCCESS) {
                             return Flowable.error(new BleGattServerException(
                                     device,
@@ -388,13 +390,13 @@ public class RxBleServerConnectionInternalImpl implements RxBleServerConnectionI
                         }
                     }
                 })
+                .ignoreElements()
                 .doOnComplete(new Action() {
                     @Override
                     public void run() throws Exception {
                         RxBleLog.d("notifications completed!");
                     }
-                })
-                .ignoreElements();
+                });
     }
 
     private <T> Observable<T> withDisconnectionHandling(Output<T> output) {
