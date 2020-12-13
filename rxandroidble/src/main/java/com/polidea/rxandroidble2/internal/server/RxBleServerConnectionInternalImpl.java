@@ -363,7 +363,7 @@ public class RxBleServerConnectionInternalImpl implements RxBleServerConnectionI
                                                 .toSingleDefault(true)
                                                 .toFlowable();
                                     }
-                                }).flatMapSingle(new Function<Single<Integer>, SingleSource<? extends Integer>>() {
+                                }).concatMapSingle(new Function<Single<Integer>, SingleSource<? extends Integer>>() {
                                                     @Override
                                                     public SingleSource<? extends Integer> apply(
                                                             @io.reactivex.annotations.NonNull Single<Integer> integerSingle
@@ -374,7 +374,7 @@ public class RxBleServerConnectionInternalImpl implements RxBleServerConnectionI
 
                             }
                         })
-                .flatMap(new Function<Integer, Publisher<Integer>>() {
+                .concatMap(new Function<Integer, Publisher<Integer>>() {
                     @Override
                     public Publisher<Integer> apply(@io.reactivex.annotations.NonNull Integer integer) throws Exception {
                         if (integer != BluetoothGatt.GATT_SUCCESS) {
