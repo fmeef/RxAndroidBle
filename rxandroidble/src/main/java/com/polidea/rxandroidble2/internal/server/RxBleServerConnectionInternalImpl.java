@@ -350,28 +350,26 @@ public class RxBleServerConnectionInternalImpl implements RxBleServerConnectionI
                                         bytes,
                                         isIndication
                                 );
-                                return Flowable.fromCallable(new Callable<Observable<Integer>>() {
+                                return Flowable.fromCallable(new Callable<Single<Integer>>() {
                                     @Override
-                                    public Observable<Integer> call() throws Exception {
-                                        return operationQueue.queue(operation);
+                                    public Single<Integer> call() throws Exception {
+                                        return operationQueue.queue(operation).firstOrError();
                                     }
-                                }).delay(new Function<Observable<Integer>, Publisher<Boolean>>() {
+                                }).delay(new Function<Single<Integer>, Publisher<Boolean>>() {
                                     @Override
                                     public Publisher<Boolean> apply(
-                                            @io.reactivex.annotations.NonNull Observable<Integer> integerObservable
+                                            @io.reactivex.annotations.NonNull Single<Integer> integerObservable
                                     ) throws Exception {
                                         return setupNotificationsDelay(clientconfig, characteristic)
                                                 .toSingleDefault(true)
                                                 .toFlowable();
                                     }
-                                })
-                                        .flatMapSingle(
-                                                new Function<Observable<Integer>, SingleSource<? extends Integer>>() {
+                                }).flatMapSingle(new Function<Single<Integer>, SingleSource<? extends Integer>>() {
                                                     @Override
                                                     public SingleSource<? extends Integer> apply(
-                                                            @io.reactivex.annotations.NonNull Observable<Integer> integerObservable
+                                                            @io.reactivex.annotations.NonNull Single<Integer> integerSingle
                                                     ) throws Exception {
-                                                        return integerObservable.firstOrError();
+                                                        return integerSingle;
                                                     }
                                                 });
 
