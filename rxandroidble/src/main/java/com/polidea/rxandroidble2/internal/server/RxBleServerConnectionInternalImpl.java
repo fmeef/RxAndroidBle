@@ -34,7 +34,6 @@ import java.util.concurrent.TimeUnit;
 import bleshadow.javax.inject.Inject;
 import bleshadow.javax.inject.Named;
 import io.reactivex.Completable;
-import io.reactivex.CompletableSource;
 import io.reactivex.Flowable;
 import io.reactivex.Observable;
 import io.reactivex.Scheduler;
@@ -375,34 +374,17 @@ public class RxBleServerConnectionInternalImpl implements RxBleServerConnectionI
 
                             }
                         })
-                .reduce(new BiFunction<Integer, Integer, Integer>() {
-                    @io.reactivex.annotations.NonNull
+                .flatMap(new Function<Integer, Publisher<Integer>>() {
                     @Override
-                    public Integer apply(
-                            @io.reactivex.annotations.NonNull Integer integer,
-                            @io.reactivex.annotations.NonNull Integer integer2
-                    ) throws Exception {
+                    public Publisher<Integer> apply(@io.reactivex.annotations.NonNull Integer integer) throws Exception {
                         if (integer != BluetoothGatt.GATT_SUCCESS) {
-                            return integer;
-                        } else if (integer2 != BluetoothGatt.GATT_SUCCESS) {
-                            return integer2;
-                        } else {
-                            return BluetoothGatt.GATT_SUCCESS;
-                        }
-                    }
-                })
-                .flatMapCompletable(new Function<Integer, CompletableSource>() {
-                    @Override
-                    public CompletableSource apply(@io.reactivex.annotations.NonNull Integer integer) throws Exception {
-                        if (integer == BluetoothGatt.GATT_SUCCESS) {
-                            return Completable.complete();
-                        } else {
-                            return Completable.error(new BleGattServerException(
-                                    integer,
+                            return Flowable.error(new BleGattServerException(
                                     device,
                                     BleGattServerOperationType.NOTIFICATION_SENT,
-                                    "failed to send notification"
-                            ));
+                                    "notification operation did not return GATT_SUCCESS"
+                                    ));
+                        } else {
+                            return Flowable.just(integer);
                         }
                     }
                 })
@@ -411,7 +393,8 @@ public class RxBleServerConnectionInternalImpl implements RxBleServerConnectionI
                     public void run() throws Exception {
                         RxBleLog.d("notifications completed!");
                     }
-                });
+                })
+                .ignoreElements();
     }
 
     private <T> Observable<T> withDisconnectionHandling(Output<T> output) {
