@@ -33,13 +33,13 @@ import java.util.concurrent.TimeUnit;
 
 import bleshadow.javax.inject.Inject;
 import bleshadow.javax.inject.Named;
-import io.reactivex.BackpressureStrategy;
 import io.reactivex.Completable;
 import io.reactivex.CompletableSource;
 import io.reactivex.Flowable;
 import io.reactivex.Observable;
 import io.reactivex.Scheduler;
 import io.reactivex.Single;
+import io.reactivex.SingleSource;
 import io.reactivex.disposables.CompositeDisposable;
 import io.reactivex.disposables.Disposable;
 import io.reactivex.functions.Action;
@@ -365,14 +365,15 @@ public class RxBleServerConnectionInternalImpl implements RxBleServerConnectionI
                                                 .toFlowable();
                                     }
                                 })
-                                        .flatMap(new Function<Observable<Integer>, Publisher<Integer>>() {
-                                            @Override
-                                            public Publisher<Integer> apply(
-                                                    @io.reactivex.annotations.NonNull Observable<Integer> integerObservable
-                                            ) throws Exception {
-                                                return integerObservable.toFlowable(BackpressureStrategy.BUFFER);
-                                            }
-                                        });
+                                        .flatMapSingle(
+                                                new Function<Observable<Integer>, SingleSource<? extends Integer>>() {
+                                                    @Override
+                                                    public SingleSource<? extends Integer> apply(
+                                                            @io.reactivex.annotations.NonNull Observable<Integer> integerObservable
+                                                    ) throws Exception {
+                                                        return integerObservable.firstOrError();
+                                                    }
+                                                });
 
                             }
                         })
