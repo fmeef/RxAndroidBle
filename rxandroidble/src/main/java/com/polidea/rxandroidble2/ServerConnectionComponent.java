@@ -6,7 +6,7 @@ import com.polidea.rxandroidble2.internal.connection.ConnectionSubscriptionWatch
 import com.polidea.rxandroidble2.internal.operations.TimeoutConfiguration;
 import com.polidea.rxandroidble2.internal.operations.server.ServerConnectionOperationsProvider;
 import com.polidea.rxandroidble2.internal.operations.server.ServerConnectionOperationsProviderImpl;
-import com.polidea.rxandroidble2.internal.serialization.ServerConnectionOperationQueueImpl;
+import com.polidea.rxandroidble2.internal.serialization.ServerOperationQueueImpl;
 import com.polidea.rxandroidble2.internal.server.RxBleServerConnectionInternal;
 import com.polidea.rxandroidble2.internal.server.RxBleServerConnectionInternalImpl;
 import com.polidea.rxandroidble2.internal.server.ServerDisconnectAction;
@@ -60,7 +60,7 @@ public interface ServerConnectionComponent {
 
         @Binds
         @IntoSet
-        abstract ConnectionSubscriptionWatcher bindSubscriptionWatcher(ServerConnectionOperationQueueImpl q);
+        abstract ConnectionSubscriptionWatcher bindSubscriptionWatcher(ServerOperationQueueImpl q);
 
         @Binds
         @IntoSet

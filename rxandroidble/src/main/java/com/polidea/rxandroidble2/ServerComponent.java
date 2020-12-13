@@ -18,8 +18,6 @@ import com.polidea.rxandroidble2.internal.connection.DisconnectionRouterOutput;
 import com.polidea.rxandroidble2.internal.connection.ServerConnector;
 import com.polidea.rxandroidble2.internal.connection.ServerConnectorImpl;
 import com.polidea.rxandroidble2.internal.serialization.RxBleThreadFactory;
-import com.polidea.rxandroidble2.internal.serialization.ServerConnectionOperationQueue;
-import com.polidea.rxandroidble2.internal.serialization.ServerConnectionOperationQueueImpl;
 import com.polidea.rxandroidble2.internal.serialization.ServerOperationQueue;
 import com.polidea.rxandroidble2.internal.serialization.ServerOperationQueueImpl;
 import com.polidea.rxandroidble2.internal.server.BluetoothGattServerProvider;
@@ -206,11 +204,6 @@ public interface ServerComponent {
         @ServerScope
         abstract RxBleServer bindRxBleServer(RxBleServerImpl rxBleServer);
 
-
-        @Binds
-        @ServerScope
-        abstract ServerConnectionOperationQueue bindServerConnectionOperationQueue(ServerConnectionOperationQueueImpl queue);
-
         @Binds
         @ServerScope
         abstract ServerConnector bindServerConnector(ServerConnectorImpl serverConnector);
@@ -221,7 +214,7 @@ public interface ServerComponent {
 
         @Binds
         @ServerScope
-        abstract ServerOperationQueue bindServerOperationQueue(ServerOperationQueueImpl operationQueue);
+        abstract ServerOperationQueue bindServerOperationQueue(ServerOperationQueueImpl impl);
     }
 
     RxBleServer rxBleServer();

@@ -21,7 +21,7 @@ import com.polidea.rxandroidble2.exceptions.BleGattServerOperationType;
 import com.polidea.rxandroidble2.internal.RxBleLog;
 import com.polidea.rxandroidble2.internal.operations.server.NotifyCharacteristicChangedOperation;
 import com.polidea.rxandroidble2.internal.operations.server.ServerConnectionOperationsProvider;
-import com.polidea.rxandroidble2.internal.serialization.ServerConnectionOperationQueue;
+import com.polidea.rxandroidble2.internal.serialization.ServerOperationQueue;
 import com.polidea.rxandroidble2.internal.util.GattServerTransaction;
 
 import org.reactivestreams.Publisher;
@@ -49,7 +49,7 @@ import io.reactivex.functions.Predicate;
 public class RxBleServerConnectionInternalImpl implements RxBleServerConnectionInternal, RxBleServerConnection {
     private final Scheduler connectionScheduler;
     private final ServerConnectionOperationsProvider operationsProvider;
-    private final ServerConnectionOperationQueue operationQueue;
+    private final ServerOperationQueue operationQueue;
     private final BluetoothDevice device;
     private final ServerDisconnectionRouter disconnectionRouter;
     private final MultiIndex<Integer, BluetoothGattCharacteristic, LongWriteClosableOutput<byte[]>>
@@ -72,7 +72,7 @@ public class RxBleServerConnectionInternalImpl implements RxBleServerConnectionI
     public RxBleServerConnectionInternalImpl(
         @Named(ServerComponent.NamedSchedulers.BLUETOOTH_CONNECTION) Scheduler connectionScheduler,
         ServerConnectionOperationsProvider operationsProvider,
-        ServerConnectionOperationQueue operationQueue,
+        ServerOperationQueue operationQueue,
         BluetoothDevice device,
         ServerDisconnectionRouter disconnectionRouter,
         ServerTransactionFactory serverTransactionFactory,
@@ -513,7 +513,7 @@ public class RxBleServerConnectionInternalImpl implements RxBleServerConnectionI
 
     @Override
     public Observable<Integer> getOnNotification() {
-        return getNotificationPublishRelay().valueRelay;
+        return notificationPublishRelay.valueRelay;
     }
 
     @Override
