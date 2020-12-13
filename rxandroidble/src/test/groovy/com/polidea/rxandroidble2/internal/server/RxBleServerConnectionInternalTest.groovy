@@ -97,6 +97,7 @@ public class RxBleServerConnectionInternalTest extends Specification {
         then:
 
         2 * serverState.getCharacteristic(_) >> characteristic
+        characteristic.getService() >> new BluetoothGattService(UUID.randomUUID(), BluetoothGattService.SERVICE_TYPE_PRIMARY)
         _.getDescriptor(_) >>  new BluetoothGattDescriptor(
                 CLIENT_CONFIG,
                 BluetoothGattDescriptor.PERMISSION_READ_ENCRYPTED  | BluetoothGattDescriptor.PERMISSION_WRITE
