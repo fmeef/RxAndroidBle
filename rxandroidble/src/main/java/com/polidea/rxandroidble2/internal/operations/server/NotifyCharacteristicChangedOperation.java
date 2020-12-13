@@ -54,15 +54,24 @@ public class NotifyCharacteristicChangedOperation extends QueueOperation<Integer
         final QueueReleasingEmitterWrapper<Integer> emitterWrapper = new QueueReleasingEmitterWrapper<>(emitter, queueReleaseInterface);
         if (server == null) {
             RxBleLog.w("NotificationSendOperation encountered null gatt server");
-            emitterWrapper.cancel();
             emitter.onError(new BleGattServerException(
                     connection.getDevice(),
                     BleGattServerOperationType.CONNECTION_STATE,
                     "server handle was null in NotifyCharacteristicChangedOperation"
                     )
             );
+            emitterWrapper.cancel();
+        } else if (characteristic.getService() == null) {
+            emitter.onError(new BleGattServerException(
+                    connection.getDevice(),
+                    BleGattServerOperationType.NOTIFICATION_SENT,
+                    "service for characteristic " + characteristic.getUuid() + " was null"
+            ));
+            emitterWrapper.cancel();
         } else {
             RxBleLog.d("running notifycharacteristic");
+
+
             getCompleted()
                     .timeout(
                             timeoutConfiguration.timeout,
@@ -89,6 +98,10 @@ public class NotifyCharacteristicChangedOperation extends QueueOperation<Integer
 
     @Override
     protected BleException provideException(DeadObjectException deadObjectException) {
-        return null;
+        return new BleGattServerException(
+                connection.getDevice(),
+                BleGattServerOperationType.NOTIFICATION_SENT,
+                "notification failed"
+        );
     }
 }
