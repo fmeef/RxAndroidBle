@@ -8,7 +8,6 @@ import android.bluetooth.BluetoothGattDescriptor;
 import android.bluetooth.BluetoothGattServerCallback;
 import android.bluetooth.BluetoothGattService;
 import android.bluetooth.BluetoothProfile;
-import android.util.Log;
 import android.util.Pair;
 
 import com.jakewharton.rxrelay2.PublishRelay;
@@ -29,8 +28,6 @@ import io.reactivex.Single;
 import io.reactivex.disposables.CompositeDisposable;
 import io.reactivex.disposables.Disposable;
 import io.reactivex.functions.Consumer;
-
-import static com.polidea.rxandroidble2.RxBleServerImpl.TAG;
 
 @ServerScope
 public class RxBleGattServerCallback {
