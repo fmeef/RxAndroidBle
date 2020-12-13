@@ -262,7 +262,7 @@ public class RxBleGattServerCallback {
                         @Override
                         public void accept(RxBleServerConnectionInternal connectionInfo) throws Exception {
                             if (connectionInfo.getNotificationPublishRelay().hasObservers()) {
-                                Log.v(TAG, "onNotificationSent: " + device.getAddress());
+                                RxBleLog.v("onNotificationSent: " + device.getAddress());
                                 connectionInfo.getNotificationPublishRelay().valueRelay.accept(
                                         status
                                 );
