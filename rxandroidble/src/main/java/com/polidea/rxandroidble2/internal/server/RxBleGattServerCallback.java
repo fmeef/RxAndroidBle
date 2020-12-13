@@ -45,29 +45,25 @@ public class RxBleGattServerCallback {
             }
 
             RxBleServerConnectionInternal connectionInfo = gattServerProvider.getConnection(device);
-
-            if (connectionInfo == null) {
-                RxBleLog.e("connectionInfo was null");
-                return;
-            }
-
-            if (newState == BluetoothProfile.STATE_DISCONNECTED
-                    || newState == BluetoothProfile.STATE_DISCONNECTING) {
-                connectionInfo.onDisconnectedException(
-                        new BleDisconnectedException(device.getAddress(), status)
-                );
-            } else {
-                if (status != BluetoothGatt.GATT_SUCCESS) {
-                    RxBleLog.e("GattServer state change failed %i", status);
-                    //TODO: is this the same as client
-                    connectionInfo.onGattConnectionStateException(
-                            new BleGattServerException(
-                                    status,
-                                    device,
-                                    BleGattServerOperationType.CONNECTION_STATE,
-                                    "onConnectionStateChange GATT_FAILURE"
-                            )
+            if (connectionInfo != null) {
+                if (newState == BluetoothProfile.STATE_DISCONNECTED
+                        || newState == BluetoothProfile.STATE_DISCONNECTING) {
+                    connectionInfo.onDisconnectedException(
+                            new BleDisconnectedException(device.getAddress(), status)
                     );
+                } else {
+                    if (status != BluetoothGatt.GATT_SUCCESS) {
+                        RxBleLog.e("GattServer state change failed %i", status);
+                        //TODO: is this the same as client
+                        connectionInfo.onGattConnectionStateException(
+                                new BleGattServerException(
+                                        status,
+                                        device,
+                                        BleGattServerOperationType.CONNECTION_STATE,
+                                        "onConnectionStateChange GATT_FAILURE"
+                                )
+                        );
+                    }
                 }
             }
 
@@ -310,6 +306,7 @@ public class RxBleGattServerCallback {
             default:
                 return RxBleConnection.RxBleConnectionState.DISCONNECTED;
         }
+
     }
 
     private static boolean isException(int status) {
