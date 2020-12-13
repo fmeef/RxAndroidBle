@@ -73,12 +73,12 @@ public class NotifyCharacteristicChangedOperation extends QueueOperation<Integer
                     .subscribe(emitterWrapper);
             characteristic.setValue(value);
             if (!server.notifyCharacteristicChanged(connection.getDevice(), characteristic, isIndication)) {
-                emitterWrapper.cancel();
                 emitter.onError(new BleGattServerException(
                         connection.getDevice(),
                         BleGattServerOperationType.CONNECTION_STATE,
                         "NotifyCharacteristicChangedOperation failed"
                 ));
+                emitterWrapper.cancel();
             }
         }
     }
