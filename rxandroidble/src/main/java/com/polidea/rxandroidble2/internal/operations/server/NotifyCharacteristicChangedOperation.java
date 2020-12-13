@@ -93,7 +93,7 @@ public class NotifyCharacteristicChangedOperation extends QueueOperation<Integer
     }
 
     private Single<Integer> getCompleted() {
-        return connection.getOnNotification().firstOrError();
+        return connection.getOnNotification().take(1).firstOrError();
     }
 
     @Override
