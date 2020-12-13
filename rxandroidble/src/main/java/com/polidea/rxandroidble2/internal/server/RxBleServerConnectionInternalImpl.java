@@ -42,6 +42,7 @@ import io.reactivex.Scheduler;
 import io.reactivex.Single;
 import io.reactivex.disposables.CompositeDisposable;
 import io.reactivex.disposables.Disposable;
+import io.reactivex.functions.Action;
 import io.reactivex.functions.BiFunction;
 import io.reactivex.functions.Function;
 import io.reactivex.functions.Predicate;
@@ -404,6 +405,12 @@ public class RxBleServerConnectionInternalImpl implements RxBleServerConnectionI
                                     "failed to send notification"
                             ));
                         }
+                    }
+                })
+                .doOnComplete(new Action() {
+                    @Override
+                    public void run() throws Exception {
+                        RxBleLog.d("notifications completed!");
                     }
                 });
     }
