@@ -249,7 +249,7 @@ public class RxBleGattServerCallback {
             }
 
             if (connectionInfo.getNotificationPublishRelay().hasObservers()) {
-                RxBleLog.d("onNotificationSent: " + device.getAddress());
+                RxBleLog.d("onNotificationSent: " + device.getAddress() + " " + status);
                 connectionInfo.getNotificationPublishRelay().valueRelay.accept(
                         status
                 );

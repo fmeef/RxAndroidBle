@@ -62,12 +62,11 @@ public class NotifyCharacteristicChangedOperation extends QueueOperation<Integer
             );
             emitterWrapper.cancel();
         } else if (characteristic.getService() == null) {
-            emitter.onError(new BleGattServerException(
+            emitterWrapper.onError(new BleGattServerException(
                     connection.getDevice(),
                     BleGattServerOperationType.NOTIFICATION_SENT,
                     "service for characteristic " + characteristic.getUuid() + " was null"
             ));
-            emitterWrapper.cancel();
         } else {
             RxBleLog.d("running notifycharacteristic");
 
@@ -82,18 +81,17 @@ public class NotifyCharacteristicChangedOperation extends QueueOperation<Integer
                     .subscribe(emitterWrapper);
             characteristic.setValue(value);
             if (!server.notifyCharacteristicChanged(connection.getDevice(), characteristic, isIndication)) {
-                emitter.onError(new BleGattServerException(
+                emitterWrapper.onError(new BleGattServerException(
                         connection.getDevice(),
                         BleGattServerOperationType.CONNECTION_STATE,
                         "NotifyCharacteristicChangedOperation failed"
                 ));
-                emitterWrapper.cancel();
             }
         }
     }
 
     private Single<Integer> getCompleted() {
-        return connection.getOnNotification().take(1).firstOrError();
+        return connection.getOnNotification().firstOrError();
     }
 
     @Override

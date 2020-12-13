@@ -5,7 +5,7 @@ import com.polidea.rxandroidble2.DummyOperationQueue
 import com.polidea.rxandroidble2.ServerTransactionFactory
 import com.polidea.rxandroidble2.internal.operations.server.ServerConnectionOperationsProvider
 import com.polidea.rxandroidble2.internal.operations.server.ServerConnectionOperationsProviderImpl
-import com.polidea.rxandroidble2.internal.serialization.ServerConnectionOperationQueue
+import com.polidea.rxandroidble2.internal.serialization.ServerOperationQueue
 import com.polidea.rxandroidble2.internal.util.MockOperationTimeoutConfiguration
 import io.reactivex.Flowable
 import io.reactivex.Observable
@@ -25,7 +25,7 @@ public class RxBleServerConnectionInternalTest extends Specification {
     UUID testUuid = UUID.randomUUID()
     TestScheduler testScheduler = new TestScheduler()
     ServerConnectionOperationsProvider operationsProvider
-    ServerConnectionOperationQueue dummyQueue = new DummyOperationQueue()
+    ServerOperationQueue dummyQueue = new DummyOperationQueue()
     ServerDisconnectionRouter disconnectionRouter = Mock ServerDisconnectionRouter
     BluetoothDevice bluetoothDevice = Mock BluetoothDevice
     BluetoothGattServer bluetoothGattServer = Mock BluetoothGattServer
