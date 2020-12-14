@@ -28,7 +28,6 @@ import org.reactivestreams.Publisher;
 
 import java.util.Arrays;
 import java.util.UUID;
-import java.util.concurrent.Callable;
 import java.util.concurrent.TimeUnit;
 
 import bleshadow.javax.inject.Inject;
@@ -339,40 +338,25 @@ public class RxBleServerConnectionInternalImpl implements RxBleServerConnectionI
         }
         return notifications
                 .subscribeOn(connectionScheduler)
+                .delay(new Function<byte[], Publisher<byte[]>>() {
+                    @Override
+                    public Publisher<byte[]> apply(@io.reactivex.annotations.NonNull byte[] bytes) throws Exception {
+                        return setupNotificationsDelay(clientconfig, characteristic)
+                                .toFlowable();
+                    }
+                })
                 .flatMap(new Function<byte[], Publisher<Integer>>() {
                             @Override
                             public Publisher<Integer> apply(@io.reactivex.annotations.NonNull final byte[] bytes) throws Exception {
                                 RxBleLog.d("processing bytes length: " + bytes.length);
-                                return Flowable.fromCallable(new Callable<Observable<Integer>>() {
-                                    @Override
-                                    public Observable<Integer> call() throws Exception {
-                                        final NotifyCharacteristicChangedOperation operation
-                                                = operationsProvider.provideNotifyOperation(
-                                                characteristic,
-                                                bytes,
-                                                isIndication
-                                        );
-                                        RxBleLog.d("queueing notification/indication");
-                                        return operationQueue.queue(operation);
-                                    }
-                                }).delay(new Function<Observable<Integer>, Publisher<Boolean>>() {
-                                    @Override
-                                    public Publisher<Boolean> apply(
-                                            @io.reactivex.annotations.NonNull Observable<Integer> integerObservable
-                                    ) throws Exception {
-                                        return setupNotificationsDelay(clientconfig, characteristic)
-                                                .toFlowable();
-                                    }
-                                }).flatMap(new Function<Observable<Integer>, Publisher<? extends Integer>>() {
-                                                    @Override
-                                                    public Publisher<? extends Integer> apply(
-                                                            @io.reactivex.annotations.NonNull Observable<Integer> integerSingle
-                                                    ) throws Exception {
-                                                        return integerSingle.toFlowable(BackpressureStrategy.BUFFER);
-                                                    }
-                                                })
-                                        .subscribeOn(connectionScheduler);
-
+                                final NotifyCharacteristicChangedOperation operation
+                                        = operationsProvider.provideNotifyOperation(
+                                        characteristic,
+                                        bytes,
+                                        isIndication
+                                );
+                                RxBleLog.d("queueing notification/indication");
+                                return operationQueue.queue(operation).toFlowable(BackpressureStrategy.BUFFER);
                             }
                 })
                 .flatMap(new Function<Integer, Publisher<Integer>>() {
