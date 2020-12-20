@@ -87,8 +87,10 @@ public class RxBleServerConnectionInternalTest extends Specification {
         when:
         def notif = Flowable.just(data).repeat(4);
         def indicationnotif = Flowable.just(data).repeat(4)
-        TestObserver res = objectUnderTest.setupNotifications(ch.getUuid(), notif).test();
-        TestObserver indicationres = objectUnderTest.setupIndication(ch.getUuid(), indicationnotif).test()
+        def processor = objectUnderTest.setupNotifications(ch.getUuid())
+        notif.subscribe(processor.blockingGet())
+        def indicationprocessor = objectUnderTest.setupIndication(ch.getUuid())
+        indicationnotif.subscribe(indicationprocessor.blockingGet())
         for (int i=0;i<4*2;i++) {
             objectUnderTest.getNotificationPublishRelay().valueRelay.accept(BluetoothGatt.GATT_SUCCESS)
             advanceTimeForWritesToComplete(1)
@@ -109,8 +111,8 @@ public class RxBleServerConnectionInternalTest extends Specification {
         serverProvider.getBluetoothGatt() >> bluetoothGattServer
         serverProvider.getConnection(_) >> objectUnderTest
         bluetoothGattServer.notifyCharacteristicChanged(_, _, _) >> true
-        res.assertComplete()
-        indicationres.assertComplete()
+        notif.test().assertComplete()
+        indicationnotif.test().assertComplete()
     }
 
 
