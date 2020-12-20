@@ -6,10 +6,9 @@ import androidx.annotation.NonNull;
 
 import java.util.UUID;
 
-import io.reactivex.Completable;
-import io.reactivex.Flowable;
 import io.reactivex.Observable;
 import io.reactivex.Single;
+import io.reactivex.processors.BehaviorProcessor;
 
 /**
  * BLE connection handle for a single devices connected to the GATT server
@@ -18,9 +17,9 @@ public interface RxBleServerConnection {
     @NonNull
     BluetoothDevice getDevice();
 
-    Completable setupNotifications(UUID characteristic, Flowable<byte[]> notifications);
+    Single<BehaviorProcessor<byte[]>> setupNotifications(UUID characteristic);
 
-    Completable setupIndication(UUID characteristic, Flowable<byte[]> indications);
+    Single<BehaviorProcessor<byte[]>> setupIndication(UUID characteristic);
 
     Observable<Integer> getOnMtuChanged();
 
