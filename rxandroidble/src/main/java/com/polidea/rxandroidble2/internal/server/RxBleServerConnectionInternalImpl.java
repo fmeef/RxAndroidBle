@@ -25,7 +25,6 @@ import com.polidea.rxandroidble2.internal.serialization.ServerOperationQueue;
 import com.polidea.rxandroidble2.internal.util.GattServerTransaction;
 
 import org.reactivestreams.Publisher;
-import org.reactivestreams.Subscription;
 
 import java.util.Arrays;
 import java.util.UUID;
@@ -36,16 +35,15 @@ import bleshadow.javax.inject.Named;
 import io.reactivex.BackpressureStrategy;
 import io.reactivex.Completable;
 import io.reactivex.Flowable;
-import io.reactivex.FlowableSubscriber;
 import io.reactivex.Observable;
 import io.reactivex.Scheduler;
 import io.reactivex.Single;
 import io.reactivex.disposables.CompositeDisposable;
 import io.reactivex.disposables.Disposable;
+import io.reactivex.functions.Action;
 import io.reactivex.functions.BiFunction;
 import io.reactivex.functions.Function;
 import io.reactivex.functions.Predicate;
-import io.reactivex.processors.BehaviorProcessor;
 
 public class RxBleServerConnectionInternalImpl implements RxBleServerConnectionInternal, RxBleServerConnection {
     private final Scheduler connectionScheduler;
@@ -271,15 +269,15 @@ public class RxBleServerConnectionInternalImpl implements RxBleServerConnectionI
     }
 
     @Override
-    public Single<BehaviorProcessor<byte[]>> setupIndication(final UUID ch) {
+    public Completable setupIndication(final UUID ch, final Flowable<byte[]> indications) {
         final BluetoothGattCharacteristic characteristic = serverState.getCharacteristic(ch);
 
         if (characteristic == null) {
-            return Single.error(
+            return Completable.error(
                     new BleGattServerException(device, BleGattServerOperationType.NOTIFICATION_SENT, "characteristic not found")
             );
         }
-        return setupNotifications(characteristic, true);
+        return setupNotifications(characteristic, indications, true);
     }
 
     private Completable setupNotificationsDelay(
@@ -312,33 +310,33 @@ public class RxBleServerConnectionInternalImpl implements RxBleServerConnectionI
     }
 
     @Override
-    public Single<BehaviorProcessor<byte[]>> setupNotifications(final UUID ch) {
+    public Completable setupNotifications(final UUID ch, final Flowable<byte[]> notifications) {
         final BluetoothGattCharacteristic characteristic = serverState.getCharacteristic(ch);
 
         if (characteristic == null) {
-            return Single.error(
+            return Completable.error(
                     new BleGattServerException(device, BleGattServerOperationType.NOTIFICATION_SENT, "characteristic not found")
             );
         }
 
-        return setupNotifications(characteristic, false);
+        return setupNotifications(characteristic, notifications, false);
     }
 
-    public Single<BehaviorProcessor<byte[]>> setupNotifications(
+    public Completable setupNotifications(
             final BluetoothGattCharacteristic characteristic,
+            final Flowable<byte[]> notifications,
             final boolean isIndication
     ) {
-        final BehaviorProcessor<byte[]> behaviorProcessor = BehaviorProcessor.create();
         RxBleLog.d("setupNotifictions: " + characteristic.getUuid());
         final BluetoothGattDescriptor clientconfig = characteristic.getDescriptor(RxBleServer.CLIENT_CONFIG);
         if (clientconfig == null) {
-            return Single.error(new BleGattServerException(
+            return Completable.error(new BleGattServerException(
                     device,
                     BleGattServerOperationType.NOTIFICATION_SENT,
                     "client config was null when setting up notifications"
             ));
         }
-        behaviorProcessor
+        return notifications
                 .subscribeOn(connectionScheduler)
                 .delay(new Function<byte[], Publisher<byte[]>>() {
                     @Override
@@ -376,28 +374,13 @@ public class RxBleServerConnectionInternalImpl implements RxBleServerConnectionI
                         }
                     }
                 })
-                .subscribe(new FlowableSubscriber<Integer>() {
+                .ignoreElements()
+                .doOnComplete(new Action() {
                     @Override
-                    public void onSubscribe(@io.reactivex.annotations.NonNull Subscription s) {
-
-                    }
-
-                    @Override
-                    public void onNext(Integer integer) {
-                        RxBleLog.d("notification sent: " + integer);
-                    }
-
-                    @Override
-                    public void onError(Throwable t) {
-                        RxBleLog.e("error in notifications: " + t);
-                    }
-
-                    @Override
-                    public void onComplete() {
-
+                    public void run() throws Exception {
+                        RxBleLog.d("notifications completed!");
                     }
                 });
-        return Single.just(behaviorProcessor);
     }
 
     private <T> Observable<T> withDisconnectionHandling(Output<T> output) {

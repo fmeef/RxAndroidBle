@@ -28,6 +28,8 @@ import java.util.Arrays;
 import java.util.Queue;
 import java.util.UUID;
 
+import io.reactivex.Completable;
+import io.reactivex.Flowable;
 import io.reactivex.Observable;
 import io.reactivex.ObservableSource;
 import io.reactivex.Single;
@@ -36,7 +38,6 @@ import io.reactivex.disposables.Disposable;
 import io.reactivex.functions.BiFunction;
 import io.reactivex.functions.Function;
 import io.reactivex.functions.Predicate;
-import io.reactivex.processors.BehaviorProcessor;
 
 public class RxBleServerConnectionMock implements RxBleServerConnection, RxBleServerConnectionInternal {
 
@@ -120,20 +121,21 @@ public class RxBleServerConnectionMock implements RxBleServerConnection, RxBleSe
         return device;
     }
 
-    public Single<BehaviorProcessor<byte[]>> setupNotifications(
+    public Completable setupNotifications(
         final BluetoothGattCharacteristic characteristic,
+        final Flowable<byte[]> notifications,
         final boolean isIndication
     ) {
         final BluetoothGattDescriptor clientConfig = characteristic.getDescriptor(RxBleServer.CLIENT_CONFIG);
         if (clientConfig == null) {
-            return Single.error(new BleGattServerException(
+            return Completable.error(new BleGattServerException(
                     device,
                     BleGattServerOperationType.NOTIFICATION_SENT,
                     "clientConfig is null"
             ));
         }
-        final BehaviorProcessor<byte[]> notifications = BehaviorProcessor.create();
-        getOnDescriptorWriteRequest(clientConfig.getUuid())
+
+        return getOnDescriptorWriteRequest(clientConfig.getUuid())
                 .flatMap(new Function<ServerResponseTransaction, ObservableSource<Integer>>() {
                     @Override
                     public ObservableSource<Integer> apply(ServerResponseTransaction transaction) throws Exception {
@@ -166,34 +168,33 @@ public class RxBleServerConnectionMock implements RxBleServerConnection, RxBleSe
                             }
                         });
                     }
-                }).subscribe();
-        return Single.just(notifications);
+                }).ignoreElements();
     }
 
     @Override
-    public Single<BehaviorProcessor<byte[]>> setupNotifications(UUID ch) {
+    public Completable setupNotifications(UUID ch, Flowable<byte[]> notifications) {
         final BluetoothGattCharacteristic characteristic = serverState.getCharacteristic(ch);
 
         if (characteristic == null) {
-            return Single.error(
+            return Completable.error(
                     new BleGattServerException(device, BleGattServerOperationType.NOTIFICATION_SENT, "characteristic not found")
             );
         }
 
-        return setupNotifications(characteristic, false);
+        return setupNotifications(characteristic, notifications, false);
     }
 
     @Override
-    public Single<BehaviorProcessor<byte[]>> setupIndication(UUID ch) {
+    public Completable setupIndication(UUID ch, Flowable<byte[]> indications) {
         final BluetoothGattCharacteristic characteristic = serverState.getCharacteristic(ch);
 
         if (characteristic == null) {
-            return Single.error(
+            return Completable.error(
                     new BleGattServerException(device, BleGattServerOperationType.NOTIFICATION_SENT, "characteristic not found")
             );
         }
 
-        return setupNotifications(characteristic, true);
+        return setupNotifications(characteristic, indications, true);
     }
 
     @Override
