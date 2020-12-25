@@ -1,6 +1,5 @@
 package com.polidea.rxandroidble2.internal.connection;
 
-import android.annotation.SuppressLint;
 import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothGattServer;
 import android.bluetooth.BluetoothGattService;
@@ -166,19 +165,6 @@ public class ServerConnectorImpl implements ServerConnector {
                     ) throws Exception {
                         return createConnection(p.first, serverConfig.getOperationTimeout())
                                 .toObservable();
-                    }
-                })
-                .map(new Function<RxBleServerConnection, RxBleServerConnection>() {
-                    @SuppressLint("CheckResult")
-                    @Override
-                    public RxBleServerConnection apply(final RxBleServerConnection connection) throws Exception {
-                        connection.observeDisconnect().doOnError(new Consumer<Throwable>() {
-                            @Override
-                            public void accept(Throwable throwable) throws Exception {
-
-                            }
-                        });
-                        return connection;
                     }
                 })
                 .doOnDispose(new Action() {
