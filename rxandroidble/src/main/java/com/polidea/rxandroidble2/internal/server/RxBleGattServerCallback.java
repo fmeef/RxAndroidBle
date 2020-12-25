@@ -20,6 +20,8 @@ import com.polidea.rxandroidble2.exceptions.BleGattServerException;
 import com.polidea.rxandroidble2.exceptions.BleGattServerOperationType;
 import com.polidea.rxandroidble2.internal.RxBleLog;
 
+import java.util.concurrent.TimeUnit;
+
 import bleshadow.javax.inject.Inject;
 import bleshadow.javax.inject.Named;
 import io.reactivex.Observable;
@@ -323,7 +325,7 @@ public class RxBleGattServerCallback {
      * Does NOT emit errors even if status != GATT_SUCCESS.
      */
     public Observable<Pair<BluetoothDevice, RxBleConnection.RxBleConnectionState>> getOnConnectionStateChange() {
-        return connectionStatePublishRelay;
+        return connectionStatePublishRelay.delay(0, TimeUnit.SECONDS, callbackScheduler);
     }
 
     public BluetoothGattServerCallback getBluetoothGattServerCallback() {
