@@ -1,6 +1,7 @@
 package com.polidea.rxandroidble2.internal.serialization;
 
 import com.polidea.rxandroidble2.ServerComponent;
+import com.polidea.rxandroidble2.ServerConnectionComponent;
 import com.polidea.rxandroidble2.ServerConnectionScope;
 import com.polidea.rxandroidble2.exceptions.BleDisconnectedException;
 import com.polidea.rxandroidble2.exceptions.BleException;
@@ -27,6 +28,7 @@ public class ServerOperationQueueImpl extends OperationQueueBase implements
     @Inject
     public ServerOperationQueueImpl(
             @Named(ServerComponent.NamedSchedulers.BLUETOOTH_SERVER) final Scheduler callbackScheduler,
+            @Named(ServerConnectionComponent.SERVER_DISCONNECTION_ROUTER)
             final DisconnectionRouterOutput disconnectionRouterOutput
 
     ) {
