@@ -14,16 +14,12 @@ import androidx.annotation.Nullable;
 import androidx.annotation.RestrictTo;
 
 import com.polidea.rxandroidble2.internal.DeviceComponent;
-import com.polidea.rxandroidble2.internal.connection.DisconnectionRouterOutput;
 import com.polidea.rxandroidble2.internal.connection.ServerConnector;
 import com.polidea.rxandroidble2.internal.connection.ServerConnectorImpl;
 import com.polidea.rxandroidble2.internal.serialization.RxBleThreadFactory;
-import com.polidea.rxandroidble2.internal.serialization.ServerOperationQueue;
-import com.polidea.rxandroidble2.internal.serialization.ServerOperationQueueImpl;
 import com.polidea.rxandroidble2.internal.server.BluetoothGattServerProvider;
 import com.polidea.rxandroidble2.internal.server.RxBleServerState;
 import com.polidea.rxandroidble2.internal.server.RxBleServerStateImpl;
-import com.polidea.rxandroidble2.internal.server.ServerDisconnectionRouter;
 
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -198,10 +194,6 @@ public interface ServerComponent {
 
         @Binds
         @ServerScope
-        abstract DisconnectionRouterOutput bindDisconnectionRouterOutput(ServerDisconnectionRouter disconnectionRouter);
-
-        @Binds
-        @ServerScope
         abstract RxBleServer bindRxBleServer(RxBleServerImpl rxBleServer);
 
         @Binds
@@ -211,10 +203,6 @@ public interface ServerComponent {
         @Binds
         @ServerScope
         abstract RxBleServerState bindServerState(RxBleServerStateImpl serverState);
-
-        @Binds
-        @ServerScope
-        abstract ServerOperationQueue bindServerOperationQueue(ServerOperationQueueImpl impl);
     }
 
     RxBleServer rxBleServer();

@@ -1,7 +1,7 @@
 package com.polidea.rxandroidble2.internal.serialization;
 
 import com.polidea.rxandroidble2.ServerComponent;
-import com.polidea.rxandroidble2.ServerScope;
+import com.polidea.rxandroidble2.ServerConnectionScope;
 import com.polidea.rxandroidble2.exceptions.BleDisconnectedException;
 import com.polidea.rxandroidble2.exceptions.BleException;
 import com.polidea.rxandroidble2.internal.RxBleLog;
@@ -15,7 +15,7 @@ import io.reactivex.Observable;
 import io.reactivex.Scheduler;
 import io.reactivex.observers.DisposableObserver;
 
-@ServerScope
+@ServerConnectionScope
 public class ServerOperationQueueImpl extends OperationQueueBase implements
         ServerOperationQueue, ConnectionSubscriptionWatcher {
 
