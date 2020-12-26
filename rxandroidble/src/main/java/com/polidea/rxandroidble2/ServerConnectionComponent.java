@@ -30,7 +30,8 @@ import io.reactivex.Scheduler;
 public interface ServerConnectionComponent {
 
     String OPERATION_TIMEOUT = "server-operation-timeout";
-
+    String SERVER_DISCONNECTION_ROUTER = "server-disconnection-router";
+    String SERVER_CONNECTION_SUBSCRIPTION_WATCHER = "connection-subscription-watcher";
 
     @Subcomponent.Builder
     interface Builder {
@@ -66,6 +67,7 @@ public interface ServerConnectionComponent {
 
         @Binds
         @ServerConnectionScope
+        @Named(SERVER_DISCONNECTION_ROUTER)
         abstract DisconnectionRouterOutput bindDisconnectionRouterOutput(ServerDisconnectionRouter disconnectionRouter);
 
 
