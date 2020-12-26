@@ -2,7 +2,7 @@ package com.polidea.rxandroidble2.internal.server;
 
 import com.jakewharton.rxrelay2.BehaviorRelay;
 import com.polidea.rxandroidble2.RxBleAdapterStateObservable;
-import com.polidea.rxandroidble2.ServerScope;
+import com.polidea.rxandroidble2.ServerConnectionScope;
 import com.polidea.rxandroidble2.exceptions.BleDisconnectedException;
 import com.polidea.rxandroidble2.exceptions.BleException;
 import com.polidea.rxandroidble2.exceptions.BleGattServerException;
@@ -20,7 +20,7 @@ import io.reactivex.functions.Consumer;
 import io.reactivex.functions.Function;
 import io.reactivex.functions.Predicate;
 
-@ServerScope
+@ServerConnectionScope
 public class ServerDisconnectionRouter implements DisconnectionRouterInput<BleGattServerException>, DisconnectionRouterOutput {
     private final BehaviorRelay<BleException> bleExceptionBehaviorRelay = BehaviorRelay.create();
     private final Observable<BleException> firstDisconnectionValueObs;

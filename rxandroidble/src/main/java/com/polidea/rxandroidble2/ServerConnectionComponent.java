@@ -3,13 +3,16 @@ package com.polidea.rxandroidble2;
 import android.bluetooth.BluetoothDevice;
 
 import com.polidea.rxandroidble2.internal.connection.ConnectionSubscriptionWatcher;
+import com.polidea.rxandroidble2.internal.connection.DisconnectionRouterOutput;
 import com.polidea.rxandroidble2.internal.operations.TimeoutConfiguration;
 import com.polidea.rxandroidble2.internal.operations.server.ServerConnectionOperationsProvider;
 import com.polidea.rxandroidble2.internal.operations.server.ServerConnectionOperationsProviderImpl;
+import com.polidea.rxandroidble2.internal.serialization.ServerOperationQueue;
 import com.polidea.rxandroidble2.internal.serialization.ServerOperationQueueImpl;
 import com.polidea.rxandroidble2.internal.server.RxBleServerConnectionInternal;
 import com.polidea.rxandroidble2.internal.server.RxBleServerConnectionInternalImpl;
 import com.polidea.rxandroidble2.internal.server.ServerDisconnectAction;
+import com.polidea.rxandroidble2.internal.server.ServerDisconnectionRouter;
 
 import java.util.Set;
 import java.util.concurrent.ExecutorService;
@@ -65,6 +68,15 @@ public interface ServerConnectionComponent {
         @Binds
         @IntoSet
         abstract ConnectionSubscriptionWatcher bindServerDisconnectAction(ServerDisconnectAction action);
+
+        @Binds
+        @ServerConnectionScope
+        abstract DisconnectionRouterOutput bindDisconnectionRouterOutput(ServerDisconnectionRouter disconnectionRouter);
+
+
+        @Binds
+        @ServerConnectionScope
+        abstract ServerOperationQueue bindServerOperationQueue(ServerOperationQueueImpl impl);
 
         @Provides
         static ServerComponent.ServerComponentFinalizer provideFinalizationCloseable(
