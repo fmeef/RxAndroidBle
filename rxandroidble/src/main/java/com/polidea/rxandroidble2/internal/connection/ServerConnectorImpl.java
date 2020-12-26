@@ -170,6 +170,7 @@ public class ServerConnectorImpl implements ServerConnector {
                 .doOnDispose(new Action() {
                     @Override
                     public void run() throws Exception {
+                        RxBleLog.e("gatt server disposed, closing server");
                         closeServer();
                     }
                 })
