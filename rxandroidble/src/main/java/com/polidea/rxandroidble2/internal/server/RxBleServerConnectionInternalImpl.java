@@ -455,14 +455,17 @@ public class RxBleServerConnectionInternalImpl implements RxBleServerConnectionI
     }
 
     @Override
-    public Observable<ServerResponseTransaction> getOnDescriptorReadRequest(final UUID descriptor) {
+    public Observable<ServerResponseTransaction> getOnDescriptorReadRequest(
+            final UUID characteristic,
+            final UUID descriptor
+    ) {
         return withDisconnectionHandling(getReadDescriptorOutput())
                 .filter(new Predicate<GattServerTransaction<BluetoothGattDescriptor>>() {
                     @Override
                     public boolean test(GattServerTransaction<BluetoothGattDescriptor> transaction) throws Exception {
                         return transaction.getPayload().getUuid().compareTo(descriptor) == 0
                                 && transaction.getPayload().getCharacteristic().getUuid()
-                                .compareTo(descriptor) == 0;
+                                .compareTo(characteristic) == 0;
                     }
                 })
                 .map(new Function<GattServerTransaction<BluetoothGattDescriptor>, ServerResponseTransaction>() {
@@ -476,16 +479,16 @@ public class RxBleServerConnectionInternalImpl implements RxBleServerConnectionI
 
     @Override
     public Observable<ServerResponseTransaction> getOnDescriptorWriteRequest(
+            final UUID characteristicuuid,
             final UUID descriptoruuid
     ) {
-        final BluetoothGattDescriptor descriptor = serverState.getDescriptor(descriptoruuid);
         return withDisconnectionHandling(getWriteDescriptorOutput())
                 .filter(new Predicate<GattServerTransaction<BluetoothGattDescriptor>>() {
                     @Override
                     public boolean test(GattServerTransaction<BluetoothGattDescriptor> transaction) throws Exception {
-                        return transaction.getPayload().getUuid().compareTo(descriptor.getUuid()) == 0
+                        return transaction.getPayload().getUuid().compareTo(descriptoruuid) == 0
                                 && transaction.getPayload().getCharacteristic().getUuid()
-                                .compareTo(descriptor.getCharacteristic().getUuid()) == 0;
+                                .compareTo(characteristicuuid) == 0;
                     }
                 })
                 .map(new Function<GattServerTransaction<BluetoothGattDescriptor>, ServerResponseTransaction>() {

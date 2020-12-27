@@ -22,7 +22,6 @@ public class RxBleServerStateImpl implements RxBleServerState {
 
     private final ConcurrentHashMap<UUID, NotificationStatus> notificationState = new ConcurrentHashMap<>();
     private final ConcurrentHashMap<UUID, BluetoothGattCharacteristic> characteristicMap = new ConcurrentHashMap<>();
-    private final ConcurrentHashMap<UUID, BluetoothGattDescriptor> descriptorMap = new ConcurrentHashMap<>();
     private final BluetoothGattServerProvider provider;
 
     @Inject
@@ -59,9 +58,6 @@ public class RxBleServerStateImpl implements RxBleServerState {
                 ));
             }
             characteristicMap.put(characteristic.getUuid(), characteristic);
-            for (BluetoothGattDescriptor descriptor : characteristic.getDescriptors()) {
-                descriptorMap.put(descriptor.getUuid(), descriptor);
-            }
         }
         provider.getBluetoothGatt().addService(service);
     }
@@ -85,8 +81,12 @@ public class RxBleServerStateImpl implements RxBleServerState {
 
     @Nullable
     @Override
-    public BluetoothGattDescriptor getDescriptor(UUID uuid) {
-        return descriptorMap.get(uuid);
+    public BluetoothGattDescriptor getDescriptor(UUID characteristic, UUID uuid) {
+        BluetoothGattCharacteristic ch = characteristicMap.get(characteristic);
+        if (ch == null) {
+            return null;
+        }
+        return ch.getDescriptor(uuid);
     }
 
     @Override
