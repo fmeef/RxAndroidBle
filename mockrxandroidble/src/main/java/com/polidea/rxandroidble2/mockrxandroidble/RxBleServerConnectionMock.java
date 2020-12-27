@@ -135,7 +135,7 @@ public class RxBleServerConnectionMock implements RxBleServerConnection, RxBleSe
             ));
         }
 
-        return getOnDescriptorWriteRequest(clientConfig.getUuid())
+        return getOnDescriptorWriteRequest(clientConfig.getCharacteristic().getUuid(), clientConfig.getUuid())
                 .flatMap(new Function<ServerResponseTransaction, ObservableSource<Integer>>() {
                     @Override
                     public ObservableSource<Integer> apply(ServerResponseTransaction transaction) throws Exception {
@@ -231,9 +231,10 @@ public class RxBleServerConnectionMock implements RxBleServerConnection, RxBleSe
 
     @Override
     public Observable<ServerResponseTransaction> getOnDescriptorReadRequest(
+            UUID c,
             UUID d
     ) {
-        final BluetoothGattDescriptor descriptor = serverState.getDescriptor(d);
+        final BluetoothGattDescriptor descriptor = serverState.getDescriptor(c, d);
         return withDisconnectionHandling(readDescriptorOutput)
                 .map(new Function<GattServerTransaction<BluetoothGattDescriptor>, ServerResponseTransaction>() {
                     @Override
@@ -245,6 +246,7 @@ public class RxBleServerConnectionMock implements RxBleServerConnection, RxBleSe
 
     @Override
     public Observable<ServerResponseTransaction> getOnDescriptorWriteRequest(
+            UUID c,
             UUID d
     ) {
         return withDisconnectionHandling(readDescriptorOutput)
