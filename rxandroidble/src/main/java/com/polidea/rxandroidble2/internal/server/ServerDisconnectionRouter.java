@@ -7,7 +7,6 @@ import com.polidea.rxandroidble2.exceptions.BleDisconnectedException;
 import com.polidea.rxandroidble2.exceptions.BleException;
 import com.polidea.rxandroidble2.exceptions.BleGattServerException;
 import com.polidea.rxandroidble2.internal.RxBleLog;
-import com.polidea.rxandroidble2.internal.connection.DisconnectionRouterInput;
 import com.polidea.rxandroidble2.internal.connection.DisconnectionRouterOutput;
 import com.polidea.rxandroidble2.internal.util.RxBleAdapterWrapper;
 
@@ -21,7 +20,7 @@ import io.reactivex.functions.Function;
 import io.reactivex.functions.Predicate;
 
 @ServerConnectionScope
-public class ServerDisconnectionRouter implements DisconnectionRouterInput<BleGattServerException>, DisconnectionRouterOutput {
+public class ServerDisconnectionRouter implements DisconnectionRouterOutput {
     private final BehaviorRelay<BleException> bleExceptionBehaviorRelay = BehaviorRelay.create();
     private final Observable<BleException> firstDisconnectionValueObs;
     private final Observable<Object> firstDisconnectionExceptionObs;
@@ -89,23 +88,18 @@ public class ServerDisconnectionRouter implements DisconnectionRouterInput<BleGa
                 });
     }
 
-
-    @Override
     public void onDisconnectedException(BleDisconnectedException disconnectedException) {
         bleExceptionBehaviorRelay.accept(disconnectedException);
     }
 
-    @Override
     public void onGattConnectionStateException(BleGattServerException disconnectedGattException) {
         bleExceptionBehaviorRelay.accept(disconnectedGattException);
     }
 
-    @Override
     public Observable<BleException> asValueOnlyObservable() {
         return firstDisconnectionValueObs;
     }
 
-    @Override
     public <T> Observable<T> asErrorOnlyObservable() {
         //noinspection unchecked
         return (Observable<T>) firstDisconnectionExceptionObs;

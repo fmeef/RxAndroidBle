@@ -6,9 +6,9 @@ import com.polidea.rxandroidble2.ServerConnectionScope;
 import com.polidea.rxandroidble2.exceptions.BleDisconnectedException;
 import com.polidea.rxandroidble2.exceptions.BleException;
 import com.polidea.rxandroidble2.internal.RxBleLog;
-import com.polidea.rxandroidble2.internal.connection.ConnectionSubscriptionWatcher;
 import com.polidea.rxandroidble2.internal.connection.DisconnectionRouterOutput;
 import com.polidea.rxandroidble2.internal.operations.Operation;
+import com.polidea.rxandroidble2.internal.server.ServerConnectionSubscriptionWatcher;
 
 import bleshadow.javax.inject.Inject;
 import bleshadow.javax.inject.Named;
@@ -18,7 +18,7 @@ import io.reactivex.observers.DisposableObserver;
 
 @ServerConnectionScope
 public class ServerOperationQueueImpl extends OperationQueueBase implements
-        ServerOperationQueue, ConnectionSubscriptionWatcher {
+        ServerOperationQueue, ServerConnectionSubscriptionWatcher {
 
     private final DisconnectionRouterOutput disconnectionRouterOutput;
     private DisposableObserver<BleException> disconnectionThrowableSubscription;
@@ -28,8 +28,7 @@ public class ServerOperationQueueImpl extends OperationQueueBase implements
     @Inject
     public ServerOperationQueueImpl(
             @Named(ServerComponent.NamedSchedulers.BLUETOOTH_SERVER) final Scheduler callbackScheduler,
-            @Named(ServerConnectionComponent.SERVER_DISCONNECTION_ROUTER)
-            final DisconnectionRouterOutput disconnectionRouterOutput
+            @Named(ServerConnectionComponent.SERVER_DISCONNECTION_ROUTER) final DisconnectionRouterOutput disconnectionRouterOutput
 
     ) {
         super(callbackScheduler);
