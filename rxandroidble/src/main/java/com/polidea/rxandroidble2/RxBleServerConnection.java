@@ -28,9 +28,9 @@ public interface RxBleServerConnection {
 
     Observable<ServerResponseTransaction> getOnCharacteristicWriteRequest(UUID characteristic);
 
-    Observable<ServerResponseTransaction> getOnDescriptorReadRequest(UUID descriptor);
+    Observable<ServerResponseTransaction> getOnDescriptorReadRequest(UUID characteristic, UUID descriptor);
 
-    Observable<ServerResponseTransaction> getOnDescriptorWriteRequest(UUID descriptor);
+    Observable<ServerResponseTransaction> getOnDescriptorWriteRequest(UUID characteristic, UUID descriptor);
 
     Single<Integer> indicationSingle(UUID characteristic, byte[] value);
 

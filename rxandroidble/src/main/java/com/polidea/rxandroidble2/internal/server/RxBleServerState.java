@@ -23,7 +23,7 @@ public interface RxBleServerState {
     @Nullable
     BluetoothGattCharacteristic getCharacteristic(UUID uuid);
     @Nullable
-    BluetoothGattDescriptor getDescriptor(UUID uuid);
+    BluetoothGattDescriptor getDescriptor(UUID characteristic, UUID uuid);
     List<BluetoothGattService> getServiceList();
 
 
