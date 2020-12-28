@@ -117,6 +117,12 @@ public class RxBleServerStateImpl implements RxBleServerState {
         }
     }
 
+
+    @Override
+    public NotificationStatus getNotificationStatus(UUID characteristic) {
+        return notificationState.get(characteristic);
+    }
+
     @Override
     public boolean getNotifications(UUID uuid) {
         NotificationStatus status = notificationState.get(uuid);
