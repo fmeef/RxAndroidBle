@@ -18,6 +18,7 @@ public interface RxBleServerState {
     byte[] getNotificationValue(UUID uuid);
     void setNotifications(UUID characteristic, byte[] value);
     void registerService(BluetoothGattService service);
+    NotificationStatus getNotificationStatus(UUID characteristic);
     @Nullable
     BluetoothGattService getService(UUID uuid);
     @Nullable

@@ -282,11 +282,19 @@ public class RxBleServerConnectionInternalImpl implements RxBleServerConnectionI
 
     private Completable setupNotificationsDelay(
             final BluetoothGattDescriptor clientconfig,
-            final BluetoothGattCharacteristic characteristic
+            final BluetoothGattCharacteristic characteristic,
+            boolean isIndication
     ) {
-        if (serverState.getNotifications(characteristic.getUuid())) {
-            RxBleLog.d("immediate start notification/indication");
-            return Completable.complete();
+        if (isIndication) {
+            if (serverState.getIndications(characteristic.getUuid())) {
+                RxBleLog.d("immediate start indication");
+                return Completable.complete();
+            }
+        } else {
+            if (serverState.getNotifications(characteristic.getUuid())) {
+                RxBleLog.d("immediate start notification");
+                return Completable.complete();
+            }
         }
 
         return withDisconnectionHandling(getWriteDescriptorOutput())
@@ -341,7 +349,7 @@ public class RxBleServerConnectionInternalImpl implements RxBleServerConnectionI
                 .delay(new Function<byte[], Publisher<byte[]>>() {
                     @Override
                     public Publisher<byte[]> apply(@io.reactivex.annotations.NonNull byte[] bytes) throws Exception {
-                        return setupNotificationsDelay(clientconfig, characteristic)
+                        return setupNotificationsDelay(clientconfig, characteristic, isIndication)
                                 .toFlowable();
                     }
                 })
