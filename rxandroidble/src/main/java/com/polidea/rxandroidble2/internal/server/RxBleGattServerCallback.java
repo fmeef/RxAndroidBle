@@ -7,6 +7,7 @@ import android.bluetooth.BluetoothGattCharacteristic;
 import android.bluetooth.BluetoothGattDescriptor;
 import android.bluetooth.BluetoothGattServerCallback;
 import android.bluetooth.BluetoothGattService;
+import android.bluetooth.BluetoothManager;
 import android.bluetooth.BluetoothProfile;
 import android.util.Pair;
 
@@ -34,6 +35,7 @@ public class RxBleGattServerCallback {
     final PublishRelay<Pair<BluetoothDevice, RxBleConnection.RxBleConnectionState>> connectionStatePublishRelay = PublishRelay.create();
     final Scheduler callbackScheduler;
     final CompositeDisposable compositeDisposable = new CompositeDisposable();
+    final BluetoothManager bluetoothManager;
     final RxBleServerState serverState;
     private final BluetoothGattServerProvider gattServerProvider;
 
@@ -46,33 +48,37 @@ public class RxBleGattServerCallback {
                 return;
             }
 
-            RxBleServerConnectionInternal connectionInfo = gattServerProvider.getConnection(device);
-            if (connectionInfo != null) {
-                if (newState == BluetoothProfile.STATE_DISCONNECTED
-                        || newState == BluetoothProfile.STATE_DISCONNECTING) {
-                    connectionInfo.onDisconnectedException(
-                            new BleDisconnectedException(device.getAddress(), status)
-                    );
-                } else {
-                    if (status != BluetoothGatt.GATT_SUCCESS) {
-                        RxBleLog.e("GattServer state change failed %i", status);
-                        //TODO: is this the same as client
-                        connectionInfo.onGattConnectionStateException(
-                                new BleGattServerException(
-                                        status,
-                                        device,
-                                        BleGattServerOperationType.CONNECTION_STATE,
-                                        "onConnectionStateChange GATT_FAILURE"
-                                )
-                        );
+            for (BluetoothDevice d : bluetoothManager.getConnectedDevices(BluetoothProfile.GATT_SERVER)) {
+                if (d.getAddress().equals(device.getAddress())) {
+                    RxBleServerConnectionInternal connectionInfo = gattServerProvider.getConnection(device);
+                    if (connectionInfo != null) {
+                        if (newState == BluetoothProfile.STATE_DISCONNECTED
+                                || newState == BluetoothProfile.STATE_DISCONNECTING) {
+                            connectionInfo.onDisconnectedException(
+                                    new BleDisconnectedException(device.getAddress(), status)
+                            );
+                        } else {
+                            if (status != BluetoothGatt.GATT_SUCCESS) {
+                                RxBleLog.e("GattServer state change failed %i", status);
+                                //TODO: is this the same as client
+                                connectionInfo.onGattConnectionStateException(
+                                        new BleGattServerException(
+                                                status,
+                                                device,
+                                                BleGattServerOperationType.CONNECTION_STATE,
+                                                "onConnectionStateChange GATT_FAILURE"
+                                        )
+                                );
+                            }
+                        }
                     }
+
+                    connectionStatePublishRelay.accept(new Pair<>(
+                            device,
+                            mapConnectionStateToRxBleConnectionStatus(newState)
+                    ));
                 }
             }
-
-            connectionStatePublishRelay.accept(new Pair<>(
-                    device,
-                    mapConnectionStateToRxBleConnectionStatus(newState)
-            ));
         }
 
         @Override
@@ -289,11 +295,13 @@ public class RxBleGattServerCallback {
     public RxBleGattServerCallback(
             @Named(ServerComponent.NamedSchedulers.BLUETOOTH_SERVER) Scheduler callbackScheduler,
             BluetoothGattServerProvider gattServerProvider,
-            RxBleServerState serverState
+            RxBleServerState serverState,
+            BluetoothManager bluetoothManager
     ) {
         this.callbackScheduler = callbackScheduler;
         this.gattServerProvider = gattServerProvider;
         this.serverState = serverState;
+        this.bluetoothManager = bluetoothManager;
     }
 
     static RxBleConnection.RxBleConnectionState mapConnectionStateToRxBleConnectionStatus(int newState) {
