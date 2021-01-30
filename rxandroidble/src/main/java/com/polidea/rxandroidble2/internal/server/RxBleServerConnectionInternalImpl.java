@@ -353,7 +353,7 @@ public class RxBleServerConnectionInternalImpl implements RxBleServerConnectionI
                                 .toFlowable();
                     }
                 })
-                .flatMap(new Function<byte[], Publisher<Integer>>() {
+                .concatMap(new Function<byte[], Publisher<Integer>>() {
                             @Override
                             public Publisher<Integer> apply(@io.reactivex.annotations.NonNull final byte[] bytes) throws Exception {
                                 RxBleLog.d("processing bytes length: " + bytes.length);
