@@ -43,41 +43,36 @@ public class RxBleGattServerCallback {
         @Override
         public void onConnectionStateChange(final BluetoothDevice device, final int status, final int newState) {
             super.onConnectionStateChange(device, status, newState);
-
-            if (device == null) {
-                return;
+            int state = bluetoothManager.getConnectionState(device, BluetoothProfile.GATT_SERVER);
+            RxBleLog.v("gatt server onConnectionStateChange: " + device.getAddress() + " " + status + " " + state);
+            RxBleServerConnectionInternal connectionInfo = gattServerProvider.getConnection(device);
+            if (connectionInfo != null) {
+                if (state == BluetoothProfile.STATE_DISCONNECTED
+                        || state == BluetoothProfile.STATE_DISCONNECTING) {
+                    connectionInfo.onDisconnectedException(
+                            new BleDisconnectedException(device.getAddress(), status)
+                    );
+                } else if (status != BluetoothGatt.GATT_SUCCESS) {
+                        RxBleLog.e("GattServer state change failed %i", status);
+                        //TODO: is this the same as client
+                        connectionInfo.onGattConnectionStateException(
+                                new BleGattServerException(
+                                        status,
+                                        device,
+                                        BleGattServerOperationType.CONNECTION_STATE,
+                                        "onConnectionStateChange GATT_FAILURE"
+                                )
+                        );
+                }
+            } else {
+                RxBleLog.e("connectionInfo was null for " + device);
             }
 
-            for (BluetoothDevice d : bluetoothManager.getConnectedDevices(BluetoothProfile.GATT_SERVER)) {
-                if (d.getAddress().equals(device.getAddress())) {
-                    RxBleServerConnectionInternal connectionInfo = gattServerProvider.getConnection(device);
-                    if (connectionInfo != null) {
-                        if (newState == BluetoothProfile.STATE_DISCONNECTED
-                                || newState == BluetoothProfile.STATE_DISCONNECTING) {
-                            connectionInfo.onDisconnectedException(
-                                    new BleDisconnectedException(device.getAddress(), status)
-                            );
-                        } else {
-                            if (status != BluetoothGatt.GATT_SUCCESS) {
-                                RxBleLog.e("GattServer state change failed %i", status);
-                                //TODO: is this the same as client
-                                connectionInfo.onGattConnectionStateException(
-                                        new BleGattServerException(
-                                                status,
-                                                device,
-                                                BleGattServerOperationType.CONNECTION_STATE,
-                                                "onConnectionStateChange GATT_FAILURE"
-                                        )
-                                );
-                            }
-                        }
-                    }
-
-                    connectionStatePublishRelay.accept(new Pair<>(
-                            device,
-                            mapConnectionStateToRxBleConnectionStatus(newState)
-                    ));
-                }
+            if (state == BluetoothProfile.STATE_CONNECTED) {
+                connectionStatePublishRelay.accept(new Pair<>(
+                        device,
+                        mapConnectionStateToRxBleConnectionStatus(state)
+                ));
             }
         }
 
