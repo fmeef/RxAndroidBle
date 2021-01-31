@@ -57,7 +57,7 @@ public class ServerOperationQueueImpl extends OperationQueueBase implements
                 .subscribeWith(new DisposableObserver<BleException>() {
                     @Override
                     public void onNext(BleException e) {
-                        terminate(e);
+                        RxBleLog.e("queue received BleException: " + e);
                     }
 
                     @Override
