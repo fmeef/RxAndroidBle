@@ -3,7 +3,6 @@ package com.polidea.rxandroidble2.internal.serialization;
 import com.polidea.rxandroidble2.ServerComponent;
 import com.polidea.rxandroidble2.ServerConnectionComponent;
 import com.polidea.rxandroidble2.ServerConnectionScope;
-import com.polidea.rxandroidble2.exceptions.BleDisconnectedException;
 import com.polidea.rxandroidble2.exceptions.BleException;
 import com.polidea.rxandroidble2.internal.RxBleLog;
 import com.polidea.rxandroidble2.internal.connection.DisconnectionRouterOutput;
@@ -74,8 +73,6 @@ public class ServerOperationQueueImpl extends OperationQueueBase implements
 
     @Override
     public void onConnectionUnsubscribed() {
-        disconnectionThrowableSubscription.dispose();
-        disconnectionThrowableSubscription = null;
-        terminate(new BleDisconnectedException("server"));
+
     }
 }
