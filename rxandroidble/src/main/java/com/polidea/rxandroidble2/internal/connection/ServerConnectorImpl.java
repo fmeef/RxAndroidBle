@@ -1,15 +1,12 @@
 package com.polidea.rxandroidble2.internal.connection;
 
+import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
-import android.bluetooth.BluetoothGattServer;
-import android.bluetooth.BluetoothGattService;
 import android.bluetooth.BluetoothManager;
+import android.bluetooth.BluetoothProfile;
 import android.content.Context;
-import android.os.Build;
-import android.util.Log;
-import android.util.Pair;
 
-import com.polidea.rxandroidble2.RxBleConnection;
+import com.jakewharton.rxrelay2.PublishRelay;
 import com.polidea.rxandroidble2.RxBleServerConnection;
 import com.polidea.rxandroidble2.ServerComponent;
 import com.polidea.rxandroidble2.ServerConfig;
@@ -17,15 +14,12 @@ import com.polidea.rxandroidble2.ServerConnectionComponent;
 import com.polidea.rxandroidble2.ServerScope;
 import com.polidea.rxandroidble2.Timeout;
 import com.polidea.rxandroidble2.internal.RxBleLog;
-import com.polidea.rxandroidble2.internal.server.BluetoothGattServerProvider;
-import com.polidea.rxandroidble2.internal.server.RxBleGattServerCallback;
 import com.polidea.rxandroidble2.internal.server.RxBleServerConnectionInternal;
-import com.polidea.rxandroidble2.internal.server.RxBleServerState;
 import com.polidea.rxandroidble2.internal.server.ServerConnectionSubscriptionWatcher;
 
-import java.util.Map;
+import java.util.Collections;
+import java.util.List;
 import java.util.Set;
-import java.util.UUID;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -35,6 +29,7 @@ import io.reactivex.Observable;
 import io.reactivex.ObservableSource;
 import io.reactivex.Scheduler;
 import io.reactivex.Single;
+import io.reactivex.annotations.NonNull;
 import io.reactivex.disposables.Disposable;
 import io.reactivex.functions.Action;
 import io.reactivex.functions.Consumer;
@@ -43,79 +38,53 @@ import io.reactivex.functions.Predicate;
 
 @ServerScope
 public class ServerConnectorImpl implements ServerConnector {
-    private final BluetoothGattServerProvider gattServerProvider;
     private final Scheduler callbackScheduler;
     private final Context context;
     private final BluetoothManager bluetoothManager;
     private final ServerConnectionComponent.Builder connectionComponentBuilder;
-    private final RxBleGattServerCallback rxBleGattServerCallback;
-    private final RxBleServerState serverState;
     private final ConcurrentHashMap<BluetoothDevice, RxBleServerConnection> localConnectionmap = new ConcurrentHashMap<>();
-
+    private final BluetoothAdapter adapter;
+    private final PublishRelay<List<BluetoothDevice>> getDevicesConnected = PublishRelay.create();
+    private final Set<String> connectedMacs = Collections.newSetFromMap(new ConcurrentHashMap<String, Boolean>());
     @Inject
     public ServerConnectorImpl(
             final @Named(ServerComponent.SERVER_CONTEXT) Context context,
-            final BluetoothGattServerProvider gattServerProvider,
             final BluetoothManager bluetoothManager,
             final @Named(ServerComponent.NamedSchedulers.BLUETOOTH_SERVER) Scheduler callbackScheduler,
             ServerConnectionComponent.Builder connectionComponentBuilder,
-            RxBleGattServerCallback rxBleGattServerCallback,
-            RxBleServerState serverState
+            BluetoothAdapter adapter
             ) {
         this.context = context;
-        this.gattServerProvider = gattServerProvider;
         this.bluetoothManager = bluetoothManager;
         this.callbackScheduler = callbackScheduler;
         this.connectionComponentBuilder = connectionComponentBuilder;
-        this.rxBleGattServerCallback = rxBleGattServerCallback;
-        this.serverState = serverState;
-    }
-
-    private boolean initializeServer(ServerConfig config) {
-        BluetoothGattServer server = gattServerProvider.getBluetoothGatt();
-        if (server == null) {
-            RxBleLog.e("error: gatt server handle null. aborting setup");
-            return false;
-        }
-
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            int phyval = 0;
-            for (ServerConfig.BluetoothPhy phy : config.getPhySet()) {
-                switch (phy) {
-                    case PHY_LE_1M:
-                        phyval |= BluetoothDevice.PHY_LE_1M_MASK;
-                        break;
-                    case PHY_LE_2M:
-                        phyval |= BluetoothDevice.PHY_LE_2M_MASK;
-                        break;
-                    case PHY_LE_CODED:
-                        phyval |= BluetoothDevice.PHY_LE_CODED_MASK;
-                        break;
-                    default:
-                        // here to please linter
-                        Log.e("debug", "we should never reach here");
-                        break;
-                }
+        this.adapter = adapter;
+        adapter.getProfileProxy(context, new BluetoothProfile.ServiceListener() {
+            @Override
+            public void onServiceConnected(int profile, BluetoothProfile proxy) {
+                getDevicesConnected.accept(proxy.getConnectedDevices());
             }
-        }
 
-        for (Map.Entry<UUID, BluetoothGattService> entry : config.getServices().entrySet()) {
-            serverState.registerService(entry.getValue());
-        }
+            @Override
+            public void onServiceDisconnected(int profile) {
 
-        return true;
+            }
+        }, BluetoothProfile.GATT_SERVER);
     }
 
-    public Single<RxBleServerConnection> createConnection(final BluetoothDevice device, final Timeout timeout) {
+    public Single<RxBleServerConnection> createConnection(
+            final BluetoothDevice device,
+            final Timeout timeout,
+            final ServerConfig config) {
         final ServerConnectionComponent component = connectionComponentBuilder
                 .bluetoothDevice(device)
                 .operationTimeout(timeout)
+                .serverConfig(config)
                 .build();
 
         final Set<ServerConnectionSubscriptionWatcher> subWatchers = component.connectionSubscriptionWatchers();
 
         final RxBleServerConnectionInternal internal = component.serverConnectionInternal();
-        gattServerProvider.updateConnection(device, internal);
         return Single.fromCallable(new Callable<RxBleServerConnection>() {
             @Override
             public RxBleServerConnection call() throws Exception {
@@ -147,44 +116,39 @@ public class ServerConnectorImpl implements ServerConnector {
 
     @Override
     public Observable<RxBleServerConnection> subscribeToConnections(final ServerConfig serverConfig) {
-        if (gattServerProvider.getBluetoothGatt() == null) {
-            BluetoothGattServer bluetoothGattServer = bluetoothManager.openGattServer(
-                    context,
-                    rxBleGattServerCallback.getBluetoothGattServerCallback()
-            );
-            gattServerProvider.updateBluetoothGatt(bluetoothGattServer);
-            initializeServer(serverConfig);
-        }
 
-        return rxBleGattServerCallback.getOnConnectionStateChange()
+        return getDevicesConnected
+                .flatMap(new Function<List<BluetoothDevice>, ObservableSource<BluetoothDevice>>() {
+                    @Override
+                    public ObservableSource<BluetoothDevice> apply(@NonNull List<BluetoothDevice> bluetoothDevices) throws Exception {
+                        return Observable.fromIterable(bluetoothDevices);
+                    }
+                })
+                .filter(new Predicate<BluetoothDevice>() {
+                    @Override
+                    public boolean test(@NonNull BluetoothDevice device) throws Exception {
+                        return !connectedMacs.contains(device.getAddress());
+                    }
+                })
+                .map(new Function<BluetoothDevice, BluetoothDevice>() {
+                    @Override
+                    public BluetoothDevice apply(@NonNull BluetoothDevice device) throws Exception {
+                        connectedMacs.add(device.getAddress());
+                        return device;
+                    }
+                })
                 .doOnError(new Consumer<Throwable>() {
                     @Override
                     public void accept(Throwable error) throws Exception {
                         RxBleLog.e("debug", "disconnect error");
                     }
                 })
-                .filter(new Predicate<Pair<BluetoothDevice, RxBleConnection.RxBleConnectionState>>() {
-                    @Override
-                    public boolean test(
-                            Pair<BluetoothDevice, RxBleConnection.RxBleConnectionState> bluetoothDeviceRxBleConnectionStatePair
-                    ) throws Exception {
-                        if (bluetoothDeviceRxBleConnectionStatePair.second == RxBleConnection.RxBleConnectionState.CONNECTED
-                                || bluetoothDeviceRxBleConnectionStatePair.second == RxBleConnection.RxBleConnectionState.CONNECTING)  {
-                            return true;
-                        } else {
-                            gattServerProvider.closeConnection(bluetoothDeviceRxBleConnectionStatePair.first);
-                            return false;
-                        }
-                    }
-                })
-                .flatMap(
-                        new Function<Pair<BluetoothDevice, RxBleConnection.RxBleConnectionState>,
-                                ObservableSource<RxBleServerConnection>>() {
+                .flatMap(new Function<BluetoothDevice, ObservableSource<RxBleServerConnection>>() {
                     @Override
                     public ObservableSource<RxBleServerConnection> apply(
-                            Pair<BluetoothDevice, RxBleConnection.RxBleConnectionState> p
+                            BluetoothDevice p
                     ) throws Exception {
-                        return createConnection(p.first, serverConfig.getOperationTimeout())
+                        return createConnection(p, serverConfig.getOperationTimeout(), serverConfig)
                                 .toObservable();
                     }
                 })
@@ -192,17 +156,9 @@ public class ServerConnectorImpl implements ServerConnector {
                     @Override
                     public void run() throws Exception {
                         RxBleLog.e("gatt server disposed, closing server");
-                        closeServer();
                     }
                 })
                 .subscribeOn(callbackScheduler)
                 .unsubscribeOn(callbackScheduler);
-    }
-
-    @Override
-    public void closeServer() {
-        if (gattServerProvider.getBluetoothGatt() != null) {
-            gattServerProvider.getBluetoothGatt().close();
-        }
     }
 }

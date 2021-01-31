@@ -35,11 +35,6 @@ public class RxBleServerMock extends RxBleServer {
     }
 
     @Override
-    public void closeServer() {
-
-    }
-
-    @Override
     public RxBleServerConnection getConnection(BluetoothDevice device) {
         return null;
     }

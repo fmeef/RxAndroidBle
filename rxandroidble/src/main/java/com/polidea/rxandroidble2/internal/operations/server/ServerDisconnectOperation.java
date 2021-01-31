@@ -52,7 +52,7 @@ public class ServerDisconnectOperation extends QueueOperation<Void> {
 
     @Override
     protected void protectedRun(final ObservableEmitter<Void> emitter, final QueueReleaseInterface queueReleaseInterface) throws Throwable {
-        final BluetoothGattServer bluetoothGattServer = provider.getBluetoothGatt();
+        final BluetoothGattServer bluetoothGattServer = provider.getServer();
         if (bluetoothGattServer == null) {
             RxBleLog.w("Server disconnect operation on client " + device.getAddress() + " with null BluetoothGattServer");
             queueReleaseInterface.release();
@@ -92,14 +92,14 @@ public class ServerDisconnectOperation extends QueueOperation<Void> {
 
     private Single<BluetoothGattServer> disconnectIfRequired() {
         return isDisconnected()
-                ? Single.just(provider.getBluetoothGatt())
+                ? Single.just(provider.getServer())
                 : disconnect();
     }
 
     private Single<BluetoothGattServer> disconnect() {
         //TODO: handle timeout
         return new DisconnectGattServerObservable(
-                provider.getBluetoothGatt(),
+                provider.getServer(),
                 callback,
                 gattServerScheduler,
                 device

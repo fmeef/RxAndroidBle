@@ -15,7 +15,7 @@ import com.jakewharton.rxrelay2.PublishRelay;
 import com.polidea.rxandroidble2.RxBleConnection;
 import com.polidea.rxandroidble2.RxBleServer;
 import com.polidea.rxandroidble2.ServerComponent;
-import com.polidea.rxandroidble2.ServerScope;
+import com.polidea.rxandroidble2.ServerConnectionScope;
 import com.polidea.rxandroidble2.exceptions.BleDisconnectedException;
 import com.polidea.rxandroidble2.exceptions.BleGattServerException;
 import com.polidea.rxandroidble2.exceptions.BleGattServerOperationType;
@@ -29,7 +29,7 @@ import io.reactivex.Observable;
 import io.reactivex.Scheduler;
 import io.reactivex.disposables.CompositeDisposable;
 
-@ServerScope
+@ServerConnectionScope
 public class RxBleGattServerCallback {
     //TODO: make this per device
     final PublishRelay<Pair<BluetoothDevice, RxBleConnection.RxBleConnectionState>> connectionStatePublishRelay = PublishRelay.create();
@@ -50,7 +50,7 @@ public class RxBleGattServerCallback {
 
             for (BluetoothDevice d : bluetoothManager.getConnectedDevices(BluetoothProfile.GATT_SERVER)) {
                 if (d.getAddress().equals(device.getAddress())) {
-                    RxBleServerConnectionInternal connectionInfo = gattServerProvider.getConnection(device);
+                    RxBleServerConnectionInternal connectionInfo = gattServerProvider.getConnection();
                     if (connectionInfo != null) {
                         if (newState == BluetoothProfile.STATE_DISCONNECTED
                                 || newState == BluetoothProfile.STATE_DISCONNECTING) {
@@ -94,7 +94,7 @@ public class RxBleGattServerCallback {
                                                 final BluetoothGattCharacteristic characteristic) {
             super.onCharacteristicReadRequest(device, requestId, offset, characteristic);
 
-            RxBleServerConnectionInternal connectionInfo = gattServerProvider.getConnection(device);
+            RxBleServerConnectionInternal connectionInfo = gattServerProvider.getConnection();
 
             if (connectionInfo == null) {
                 RxBleLog.e("connectionInfo was null");
@@ -126,7 +126,7 @@ public class RxBleGattServerCallback {
             RxBleLog.d("onCharacteristicWriteRequest characteristic: " + characteristic.getUuid()
                     + " device: " + device.getAddress());
 
-            RxBleServerConnectionInternal connectionInfo = gattServerProvider.getConnection(device);
+            RxBleServerConnectionInternal connectionInfo = gattServerProvider.getConnection();
 
             if (connectionInfo == null) {
                 RxBleLog.e("connectionInfo was null");
@@ -158,7 +158,7 @@ public class RxBleGattServerCallback {
             super.onDescriptorReadRequest(device, requestId, offset, descriptor);
             RxBleLog.d("onDescriptorReadRequest: " + descriptor.getUuid());
 
-            RxBleServerConnectionInternal connectionInfo = gattServerProvider.getConnection(device);
+            RxBleServerConnectionInternal connectionInfo = gattServerProvider.getConnection();
 
             if (connectionInfo == null) {
                 RxBleLog.e("connectionInfo was null");
@@ -197,7 +197,7 @@ public class RxBleGattServerCallback {
             super.onDescriptorWriteRequest(device, requestId, descriptor, preparedWrite, responseNeeded, offset, value);
             RxBleLog.d("onDescriptorWriteRequest: " + descriptor.getUuid());
 
-            RxBleServerConnectionInternal connectionInfo = gattServerProvider.getConnection(device);
+            RxBleServerConnectionInternal connectionInfo = gattServerProvider.getConnection();
 
             if (connectionInfo == null) {
                 RxBleLog.e("connectionInfo was null");
@@ -233,7 +233,7 @@ public class RxBleGattServerCallback {
         public void onExecuteWrite(final BluetoothDevice device, final int requestId, final boolean execute) {
             super.onExecuteWrite(device, requestId, execute);
             if (execute) {
-                RxBleServerConnectionInternal connectionInfo = gattServerProvider.getConnection(device);
+                RxBleServerConnectionInternal connectionInfo = gattServerProvider.getConnection();
 
                 if (connectionInfo == null) {
                     RxBleLog.e("connectionInfo was null");
@@ -249,7 +249,7 @@ public class RxBleGattServerCallback {
         @Override
         public void onNotificationSent(final BluetoothDevice device, final int status) {
             super.onNotificationSent(device, status);
-            RxBleServerConnectionInternal connectionInfo = gattServerProvider.getConnection(device);
+            RxBleServerConnectionInternal connectionInfo = gattServerProvider.getConnection();
 
             if (connectionInfo == null) {
                 RxBleLog.e("connectionInfo was null");
@@ -268,7 +268,7 @@ public class RxBleGattServerCallback {
         public void onMtuChanged(final BluetoothDevice device, final int mtu) {
             super.onMtuChanged(device, mtu);
 
-            RxBleServerConnectionInternal connectionInfo = gattServerProvider.getConnection(device);
+            RxBleServerConnectionInternal connectionInfo = gattServerProvider.getConnection();
 
             if (connectionInfo == null) {
                 RxBleLog.e("connectionInfo was null");

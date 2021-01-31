@@ -51,7 +51,7 @@ public class NotifyCharacteristicChangedOperation extends QueueOperation<Integer
             final ObservableEmitter<Integer> emitter,
             final QueueReleaseInterface queueReleaseInterface
     ) throws Throwable {
-        final BluetoothGattServer server = serverProvider.getBluetoothGatt();
+        final BluetoothGattServer server = serverProvider.getServer();
         final QueueReleasingEmitterWrapper<Integer> emitterWrapper = new QueueReleasingEmitterWrapper<>(emitter, queueReleaseInterface);
         if (server == null) {
             RxBleLog.w("NotificationSendOperation encountered null gatt server");

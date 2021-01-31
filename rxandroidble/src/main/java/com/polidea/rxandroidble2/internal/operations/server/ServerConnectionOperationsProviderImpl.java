@@ -55,7 +55,7 @@ public class ServerConnectionOperationsProviderImpl implements ServerConnectionO
     ) {
         return new ServerReplyOperation(
                 timeoutConfiguration,
-                serverProvider.getBluetoothGatt(),
+                serverProvider.getServer(),
                 device,
                 requestID,
                 status,
@@ -85,7 +85,7 @@ public class ServerConnectionOperationsProviderImpl implements ServerConnectionO
                 serverProvider,
                 characteristic,
                 timeoutConfiguration,
-                serverProvider.getConnection(bluetoothDevice),
+                serverProvider.getConnection(),
                 value,
                 isIndication
         );

@@ -4,6 +4,12 @@ import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothGatt;
 import android.bluetooth.BluetoothGattCharacteristic;
 import android.bluetooth.BluetoothGattDescriptor;
+import android.bluetooth.BluetoothGattServer;
+import android.bluetooth.BluetoothGattService;
+import android.bluetooth.BluetoothManager;
+import android.content.Context;
+import android.os.Build;
+import android.util.Log;
 
 import androidx.annotation.NonNull;
 
@@ -12,6 +18,7 @@ import com.polidea.rxandroidble2.RxBleConnection;
 import com.polidea.rxandroidble2.RxBleServer;
 import com.polidea.rxandroidble2.RxBleServerConnection;
 import com.polidea.rxandroidble2.ServerComponent;
+import com.polidea.rxandroidble2.ServerConfig;
 import com.polidea.rxandroidble2.ServerResponseTransaction;
 import com.polidea.rxandroidble2.ServerTransactionFactory;
 import com.polidea.rxandroidble2.exceptions.BleDisconnectedException;
@@ -27,6 +34,7 @@ import com.polidea.rxandroidble2.internal.util.GattServerTransaction;
 import org.reactivestreams.Publisher;
 
 import java.util.Arrays;
+import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 
@@ -59,6 +67,7 @@ public class RxBleServerConnectionInternalImpl implements RxBleServerConnectionI
     private final CompositeDisposable compositeDisposable = new CompositeDisposable();
     private final BluetoothGattServerProvider gattServerProvider;
     private final RxBleServerState serverState;
+    private final RxBleGattServerCallback callback;
 
     private final Function<BleException, Observable<?>> errorMapper = new Function<BleException, Observable<?>>() {
         @Override
@@ -76,8 +85,11 @@ public class RxBleServerConnectionInternalImpl implements RxBleServerConnectionI
         ServerDisconnectionRouter disconnectionRouter,
         ServerTransactionFactory serverTransactionFactory,
         BluetoothGattServerProvider serverProvider,
-        RxBleServerState serverState
-
+        RxBleServerState serverState,
+        RxBleGattServerCallback callback,
+        ServerConfig config,
+        BluetoothManager manager,
+        Context context
     ) {
         this.connectionScheduler = connectionScheduler;
         this.operationsProvider = operationsProvider;
@@ -87,6 +99,46 @@ public class RxBleServerConnectionInternalImpl implements RxBleServerConnectionI
         this.serverTransactionFactory = serverTransactionFactory;
         this.gattServerProvider = serverProvider;
         this.serverState = serverState;
+        this.callback = callback;
+        initializeServer(config);
+        final BluetoothGattServer server = manager.openGattServer(context, callback.getBluetoothGattServerCallback());
+        serverProvider.updateServer(server);
+        serverProvider.updateConnection(this);
+    }
+
+    private boolean initializeServer(ServerConfig config) {
+        BluetoothGattServer server = gattServerProvider.getServer();
+        if (server == null) {
+            RxBleLog.e("error: gatt server handle null. aborting setup");
+            return false;
+        }
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            int phyval = 0;
+            for (ServerConfig.BluetoothPhy phy : config.getPhySet()) {
+                switch (phy) {
+                    case PHY_LE_1M:
+                        phyval |= BluetoothDevice.PHY_LE_1M_MASK;
+                        break;
+                    case PHY_LE_2M:
+                        phyval |= BluetoothDevice.PHY_LE_2M_MASK;
+                        break;
+                    case PHY_LE_CODED:
+                        phyval |= BluetoothDevice.PHY_LE_CODED_MASK;
+                        break;
+                    default:
+                        // here to please linter
+                        Log.e("debug", "we should never reach here");
+                        break;
+                }
+            }
+        }
+
+        for (Map.Entry<UUID, BluetoothGattService> entry : config.getServices().entrySet()) {
+            serverState.registerService(entry.getValue());
+        }
+
+        return true;
     }
 
 
@@ -104,6 +156,7 @@ public class RxBleServerConnectionInternalImpl implements RxBleServerConnectionI
             new Output<>();
     private final Output<Integer> changedMtuOutput =
             new Output<>();
+
 
 
 

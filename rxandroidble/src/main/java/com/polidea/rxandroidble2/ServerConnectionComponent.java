@@ -10,6 +10,8 @@ import com.polidea.rxandroidble2.internal.serialization.ServerOperationQueue;
 import com.polidea.rxandroidble2.internal.serialization.ServerOperationQueueImpl;
 import com.polidea.rxandroidble2.internal.server.RxBleServerConnectionInternal;
 import com.polidea.rxandroidble2.internal.server.RxBleServerConnectionInternalImpl;
+import com.polidea.rxandroidble2.internal.server.RxBleServerState;
+import com.polidea.rxandroidble2.internal.server.RxBleServerStateImpl;
 import com.polidea.rxandroidble2.internal.server.ServerConnectionSubscriptionWatcher;
 import com.polidea.rxandroidble2.internal.server.ServerDisconnectionRouter;
 
@@ -41,6 +43,9 @@ public interface ServerConnectionComponent {
         Builder operationTimeout(Timeout operationTimeout);
 
         @BindsInstance
+        Builder serverConfig(ServerConfig config);
+
+        @BindsInstance
         Builder bluetoothDevice(BluetoothDevice device);
     }
 
@@ -60,6 +65,10 @@ public interface ServerConnectionComponent {
 
         @Binds
         abstract ServerTransactionFactory bindServerTransactionFactory(ServerTransactionFactoryImpl transactionFactory);
+
+        @Binds
+        @ServerConnectionScope
+        abstract RxBleServerState bindServerState(RxBleServerStateImpl serverState);
 
         @Binds
         @IntoSet
@@ -97,9 +106,6 @@ public interface ServerConnectionComponent {
         ) {
             return new TimeoutConfiguration(operationTimeout.timeout, operationTimeout.timeUnit, timeoutScheduler);
         }
-
-
-
     }
 
     Set<ServerConnectionSubscriptionWatcher> connectionSubscriptionWatchers();

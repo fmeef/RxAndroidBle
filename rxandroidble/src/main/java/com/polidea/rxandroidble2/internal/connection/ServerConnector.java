@@ -10,5 +10,4 @@ import io.reactivex.Observable;
 public interface ServerConnector {
     Observable<RxBleServerConnection> subscribeToConnections(ServerConfig config);
     RxBleServerConnection getConnection(BluetoothDevice device);
-    void closeServer();
 }

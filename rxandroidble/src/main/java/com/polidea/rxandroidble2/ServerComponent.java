@@ -3,23 +3,18 @@ package com.polidea.rxandroidble2;
 import android.annotation.SuppressLint;
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothGattDescriptor;
-import android.bluetooth.BluetoothGattServer;
 import android.bluetooth.BluetoothManager;
 import android.content.ContentResolver;
 import android.content.Context;
 import android.content.pm.PackageManager;
 import android.os.Build;
 
-import androidx.annotation.Nullable;
 import androidx.annotation.RestrictTo;
 
 import com.polidea.rxandroidble2.internal.DeviceComponent;
 import com.polidea.rxandroidble2.internal.connection.ServerConnector;
 import com.polidea.rxandroidble2.internal.connection.ServerConnectorImpl;
 import com.polidea.rxandroidble2.internal.serialization.RxBleThreadFactory;
-import com.polidea.rxandroidble2.internal.server.BluetoothGattServerProvider;
-import com.polidea.rxandroidble2.internal.server.RxBleServerState;
-import com.polidea.rxandroidble2.internal.server.RxBleServerStateImpl;
 
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -101,7 +96,6 @@ public interface ServerComponent {
         }
 
         @Provides
-        @Nullable
         static BluetoothAdapter provideBluetoothAdapter() {
             return BluetoothAdapter.getDefaultAdapter();
         }
@@ -182,12 +176,6 @@ public interface ServerComponent {
             return Executors.newSingleThreadExecutor();
         }
 
-        @Provides
-        @ServerScope
-        static BluetoothGattServer provideBluetoothGattServer(BluetoothGattServerProvider bluetoothGattServerProvider) {
-            return bluetoothGattServerProvider.getBluetoothGatt();
-        }
-
         @Binds
         @ServerScope
         abstract Observable<RxBleAdapterStateObservable.BleAdapterState> bindStateObs(RxBleAdapterStateObservable stateObservable);
@@ -199,10 +187,6 @@ public interface ServerComponent {
         @Binds
         @ServerScope
         abstract ServerConnector bindServerConnector(ServerConnectorImpl serverConnector);
-
-        @Binds
-        @ServerScope
-        abstract RxBleServerState bindServerState(RxBleServerStateImpl serverState);
     }
 
     RxBleServer rxBleServer();

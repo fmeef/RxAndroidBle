@@ -7,7 +7,7 @@ import android.bluetooth.BluetoothGattService;
 import androidx.annotation.Nullable;
 
 import com.polidea.rxandroidble2.RxBleServer;
-import com.polidea.rxandroidble2.ServerScope;
+import com.polidea.rxandroidble2.ServerConnectionScope;
 import com.polidea.rxandroidble2.internal.RxBleLog;
 
 import java.util.Arrays;
@@ -17,7 +17,7 @@ import java.util.concurrent.ConcurrentHashMap;
 
 import bleshadow.javax.inject.Inject;
 
-@ServerScope
+@ServerConnectionScope
 public class RxBleServerStateImpl implements RxBleServerState {
 
     private final ConcurrentHashMap<UUID, NotificationStatus> notificationState = new ConcurrentHashMap<>();
@@ -59,7 +59,7 @@ public class RxBleServerStateImpl implements RxBleServerState {
             }
             characteristicMap.put(characteristic.getUuid(), characteristic);
         }
-        provider.getBluetoothGatt().addService(service);
+        provider.getServer().addService(service);
     }
 
     @Override
@@ -70,13 +70,13 @@ public class RxBleServerStateImpl implements RxBleServerState {
     @Override
     @Nullable
     public BluetoothGattService getService(UUID uuid) {
-        return provider.getBluetoothGatt().getService(uuid);
+        return provider.getServer().getService(uuid);
     }
 
     @Override
     @Nullable
     public List<BluetoothGattService> getServiceList() {
-        return provider.getBluetoothGatt().getServices();
+        return provider.getServer().getServices();
     }
 
     @Nullable

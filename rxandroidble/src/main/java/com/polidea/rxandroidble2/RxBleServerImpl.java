@@ -75,11 +75,6 @@ public class RxBleServerImpl extends RxBleServer {
         return serverConnector.subscribeToConnections(config); //TODO:
     }
 
-    @Override
-    public void closeServer() {
-
-    }
-
     private void guardBluetoothAdapterAvailable() {
         if (!rxBleAdapterWrapper.hasBluetoothAdapter()) {
             throw new UnsupportedOperationException("RxAndroidBle library needs a BluetoothAdapter to be available in the system to work."

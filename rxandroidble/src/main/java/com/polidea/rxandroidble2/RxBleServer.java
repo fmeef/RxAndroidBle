@@ -90,6 +90,4 @@ public abstract class RxBleServer {
     public abstract Observable<RxBleServerConnection> openServer(ServerConfig config);
 
     public abstract RxBleServerConnection getConnection(BluetoothDevice device);
-
-    public abstract void closeServer();
 }
