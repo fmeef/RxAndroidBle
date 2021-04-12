@@ -7,7 +7,7 @@ import com.polidea.rxandroidble2.ServerTransactionFactory;
 
 import java.util.concurrent.Callable;
 
-import io.reactivex.Observable;
+import io.reactivex.Single;
 
 public class ServerTransactionFactoryMock implements ServerTransactionFactory {
 
@@ -18,13 +18,13 @@ public class ServerTransactionFactoryMock implements ServerTransactionFactory {
     }
 
     @Override
-    public Observable<ServerResponseTransaction> prepareCharacteristicTransaction(
+    public Single<ServerResponseTransaction> prepareCharacteristicTransaction(
             final byte[] value,
             final int requestID,
             final int offset,
             final BluetoothDevice device
     ) {
-        return Observable.fromCallable(new Callable<ServerResponseTransaction>() {
+        return Single.fromCallable(new Callable<ServerResponseTransaction>() {
             @Override
             public ServerResponseTransaction call() throws Exception {
                 ServerResponseTransaction transaction = new ServerResponseTransactionMock(requestID, offset, value, device, response);

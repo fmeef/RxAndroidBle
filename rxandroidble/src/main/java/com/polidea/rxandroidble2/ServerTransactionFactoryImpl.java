@@ -6,8 +6,8 @@ import android.bluetooth.BluetoothDevice;
 import java.util.concurrent.Callable;
 
 import bleshadow.javax.inject.Inject;
-import io.reactivex.Observable;
-import io.reactivex.ObservableSource;
+import io.reactivex.Single;
+import io.reactivex.SingleSource;
 
 public class ServerTransactionFactoryImpl implements ServerTransactionFactory {
     final ServerTransactionComponent.Builder transactionComponentBuilder;
@@ -21,15 +21,15 @@ public class ServerTransactionFactoryImpl implements ServerTransactionFactory {
 
 
     @Override
-    public Observable<ServerResponseTransaction> prepareCharacteristicTransaction(
+    public Single<ServerResponseTransaction> prepareCharacteristicTransaction(
             final byte[] value,
             final int requestID,
             final int offset,
             final BluetoothDevice device
     ) {
-        return Observable.defer(new Callable<ObservableSource<? extends ServerResponseTransaction>>() {
+        return Single.defer(new Callable<SingleSource<? extends ServerResponseTransaction>>() {
             @Override
-            public ObservableSource<? extends ServerResponseTransaction> call() throws Exception {
+            public SingleSource<? extends ServerResponseTransaction> call() throws Exception {
                 final ServerTransactionComponent.TransactionConfig config = new ServerTransactionComponent.TransactionConfig();
                 config.device = device;
                 config.offset = offset;
@@ -38,7 +38,7 @@ public class ServerTransactionFactoryImpl implements ServerTransactionFactory {
                 final ServerTransactionComponent transactionComponent = transactionComponentBuilder
                         .config(config)
                         .build();
-                return Observable.fromCallable(new Callable<ServerResponseTransaction>() {
+                return Single.fromCallable(new Callable<ServerResponseTransaction>() {
                     @Override
                     public ServerResponseTransaction call() throws Exception {
                         return transactionComponent.getCharacteristicTransaction();

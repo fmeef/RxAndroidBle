@@ -2,10 +2,10 @@ package com.polidea.rxandroidble2;
 
 import android.bluetooth.BluetoothDevice;
 
-import io.reactivex.Observable;
+import io.reactivex.Single;
 
 public interface ServerTransactionFactory {
-    Observable<ServerResponseTransaction> prepareCharacteristicTransaction(
+    Single<ServerResponseTransaction> prepareCharacteristicTransaction(
             byte[] value,
             int requestID,
             int offset,
