@@ -21,10 +21,8 @@ import com.polidea.rxandroidble2.internal.server.BluetoothGattServerProvider;
 import com.polidea.rxandroidble2.internal.server.RxBleGattServerCallback;
 import com.polidea.rxandroidble2.internal.server.RxBleServerConnectionInternal;
 import com.polidea.rxandroidble2.internal.server.RxBleServerState;
-import com.polidea.rxandroidble2.internal.server.ServerConnectionSubscriptionWatcher;
 
 import java.util.Map;
-import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ConcurrentHashMap;
@@ -35,7 +33,6 @@ import io.reactivex.Observable;
 import io.reactivex.ObservableSource;
 import io.reactivex.Scheduler;
 import io.reactivex.Single;
-import io.reactivex.disposables.Disposable;
 import io.reactivex.functions.Action;
 import io.reactivex.functions.Consumer;
 import io.reactivex.functions.Function;
@@ -112,8 +109,6 @@ public class ServerConnectorImpl implements ServerConnector {
                 .operationTimeout(timeout)
                 .build();
 
-        final Set<ServerConnectionSubscriptionWatcher> subWatchers = component.connectionSubscriptionWatchers();
-
         final RxBleServerConnectionInternal internal = component.serverConnectionInternal();
         gattServerProvider.updateConnection(device, internal);
         return Single.fromCallable(new Callable<RxBleServerConnection>() {
@@ -121,23 +116,7 @@ public class ServerConnectorImpl implements ServerConnector {
             public RxBleServerConnection call() throws Exception {
                 return internal.getConnection();
             }
-        })
-                .doOnSubscribe(new Consumer<Disposable>() {
-                    @Override
-                    public void accept(Disposable disposable) throws Exception {
-                        for (ServerConnectionSubscriptionWatcher s : subWatchers) {
-                            s.onConnectionSubscribed();
-                        }
-                    }
-                })
-                .doFinally(new Action() {
-                    @Override
-                    public void run() throws Exception {
-                        for (ServerConnectionSubscriptionWatcher s : subWatchers) {
-                            s.onConnectionUnsubscribed();
-                        }
-                    }
-                });
+        });
     }
 
     @Override

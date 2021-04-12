@@ -68,12 +68,10 @@ public class RxBleGattServerCallback {
                 RxBleLog.e("connectionInfo was null for " + device);
             }
 
-            if (state == BluetoothProfile.STATE_CONNECTED) {
-                connectionStatePublishRelay.accept(new Pair<>(
-                        device,
-                        mapConnectionStateToRxBleConnectionStatus(state)
-                ));
-            }
+            connectionStatePublishRelay.accept(new Pair<>(
+                    device,
+                    mapConnectionStateToRxBleConnectionStatus(state)
+            ));
         }
 
         @Override
