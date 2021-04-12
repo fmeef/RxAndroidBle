@@ -161,19 +161,11 @@ public interface ServerComponent {
         }
 
         @Provides
-        @Named(NamedSchedulers.BLUETOOTH_CONNECTION)
-        @ServerScope
-        static Scheduler provideBluetoothConnectionScheduler() {
-            return RxJavaPlugins.createSingleScheduler(new RxBleThreadFactory());
-        }
-
-        @Provides
         @Named(NamedSchedulers.TIMEOUT)
         @ServerScope
         static Scheduler providesBluetoothTimeoutScheduler() {
             return RxJavaPlugins.createSingleScheduler(new RxBleThreadFactory());
         }
-
 
         @Provides
         @Named(ServerComponent.NamedExecutors.BLUETOOTH_INTERACTION)
@@ -186,6 +178,21 @@ public interface ServerComponent {
         @ServerScope
         static BluetoothGattServer provideBluetoothGattServer(BluetoothGattServerProvider bluetoothGattServerProvider) {
             return bluetoothGattServerProvider.getBluetoothGatt();
+        }
+
+        @Provides
+        @ServerScope
+        static ServerComponent.ServerComponentFinalizer provideFinalizationCloseable(
+                @Named(ServerComponent.NamedExecutors.BLUETOOTH_INTERACTION) final ExecutorService interactionExecutorService,
+                @Named(NamedSchedulers.BLUETOOTH_SERVER) final Scheduler callbacksScheduler
+        ) {
+            return new ServerComponent.ServerComponentFinalizer() {
+                @Override
+                public void onFinalize() {
+                    interactionExecutorService.shutdown();
+                    callbacksScheduler.shutdown();
+                }
+            };
         }
 
         @Binds

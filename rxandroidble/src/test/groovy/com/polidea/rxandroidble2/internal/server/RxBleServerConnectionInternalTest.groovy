@@ -2,6 +2,7 @@ package com.polidea.rxandroidble2.internal.server
 
 import android.bluetooth.*
 import com.polidea.rxandroidble2.DummyOperationQueue
+import com.polidea.rxandroidble2.ServerConnectionComponent
 import com.polidea.rxandroidble2.ServerTransactionFactory
 import com.polidea.rxandroidble2.internal.operations.server.ServerConnectionOperationsProvider
 import com.polidea.rxandroidble2.internal.operations.server.ServerConnectionOperationsProviderImpl
@@ -76,7 +77,14 @@ public class RxBleServerConnectionInternalTest extends Specification {
                 disconnectionRouter,
                 serverTransactionFactory,
                 serverProvider,
-                serverState
+                serverState,
+                new ServerConnectionComponent.ServerConnectionComponentFinalizer() {
+
+                    @Override
+                    void onFinalize() {
+
+                    }
+                }
         )
     }
 
