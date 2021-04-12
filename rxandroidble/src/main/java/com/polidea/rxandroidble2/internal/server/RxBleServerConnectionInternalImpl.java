@@ -28,16 +28,19 @@ import org.reactivestreams.Publisher;
 
 import java.util.Arrays;
 import java.util.UUID;
+import java.util.concurrent.Callable;
 import java.util.concurrent.TimeUnit;
 
 import bleshadow.javax.inject.Inject;
 import bleshadow.javax.inject.Named;
 import io.reactivex.BackpressureStrategy;
 import io.reactivex.Completable;
+import io.reactivex.CompletableSource;
 import io.reactivex.Flowable;
 import io.reactivex.Observable;
 import io.reactivex.Scheduler;
 import io.reactivex.Single;
+import io.reactivex.SingleSource;
 import io.reactivex.disposables.CompositeDisposable;
 import io.reactivex.disposables.Disposable;
 import io.reactivex.functions.Action;
@@ -202,24 +205,36 @@ public class RxBleServerConnectionInternalImpl implements RxBleServerConnectionI
 
     @Override
     public Single<byte[]> closeLongWriteCharacteristicOutput(Integer requestid) {
-        LongWriteClosableOutput<byte[]> output = characteristicMultiIndex.get(requestid);
-        if (output != null) {
-            output.valueRelay.onComplete();
-            characteristicMultiIndex.remove(requestid);
-            return output.out.delay(0, TimeUnit.SECONDS, connectionScheduler);
-        }
-        return Single.never();
+        return Single.just(requestid)
+                .flatMap(new Function<Integer, SingleSource<? extends byte[]>>() {
+                    @Override
+                    public SingleSource<? extends byte[]> apply(@io.reactivex.annotations.NonNull Integer integer) throws Exception {
+                        LongWriteClosableOutput<byte[]> output = characteristicMultiIndex.get(integer);
+                        if (output != null) {
+                            output.valueRelay.onComplete();
+                            characteristicMultiIndex.remove(integer);
+                            return output.out.delay(0, TimeUnit.SECONDS, connectionScheduler);
+                        }
+                        return Single.never();
+                    }
+                });
     }
 
     @Override
     public Single<byte[]> closeLongWriteDescriptorOutput(Integer requestid) {
-        LongWriteClosableOutput<byte[]> output = descriptorMultiIndex.get(requestid);
-        if (output != null) {
-            output.valueRelay.onComplete();
-            characteristicMultiIndex.remove(requestid);
-            return output.out.delay(0, TimeUnit.SECONDS, connectionScheduler);
-        }
-        return Single.never();
+        return Single.just(requestid)
+                .flatMap(new Function<Integer, SingleSource<? extends byte[]>>() {
+                    @Override
+                    public SingleSource<? extends byte[]> apply(@io.reactivex.annotations.NonNull Integer integer) throws Exception {
+                        LongWriteClosableOutput<byte[]> output = descriptorMultiIndex.get(integer);
+                        if (output != null) {
+                            output.valueRelay.onComplete();
+                            characteristicMultiIndex.remove(integer);
+                            return output.out.delay(0, TimeUnit.SECONDS, connectionScheduler);
+                        }
+                        return Single.never();
+                    }
+                });
     }
 
     @Override
@@ -233,101 +248,152 @@ public class RxBleServerConnectionInternalImpl implements RxBleServerConnectionI
     }
 
     @Override
-    public Single<Integer> indicationSingle(UUID ch, byte[] value) {
-        final BluetoothGattCharacteristic characteristic = serverState.getCharacteristic(ch);
+    public Single<Integer> indicationSingle(final UUID ch, final byte[] value) {
+        return Single.fromCallable(new Callable<Single<Integer>>() {
+            @Override
+            public Single<Integer> call() throws Exception {
+                final BluetoothGattCharacteristic characteristic = serverState.getCharacteristic(ch);
 
-        if (characteristic == null) {
-            return Single.error(
-                    new BleGattServerException(device, BleGattServerOperationType.NOTIFICATION_SENT, "characteristic not found")
-            );
-        }
+                if (characteristic == null) {
+                    return Single.error(
+                            new BleGattServerException(device, BleGattServerOperationType.NOTIFICATION_SENT, "characteristic not found")
+                    );
+                }
 
-        NotifyCharacteristicChangedOperation operation = operationsProvider.provideNotifyOperation(
-                characteristic,
-                value,
-                true
-        );
-        return operationQueue.queue(operation).firstOrError();
+                NotifyCharacteristicChangedOperation operation = operationsProvider.provideNotifyOperation(
+                        characteristic,
+                        value,
+                        true
+                );
+                return operationQueue.queue(operation).firstOrError();
+            }
+        }).flatMap(new Function<Single<Integer>, SingleSource<? extends Integer>>() {
+            @Override
+            public SingleSource<? extends Integer> apply(@io.reactivex.annotations.NonNull Single<Integer> integerSingle) throws Exception {
+                return integerSingle;
+            }
+        });
     }
 
     @Override
-    public Single<Integer> notificationSingle(UUID ch, byte[] value) {
-        final BluetoothGattCharacteristic characteristic = serverState.getCharacteristic(ch);
+    public Single<Integer> notificationSingle(final UUID ch, final byte[] value) {
+        return Single.fromCallable(new Callable<Single<Integer>>() {
+            @Override
+            public Single<Integer> call() throws Exception {
+                final BluetoothGattCharacteristic characteristic = serverState.getCharacteristic(ch);
 
-        if (characteristic == null) {
-            return Single.error(
-                    new BleGattServerException(device, BleGattServerOperationType.NOTIFICATION_SENT, "characteristic not found")
-            );
-        }
+                if (characteristic == null) {
+                    return Single.error(
+                            new BleGattServerException(device, BleGattServerOperationType.NOTIFICATION_SENT, "characteristic not found")
+                    );
+                }
 
-        NotifyCharacteristicChangedOperation operation = operationsProvider.provideNotifyOperation(
-                characteristic,
-                value,
-                false
-        );
-        return operationQueue.queue(operation).firstOrError();
+                NotifyCharacteristicChangedOperation operation = operationsProvider.provideNotifyOperation(
+                        characteristic,
+                        value,
+                        false
+                );
+                return operationQueue.queue(operation).firstOrError();
+            }
+        }).flatMap(new Function<Single<Integer>, SingleSource<? extends Integer>>() {
+            @Override
+            public SingleSource<? extends Integer> apply(@io.reactivex.annotations.NonNull Single<Integer> integerSingle) throws Exception {
+                return integerSingle;
+            }
+        });
     }
 
     @Override
     public Completable setupIndication(final UUID ch, final Flowable<byte[]> indications) {
-        final BluetoothGattCharacteristic characteristic = serverState.getCharacteristic(ch);
+        return Single.fromCallable(new Callable<Completable>() {
 
-        if (characteristic == null) {
-            return Completable.error(
-                    new BleGattServerException(device, BleGattServerOperationType.NOTIFICATION_SENT, "characteristic not found")
-            );
-        }
-        return setupNotifications(characteristic, indications, true);
+            @Override
+            public Completable call() throws Exception {
+                final BluetoothGattCharacteristic characteristic = serverState.getCharacteristic(ch);
+
+                if (characteristic == null) {
+                    throw new BleGattServerException(device, BleGattServerOperationType.NOTIFICATION_SENT, "characteristic not found");
+                }
+                return setupNotifications(characteristic, indications, true);
+            }
+        }).flatMapCompletable(new Function<Completable, CompletableSource>() {
+            @Override
+            public CompletableSource apply(@io.reactivex.annotations.NonNull Completable completable) throws Exception {
+                return completable;
+            }
+        });
     }
 
     private Completable setupNotificationsDelay(
             final BluetoothGattDescriptor clientconfig,
             final BluetoothGattCharacteristic characteristic,
-            boolean isIndication
+            final boolean isIndication
     ) {
-        if (isIndication) {
-            if (serverState.getIndications(characteristic.getUuid())) {
-                RxBleLog.d("immediate start indication");
-                return Completable.complete();
-            }
-        } else {
-            if (serverState.getNotifications(characteristic.getUuid())) {
-                RxBleLog.d("immediate start notification");
-                return Completable.complete();
-            }
-        }
+        return Single.fromCallable(new Callable<Completable>() {
 
-        return withDisconnectionHandling(getWriteDescriptorOutput())
-                .filter(new Predicate<GattServerTransaction<BluetoothGattDescriptor>>() {
-                    @Override
-                    public boolean test(GattServerTransaction<BluetoothGattDescriptor> transaction) throws Exception {
-                        return transaction.getPayload().getUuid().compareTo(clientconfig.getUuid()) == 0
-                                && transaction.getPayload().getCharacteristic().getUuid()
-                                .compareTo(clientconfig.getCharacteristic().getUuid()) == 0;
+            @Override
+            public Completable call() throws Exception {
+                if (isIndication) {
+                    if (serverState.getIndications(characteristic.getUuid())) {
+                        RxBleLog.d("immediate start indication");
+                        return Completable.complete();
                     }
-                })
-                .takeWhile(new Predicate<GattServerTransaction<BluetoothGattDescriptor>>() {
-                    @Override
-                    public boolean test(
-                            @io.reactivex.annotations.NonNull GattServerTransaction<BluetoothGattDescriptor> trans
-                    ) throws Exception {
-                        return Arrays.equals(trans.getTransaction().getValue(), BluetoothGattDescriptor.DISABLE_NOTIFICATION_VALUE);
+                } else {
+                    if (serverState.getNotifications(characteristic.getUuid())) {
+                        RxBleLog.d("immediate start notification");
+                        return Completable.complete();
                     }
-                })
-                .ignoreElements();
+                }
+
+                return withDisconnectionHandling(getWriteDescriptorOutput())
+                        .filter(new Predicate<GattServerTransaction<BluetoothGattDescriptor>>() {
+                            @Override
+                            public boolean test(GattServerTransaction<BluetoothGattDescriptor> transaction) throws Exception {
+                                return transaction.getPayload().getUuid().compareTo(clientconfig.getUuid()) == 0
+                                        && transaction.getPayload().getCharacteristic().getUuid()
+                                        .compareTo(clientconfig.getCharacteristic().getUuid()) == 0;
+                            }
+                        })
+                        .takeWhile(new Predicate<GattServerTransaction<BluetoothGattDescriptor>>() {
+                            @Override
+                            public boolean test(
+                                    @io.reactivex.annotations.NonNull GattServerTransaction<BluetoothGattDescriptor> trans
+                            ) throws Exception {
+                                return Arrays.equals(trans.getTransaction().getValue(), BluetoothGattDescriptor.DISABLE_NOTIFICATION_VALUE);
+                            }
+                        })
+                        .ignoreElements();
+            }
+        }).flatMapCompletable(new Function<Completable, CompletableSource>() {
+            @Override
+            public CompletableSource apply(@io.reactivex.annotations.NonNull Completable completable) throws Exception {
+                return completable;
+            }
+        });
+
     }
 
     @Override
     public Completable setupNotifications(final UUID ch, final Flowable<byte[]> notifications) {
-        final BluetoothGattCharacteristic characteristic = serverState.getCharacteristic(ch);
+        return Single.fromCallable(new Callable<Completable>() {
+            @Override
+            public Completable call() throws Exception {
+                final BluetoothGattCharacteristic characteristic = serverState.getCharacteristic(ch);
 
-        if (characteristic == null) {
-            return Completable.error(
-                    new BleGattServerException(device, BleGattServerOperationType.NOTIFICATION_SENT, "characteristic not found")
-            );
-        }
+                if (characteristic == null) {
+                    return Completable.error(
+                            new BleGattServerException(device, BleGattServerOperationType.NOTIFICATION_SENT, "characteristic not found")
+                    );
+                }
 
-        return setupNotifications(characteristic, notifications, false);
+                return setupNotifications(characteristic, notifications, false);
+            }
+        }).flatMapCompletable(new Function<Completable, CompletableSource>() {
+            @Override
+            public CompletableSource apply(@io.reactivex.annotations.NonNull Completable completable) throws Exception {
+                return completable;
+            }
+        });
     }
 
     public Completable setupNotifications(
@@ -335,25 +401,28 @@ public class RxBleServerConnectionInternalImpl implements RxBleServerConnectionI
             final Flowable<byte[]> notifications,
             final boolean isIndication
     ) {
-        RxBleLog.d("setupNotifictions: " + characteristic.getUuid());
-        final BluetoothGattDescriptor clientconfig = characteristic.getDescriptor(RxBleServer.CLIENT_CONFIG);
-        if (clientconfig == null) {
-            return Completable.error(new BleGattServerException(
-                    device,
-                    BleGattServerOperationType.NOTIFICATION_SENT,
-                    "client config was null when setting up notifications"
-            ));
-        }
-        return notifications
-                .subscribeOn(connectionScheduler)
-                .delay(new Function<byte[], Publisher<byte[]>>() {
-                    @Override
-                    public Publisher<byte[]> apply(@io.reactivex.annotations.NonNull byte[] bytes) throws Exception {
-                        return setupNotificationsDelay(clientconfig, characteristic, isIndication)
-                                .toFlowable();
-                    }
-                })
-                .concatMap(new Function<byte[], Publisher<Integer>>() {
+        return Single.fromCallable(new Callable<Completable>() {
+            @Override
+            public Completable call() throws Exception {
+                RxBleLog.d("setupNotifictions: " + characteristic.getUuid());
+                final BluetoothGattDescriptor clientconfig = characteristic.getDescriptor(RxBleServer.CLIENT_CONFIG);
+                if (clientconfig == null) {
+                    return Completable.error(new BleGattServerException(
+                            device,
+                            BleGattServerOperationType.NOTIFICATION_SENT,
+                            "client config was null when setting up notifications"
+                    ));
+                }
+                return notifications
+                        .subscribeOn(connectionScheduler)
+                        .delay(new Function<byte[], Publisher<byte[]>>() {
+                            @Override
+                            public Publisher<byte[]> apply(@io.reactivex.annotations.NonNull byte[] bytes) throws Exception {
+                                return setupNotificationsDelay(clientconfig, characteristic, isIndication)
+                                        .toFlowable();
+                            }
+                        })
+                        .concatMap(new Function<byte[], Publisher<Integer>>() {
                             @Override
                             public Publisher<Integer> apply(@io.reactivex.annotations.NonNull final byte[] bytes) throws Exception {
                                 RxBleLog.d("processing bytes length: " + bytes.length);
@@ -366,29 +435,36 @@ public class RxBleServerConnectionInternalImpl implements RxBleServerConnectionI
                                 RxBleLog.d("queueing notification/indication");
                                 return operationQueue.queue(operation).toFlowable(BackpressureStrategy.BUFFER);
                             }
-                })
-                .flatMap(new Function<Integer, Publisher<Integer>>() {
-                    @Override
-                    public Publisher<Integer> apply(@io.reactivex.annotations.NonNull Integer integer) throws Exception {
-                        RxBleLog.d("notification result: " + integer);
-                        if (integer != BluetoothGatt.GATT_SUCCESS) {
-                            return Flowable.error(new BleGattServerException(
-                                    device,
-                                    BleGattServerOperationType.NOTIFICATION_SENT,
-                                    "notification operation did not return GATT_SUCCESS"
+                        })
+                        .flatMap(new Function<Integer, Publisher<Integer>>() {
+                            @Override
+                            public Publisher<Integer> apply(@io.reactivex.annotations.NonNull Integer integer) throws Exception {
+                                RxBleLog.d("notification result: " + integer);
+                                if (integer != BluetoothGatt.GATT_SUCCESS) {
+                                    return Flowable.error(new BleGattServerException(
+                                            device,
+                                            BleGattServerOperationType.NOTIFICATION_SENT,
+                                            "notification operation did not return GATT_SUCCESS"
                                     ));
-                        } else {
-                            return Flowable.just(integer);
-                        }
-                    }
-                })
-                .ignoreElements()
-                .doOnComplete(new Action() {
-                    @Override
-                    public void run() throws Exception {
-                        RxBleLog.d("notifications completed!");
-                    }
-                });
+                                } else {
+                                    return Flowable.just(integer);
+                                }
+                            }
+                        })
+                        .ignoreElements()
+                        .doOnComplete(new Action() {
+                            @Override
+                            public void run() throws Exception {
+                                RxBleLog.d("notifications completed!");
+                            }
+                        });
+            }
+        }).flatMapCompletable(new Function<Completable, CompletableSource>() {
+            @Override
+            public CompletableSource apply(@io.reactivex.annotations.NonNull Completable completable) throws Exception {
+                return completable;
+            }
+        });
     }
 
     private <T> Observable<T> withDisconnectionHandling(Output<T> output) {
