@@ -615,7 +615,6 @@ public class RxBleServerConnectionInternalImpl implements RxBleServerConnectionI
                         return new GattServerTransaction<>(descriptor, serverResponseTransaction);
                     }
                 })
-                .subscribeOn(connectionScheduler)
                 .subscribe(valueRelay);
         compositeDisposable.add(disposable);
     }
@@ -664,6 +663,7 @@ public class RxBleServerConnectionInternalImpl implements RxBleServerConnectionI
 
     @Override
     public void dispose() {
+        connectionScheduler.shutdown();
         compositeDisposable.dispose();
     }
 
