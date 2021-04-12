@@ -2,17 +2,18 @@ package com.polidea.rxandroidble2;
 
 import android.bluetooth.BluetoothDevice;
 
+import androidx.annotation.RestrictTo;
+
 import com.polidea.rxandroidble2.internal.connection.DisconnectionRouterOutput;
 import com.polidea.rxandroidble2.internal.operations.TimeoutConfiguration;
 import com.polidea.rxandroidble2.internal.operations.server.ServerConnectionOperationsProvider;
 import com.polidea.rxandroidble2.internal.operations.server.ServerConnectionOperationsProviderImpl;
+import com.polidea.rxandroidble2.internal.serialization.RxBleThreadFactory;
 import com.polidea.rxandroidble2.internal.serialization.ServerOperationQueue;
 import com.polidea.rxandroidble2.internal.serialization.ServerOperationQueueImpl;
 import com.polidea.rxandroidble2.internal.server.RxBleServerConnectionInternal;
 import com.polidea.rxandroidble2.internal.server.RxBleServerConnectionInternalImpl;
 import com.polidea.rxandroidble2.internal.server.ServerDisconnectionRouter;
-
-import java.util.concurrent.ExecutorService;
 
 import bleshadow.dagger.Binds;
 import bleshadow.dagger.BindsInstance;
@@ -21,6 +22,7 @@ import bleshadow.dagger.Provides;
 import bleshadow.dagger.Subcomponent;
 import bleshadow.javax.inject.Named;
 import io.reactivex.Scheduler;
+import io.reactivex.plugins.RxJavaPlugins;
 
 @ServerConnectionScope
 @Subcomponent(modules = {ServerConnectionComponent.ConnectionModule.class})
@@ -44,6 +46,7 @@ public interface ServerConnectionComponent {
     @Module(subcomponents = {ServerTransactionComponent.class})
     abstract class ConnectionModule {
         @Binds
+        @ServerConnectionScope
         abstract RxBleServerConnectionInternal bindRxBleServerConnectionInternal(RxBleServerConnectionInternalImpl rxBleServerConnection);
 
         @Binds
@@ -51,11 +54,13 @@ public interface ServerConnectionComponent {
         abstract RxBleServerConnection bindRxBleServerConnection(RxBleServerConnectionInternalImpl connection);
 
         @Binds
+        @ServerConnectionScope
         abstract ServerConnectionOperationsProvider bindServerConnectionOperationsProvider(
                 ServerConnectionOperationsProviderImpl provider
         );
 
         @Binds
+        @ServerConnectionScope
         abstract ServerTransactionFactory bindServerTransactionFactory(ServerTransactionFactoryImpl transactionFactory);
 
         @Binds
@@ -69,15 +74,21 @@ public interface ServerConnectionComponent {
         abstract ServerOperationQueue bindServerOperationQueue(ServerOperationQueueImpl impl);
 
         @Provides
-        static ServerComponent.ServerComponentFinalizer provideFinalizationCloseable(
-                @Named(ServerComponent.NamedExecutors.BLUETOOTH_INTERACTION) final ExecutorService interactionExecutorService,
-                @Named(ServerComponent.NamedSchedulers.BLUETOOTH_CONNECTION) final Scheduler callbacksScheduler
-        ) {
-            return new ServerComponent.ServerComponentFinalizer() {
+        @Named(ServerComponent.NamedSchedulers.BLUETOOTH_CONNECTION)
+        @ServerConnectionScope
+        static Scheduler provideBluetoothConnectionScheduler() {
+            return RxJavaPlugins.createSingleScheduler(new RxBleThreadFactory());
+        }
+
+        @Provides
+        @ServerConnectionScope
+        static ServerConnectionComponent.ServerConnectionComponentFinalizer finalizer(
+                @Named(ServerComponent.NamedSchedulers.BLUETOOTH_CONNECTION) final Scheduler scheduler
+                ) {
+            return new ServerConnectionComponentFinalizer() {
                 @Override
                 public void onFinalize() {
-                    interactionExecutorService.shutdown();
-                    callbacksScheduler.shutdown();
+                    scheduler.shutdown();
                 }
             };
         }
@@ -96,5 +107,11 @@ public interface ServerConnectionComponent {
     }
 
     RxBleServerConnectionInternal serverConnectionInternal();
+
+    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+    interface ServerConnectionComponentFinalizer {
+
+        void onFinalize();
+    }
 
 }
