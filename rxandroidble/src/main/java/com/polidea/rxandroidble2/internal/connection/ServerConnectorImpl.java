@@ -147,13 +147,8 @@ public class ServerConnectorImpl implements ServerConnector {
                     public boolean test(
                             Pair<BluetoothDevice, RxBleConnection.RxBleConnectionState> bluetoothDeviceRxBleConnectionStatePair
                     ) throws Exception {
-                        if (bluetoothDeviceRxBleConnectionStatePair.second == RxBleConnection.RxBleConnectionState.CONNECTED
-                                || bluetoothDeviceRxBleConnectionStatePair.second == RxBleConnection.RxBleConnectionState.CONNECTING)  {
-                            return true;
-                        } else {
-                            gattServerProvider.closeConnection(bluetoothDeviceRxBleConnectionStatePair.first);
-                            return false;
-                        }
+                        return bluetoothDeviceRxBleConnectionStatePair.second == RxBleConnection.RxBleConnectionState.CONNECTED
+                                || bluetoothDeviceRxBleConnectionStatePair.second == RxBleConnection.RxBleConnectionState.CONNECTING;
                     }
                 })
                 .flatMap(
