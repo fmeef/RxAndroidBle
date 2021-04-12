@@ -482,6 +482,15 @@ public class RxBleServerConnectionMock implements RxBleServerConnection, RxBleSe
         compositeDisposable.add(disposable);
     }
 
+    @Override
+    public void dispose() {
+
+    }
+
+    @Override
+    public boolean isDisposed() {
+        return false;
+    }
 
     public static class Builder {
         private BluetoothDevice device;

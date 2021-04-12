@@ -10,11 +10,12 @@ import io.reactivex.Completable;
 import io.reactivex.Flowable;
 import io.reactivex.Observable;
 import io.reactivex.Single;
+import io.reactivex.disposables.Disposable;
 
 /**
  * BLE connection handle for a single devices connected to the GATT server
  */
-public interface RxBleServerConnection {
+public interface RxBleServerConnection extends Disposable {
     @NonNull
     BluetoothDevice getDevice();
 
