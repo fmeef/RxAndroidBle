@@ -24,18 +24,21 @@ public class RxBleServerImpl extends RxBleServer {
     private final Observable<RxBleAdapterStateObservable.BleAdapterState> rxBleAdapterStateObservable;
     private final Lazy<ServerStateObservable> lazyServerStateObservable;
     private final ServerConnector serverConnector;
+    private final ServerComponent.ServerComponentFinalizer finalizer;
 
     @Inject
     public RxBleServerImpl(
             final RxBleAdapterWrapper rxBleAdapterWrapper,
             final Observable<RxBleAdapterStateObservable.BleAdapterState> rxBleAdapterStateObservable,
             final Lazy<ServerStateObservable> lazyServerStateObservable,
-            final ServerConnector serverConnector
-    ) {
+            final ServerConnector serverConnector,
+            final ServerComponent.ServerComponentFinalizer finalizer
+            ) {
         this.rxBleAdapterWrapper = rxBleAdapterWrapper;
         this.rxBleAdapterStateObservable = rxBleAdapterStateObservable;
         this.lazyServerStateObservable = lazyServerStateObservable;
         this.serverConnector = serverConnector;
+        this.finalizer = finalizer;
     }
 
     public Observable<Set<BluetoothDevice>> getConnectedDevices() {
@@ -44,7 +47,7 @@ public class RxBleServerImpl extends RxBleServer {
 
     @Override
     protected void finalize() throws Throwable {
-        //TODO: finalize using ServerComponentFinalizer
+        finalizer.onFinalize();
         super.finalize();
     }
 
