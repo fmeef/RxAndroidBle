@@ -585,4 +585,14 @@ public class RxBleServerConnectionInternalImpl implements RxBleServerConnectionI
     public RxBleServerConnection getConnection() {
         return this;
     }
+
+    @Override
+    public void dispose() {
+        compositeDisposable.dispose();
+    }
+
+    @Override
+    public boolean isDisposed() {
+        return compositeDisposable.isDisposed();
+    }
 }
