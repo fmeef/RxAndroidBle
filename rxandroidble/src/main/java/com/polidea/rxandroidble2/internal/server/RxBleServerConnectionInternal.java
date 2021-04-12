@@ -17,6 +17,7 @@ import java.util.UUID;
 
 import io.reactivex.Observable;
 import io.reactivex.Single;
+import io.reactivex.disposables.Disposable;
 import io.reactivex.subjects.PublishSubject;
 import io.reactivex.subjects.SingleSubject;
 import io.reactivex.subjects.Subject;
@@ -25,7 +26,7 @@ import io.reactivex.subjects.Subject;
  * BLE connection handle for a single devices connected to the GATT server
  */
 @ServerConnectionScope
-public interface RxBleServerConnectionInternal {
+public interface RxBleServerConnectionInternal extends Disposable {
     @NonNull
     Output<GattServerTransaction<UUID>> getReadCharacteristicOutput();
 
