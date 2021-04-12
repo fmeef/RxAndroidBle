@@ -52,6 +52,7 @@ public class RxBleGattServerCallback {
                     connectionInfo.onDisconnectedException(
                             new BleDisconnectedException(device.getAddress(), status)
                     );
+                    gattServerProvider.closeConnection(device);
                 } else if (status != BluetoothGatt.GATT_SUCCESS) {
                         RxBleLog.e("GattServer state change failed %i", status);
                         //TODO: is this the same as client
@@ -63,6 +64,7 @@ public class RxBleGattServerCallback {
                                         "onConnectionStateChange GATT_FAILURE"
                                 )
                         );
+                        gattServerProvider.closeConnection(device);
                 }
             } else {
                 RxBleLog.e("connectionInfo was null for " + device);

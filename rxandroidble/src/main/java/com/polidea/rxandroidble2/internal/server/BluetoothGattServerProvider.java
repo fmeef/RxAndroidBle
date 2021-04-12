@@ -40,6 +40,10 @@ public class BluetoothGattServerProvider {
     }
 
     public synchronized void closeConnection(final BluetoothDevice device) {
+        RxBleServerConnectionInternal c = connections.get(device);
+        if (c != null) {
+            c.dispose();
+        }
         connections.remove(device);
         //TODO: cleanup connection
     }
