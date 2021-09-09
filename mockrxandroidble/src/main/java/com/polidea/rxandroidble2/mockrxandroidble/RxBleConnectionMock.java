@@ -1,13 +1,12 @@
 package com.polidea.rxandroidble2.mockrxandroidble;
 
 import android.bluetooth.BluetoothGatt;
-import android.bluetooth.BluetoothGattCallback;
 import android.bluetooth.BluetoothGattCharacteristic;
 import android.bluetooth.BluetoothGattDescriptor;
-import androidx.annotation.NonNull;
-
 import android.bluetooth.BluetoothGattService;
 import android.util.Log;
+
+import androidx.annotation.NonNull;
 
 import com.polidea.rxandroidble2.ConnectionParameters;
 import com.polidea.rxandroidble2.NotificationSetupMode;
@@ -23,12 +22,12 @@ import com.polidea.rxandroidble2.internal.Priority;
 import com.polidea.rxandroidble2.internal.connection.ImmediateSerializedBatchAckStrategy;
 import com.polidea.rxandroidble2.internal.connection.RxBleGattCallback;
 import com.polidea.rxandroidble2.internal.util.ObservableUtil;
-import com.polidea.rxandroidble2.mockrxandroidble.callbacks.results.RxBleGattReadResultMock;
-import com.polidea.rxandroidble2.mockrxandroidble.callbacks.results.RxBleGattWriteResultMock;
 import com.polidea.rxandroidble2.mockrxandroidble.callbacks.RxBleCharacteristicReadCallback;
 import com.polidea.rxandroidble2.mockrxandroidble.callbacks.RxBleCharacteristicWriteCallback;
 import com.polidea.rxandroidble2.mockrxandroidble.callbacks.RxBleDescriptorReadCallback;
 import com.polidea.rxandroidble2.mockrxandroidble.callbacks.RxBleDescriptorWriteCallback;
+import com.polidea.rxandroidble2.mockrxandroidble.callbacks.results.RxBleGattReadResultMock;
+import com.polidea.rxandroidble2.mockrxandroidble.callbacks.results.RxBleGattWriteResultMock;
 
 import java.util.ArrayList;
 import java.util.HashMap;

@@ -368,7 +368,7 @@ class RxBleConnectionTest extends Specification {
     def "should clear native gatt callback after custom operation is finished"() {
         given:
         def nativeCallback = Mock BluetoothGattCallback
-        def customOperation = new RxBleCustomOperation<Boolean>() {
+        def customOperation = new RxBleCustomOperation<Boolean, BluetoothGatt, RxBleGattCallback>() {
 
             @Override
             Observable<byte[]> asObservable(BluetoothGatt bluetoothGatt, RxBleGattCallback rxBleGattCallback,
@@ -388,7 +388,7 @@ class RxBleConnectionTest extends Specification {
     def "should clear native gatt callback after custom operation failed"() {
         given:
         def nativeCallback = Mock BluetoothGattCallback
-        def customOperation = new RxBleCustomOperation<Boolean>() {
+        def customOperation = new RxBleCustomOperation<Boolean, BluetoothGatt, RxBleGattCallback>() {
 
             @NonNull
             @Override
@@ -410,7 +410,7 @@ class RxBleConnectionTest extends Specification {
     def "should clear hidden native gatt callback after custom operation is finished"() {
         given:
         def hiddenNativeCallback = Mock HiddenBluetoothGattCallback
-        def customOperation = new RxBleCustomOperation<Boolean>() {
+        def customOperation = new RxBleCustomOperation<Boolean, BluetoothGatt, RxBleGattCallback>() {
 
             @Override
             Observable<byte[]> asObservable(BluetoothGatt bluetoothGatt, RxBleGattCallback rxBleGattCallback,
@@ -430,7 +430,7 @@ class RxBleConnectionTest extends Specification {
     def "should clear hidden native gatt callback after custom operation failed"() {
         given:
         def hiddenNativeCallback = Mock HiddenBluetoothGattCallback
-        def customOperation = new RxBleCustomOperation<Boolean>() {
+        def customOperation = new RxBleCustomOperation<Boolean, BluetoothGatt, RxBleGattCallback>() {
 
             @NonNull
             @Override
@@ -532,7 +532,7 @@ class RxBleConnectionTest extends Specification {
     }
 
     def customOperationWithOutcome(Closure<Observable<Boolean>> outcomeSupplier) {
-        new RxBleCustomOperation<Boolean>() {
+        new RxBleCustomOperation<Boolean, BluetoothGatt, RxBleGattCallback>() {
 
             @NonNull
             @Override
