@@ -40,7 +40,7 @@ public class ServerResponseTransactionMock implements
     }
 
     @Override
-    public Completable sendReply(int status, int offset, byte[] value) {
+    public Completable sendReply(byte[] value, int status) {
         return Completable.complete();
     }
 
