@@ -9,12 +9,12 @@ import android.os.Build;
 import android.util.Log;
 import android.util.Pair;
 
+import com.polidea.rxandroidble2.ClientComponent;
+import com.polidea.rxandroidble2.ClientScope;
 import com.polidea.rxandroidble2.RxBleConnection;
 import com.polidea.rxandroidble2.RxBleServerConnection;
-import com.polidea.rxandroidble2.ServerComponent;
 import com.polidea.rxandroidble2.ServerConfig;
 import com.polidea.rxandroidble2.ServerConnectionComponent;
-import com.polidea.rxandroidble2.ServerScope;
 import com.polidea.rxandroidble2.Timeout;
 import com.polidea.rxandroidble2.internal.RxBleLog;
 import com.polidea.rxandroidble2.internal.server.BluetoothGattServerProvider;
@@ -38,7 +38,7 @@ import io.reactivex.functions.Consumer;
 import io.reactivex.functions.Function;
 import io.reactivex.functions.Predicate;
 
-@ServerScope
+@ClientScope
 public class ServerConnectorImpl implements ServerConnector {
     private final BluetoothGattServerProvider gattServerProvider;
     private final Scheduler callbackScheduler;
@@ -51,10 +51,10 @@ public class ServerConnectorImpl implements ServerConnector {
 
     @Inject
     public ServerConnectorImpl(
-            final @Named(ServerComponent.SERVER_CONTEXT) Context context,
+            final Context context,
             final BluetoothGattServerProvider gattServerProvider,
             final BluetoothManager bluetoothManager,
-            final @Named(ServerComponent.NamedSchedulers.BLUETOOTH_SERVER) Scheduler callbackScheduler,
+            final @Named(ClientComponent.NamedSchedulers.BLUETOOTH_CALLBACKS) Scheduler callbackScheduler,
             ServerConnectionComponent.Builder connectionComponentBuilder,
             RxBleGattServerCallback rxBleGattServerCallback,
             RxBleServerState serverState

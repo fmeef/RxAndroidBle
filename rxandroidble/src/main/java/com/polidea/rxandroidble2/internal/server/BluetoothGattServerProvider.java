@@ -5,14 +5,14 @@ import android.bluetooth.BluetoothGattServer;
 
 import androidx.annotation.NonNull;
 
-import com.polidea.rxandroidble2.ServerScope;
+import com.polidea.rxandroidble2.ClientScope;
 
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicReference;
 
 import bleshadow.javax.inject.Inject;
 
-@ServerScope
+@ClientScope
 public class BluetoothGattServerProvider {
     private final AtomicReference<BluetoothGattServer> reference = new AtomicReference<>();
     private final ConcurrentHashMap<BluetoothDevice, RxBleServerConnectionInternal> connections = new ConcurrentHashMap<>();

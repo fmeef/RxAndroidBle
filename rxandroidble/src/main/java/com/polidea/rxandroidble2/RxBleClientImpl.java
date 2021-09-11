@@ -1,6 +1,7 @@
 package com.polidea.rxandroidble2;
 
 import android.bluetooth.BluetoothDevice;
+
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
@@ -8,6 +9,7 @@ import com.polidea.rxandroidble2.RxBleAdapterStateObservable.BleAdapterState;
 import com.polidea.rxandroidble2.exceptions.BleScanException;
 import com.polidea.rxandroidble2.internal.RxBleDeviceProvider;
 import com.polidea.rxandroidble2.internal.RxBleLog;
+import com.polidea.rxandroidble2.internal.connection.ServerConnector;
 import com.polidea.rxandroidble2.internal.operations.LegacyScanOperation;
 import com.polidea.rxandroidble2.internal.operations.Operation;
 import com.polidea.rxandroidble2.internal.scan.RxBleInternalScanResult;
@@ -25,7 +27,6 @@ import com.polidea.rxandroidble2.scan.BackgroundScanner;
 import com.polidea.rxandroidble2.scan.ScanFilter;
 import com.polidea.rxandroidble2.scan.ScanResult;
 import com.polidea.rxandroidble2.scan.ScanSettings;
-
 import io.reactivex.functions.Consumer;
 
 import java.util.Arrays;
@@ -45,6 +46,7 @@ import io.reactivex.Observable;
 import io.reactivex.ObservableSource;
 import io.reactivex.Scheduler;
 import io.reactivex.functions.Action;
+import io.reactivex.functions.Consumer;
 import io.reactivex.functions.Function;
 import io.reactivex.functions.Predicate;
 
@@ -67,6 +69,7 @@ class RxBleClientImpl extends RxBleClient {
     private final Lazy<ClientStateObservable> lazyClientStateObservable;
     private final BackgroundScanner backgroundScanner;
     private final CheckerScanPermission checkerScanPermission;
+    private final ServerConnector serverConnector;
 
     @Inject
     RxBleClientImpl(RxBleAdapterWrapper rxBleAdapterWrapper,
@@ -82,7 +85,8 @@ class RxBleClientImpl extends RxBleClient {
                     @Named(ClientComponent.NamedSchedulers.BLUETOOTH_INTERACTION) Scheduler bluetoothInteractionScheduler,
                     ClientComponent.ClientComponentFinalizer clientComponentFinalizer,
                     BackgroundScanner backgroundScanner,
-                    CheckerScanPermission checkerScanPermission) {
+                    CheckerScanPermission checkerScanPermission,
+                    ServerConnector serverConnector) {
         this.operationQueue = operationQueue;
         this.rxBleAdapterWrapper = rxBleAdapterWrapper;
         this.rxBleAdapterStateObservable = adapterStateObservable;
@@ -97,6 +101,7 @@ class RxBleClientImpl extends RxBleClient {
         this.clientComponentFinalizer = clientComponentFinalizer;
         this.backgroundScanner = backgroundScanner;
         this.checkerScanPermission = checkerScanPermission;
+        this.serverConnector = serverConnector;
     }
 
     @Override
@@ -278,5 +283,15 @@ class RxBleClientImpl extends RxBleClient {
     @Override
     public String[] getRecommendedScanRuntimePermissions() {
         return checkerScanPermission.getRecommendedScanRuntimePermissions();
+    }
+
+    @Override
+    public RxBleServerConnection getConnection(BluetoothDevice device) {
+        return serverConnector.getConnection(device);
+    }
+
+    @Override
+    public Observable<RxBleServerConnection> openServer(ServerConfig config) {
+        return serverConnector.subscribeToConnections(config);
     }
 }

@@ -6,8 +6,8 @@ import android.bluetooth.BluetoothGattService;
 
 import androidx.annotation.Nullable;
 
-import com.polidea.rxandroidble2.RxBleServer;
-import com.polidea.rxandroidble2.ServerScope;
+import com.polidea.rxandroidble2.ClientScope;
+import com.polidea.rxandroidble2.RxBleClient;
 import com.polidea.rxandroidble2.internal.RxBleLog;
 
 import java.util.Arrays;
@@ -17,7 +17,7 @@ import java.util.concurrent.ConcurrentHashMap;
 
 import bleshadow.javax.inject.Inject;
 
-@ServerScope
+@ClientScope
 public class RxBleServerStateImpl implements RxBleServerState {
 
     private final ConcurrentHashMap<UUID, NotificationStatus> notificationState = new ConcurrentHashMap<>();
@@ -53,7 +53,7 @@ public class RxBleServerStateImpl implements RxBleServerState {
                     || (characteristic.getProperties() & BluetoothGattCharacteristic.PROPERTY_INDICATE) == 0) {
                 RxBleLog.d("setting CLIENT_CONFIG for characteristic " + characteristic.getUuid());
                 characteristic.addDescriptor(new BluetoothGattDescriptor(
-                        RxBleServer.CLIENT_CONFIG,
+                        RxBleClient.CLIENT_CONFIG,
                         BluetoothGattDescriptor.PERMISSION_WRITE | BluetoothGattDescriptor.PERMISSION_READ
                 ));
             }

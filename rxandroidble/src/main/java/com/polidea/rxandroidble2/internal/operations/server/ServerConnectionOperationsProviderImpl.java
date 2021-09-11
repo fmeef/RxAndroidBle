@@ -4,7 +4,7 @@ import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothGattCharacteristic;
 import android.bluetooth.BluetoothManager;
 
-import com.polidea.rxandroidble2.ServerComponent;
+import com.polidea.rxandroidble2.ClientComponent;
 import com.polidea.rxandroidble2.ServerConnectionComponent;
 import com.polidea.rxandroidble2.ServerConnectionScope;
 import com.polidea.rxandroidble2.internal.operations.TimeoutConfiguration;
@@ -28,7 +28,7 @@ public class ServerConnectionOperationsProviderImpl implements ServerConnectionO
 
     @Inject
     public ServerConnectionOperationsProviderImpl(
-            @Named(ServerComponent.NamedSchedulers.BLUETOOTH_CONNECTION) Scheduler gattServerScheduler,
+            @Named(ClientComponent.NamedSchedulers.BLUETOOTH_INTERACTION) Scheduler gattServerScheduler,
             BluetoothDevice bluetoothDevice,
             RxBleGattServerCallback callback,
             BluetoothManager bluetoothManager,

@@ -8,10 +8,10 @@ import android.bluetooth.BluetoothGattDescriptor;
 import androidx.annotation.NonNull;
 
 import com.jakewharton.rxrelay2.PublishRelay;
+import com.polidea.rxandroidble2.ClientComponent;
+import com.polidea.rxandroidble2.RxBleClient;
 import com.polidea.rxandroidble2.RxBleConnection;
-import com.polidea.rxandroidble2.RxBleServer;
 import com.polidea.rxandroidble2.RxBleServerConnection;
-import com.polidea.rxandroidble2.ServerComponent;
 import com.polidea.rxandroidble2.ServerConnectionComponent;
 import com.polidea.rxandroidble2.ServerResponseTransaction;
 import com.polidea.rxandroidble2.ServerTransactionFactory;
@@ -74,7 +74,7 @@ public class RxBleServerConnectionInternalImpl implements RxBleServerConnectionI
 
     @Inject
     public RxBleServerConnectionInternalImpl(
-        @Named(ServerComponent.NamedSchedulers.BLUETOOTH_CONNECTION) Scheduler connectionScheduler,
+        @Named(ClientComponent.NamedSchedulers.BLUETOOTH_INTERACTION) Scheduler connectionScheduler,
         ServerConnectionOperationsProvider operationsProvider,
         ServerOperationQueue operationQueue,
         BluetoothDevice device,
@@ -414,7 +414,7 @@ public class RxBleServerConnectionInternalImpl implements RxBleServerConnectionI
             @Override
             public Completable call() throws Exception {
                 RxBleLog.d("setupNotifictions: " + characteristic.getUuid());
-                final BluetoothGattDescriptor clientconfig = characteristic.getDescriptor(RxBleServer.CLIENT_CONFIG);
+                final BluetoothGattDescriptor clientconfig = characteristic.getDescriptor(RxBleClient.CLIENT_CONFIG);
                 if (clientconfig == null) {
                     return Completable.error(new BleGattServerException(
                             device,
