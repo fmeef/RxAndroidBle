@@ -12,10 +12,10 @@ import android.bluetooth.BluetoothProfile;
 import android.util.Pair;
 
 import com.jakewharton.rxrelay2.PublishRelay;
+import com.polidea.rxandroidble2.ClientComponent;
+import com.polidea.rxandroidble2.ClientScope;
+import com.polidea.rxandroidble2.RxBleClient;
 import com.polidea.rxandroidble2.RxBleConnection;
-import com.polidea.rxandroidble2.RxBleServer;
-import com.polidea.rxandroidble2.ServerComponent;
-import com.polidea.rxandroidble2.ServerScope;
 import com.polidea.rxandroidble2.exceptions.BleDisconnectedException;
 import com.polidea.rxandroidble2.exceptions.BleGattServerException;
 import com.polidea.rxandroidble2.exceptions.BleGattServerOperationType;
@@ -27,14 +27,12 @@ import bleshadow.javax.inject.Inject;
 import bleshadow.javax.inject.Named;
 import io.reactivex.Observable;
 import io.reactivex.Scheduler;
-import io.reactivex.disposables.CompositeDisposable;
 
-@ServerScope
+@ClientScope
 public class RxBleGattServerCallback {
     //TODO: make this per device
     final PublishRelay<Pair<BluetoothDevice, RxBleConnection.RxBleConnectionState>> connectionStatePublishRelay = PublishRelay.create();
     final Scheduler callbackScheduler;
-    final CompositeDisposable compositeDisposable = new CompositeDisposable();
     final BluetoothManager bluetoothManager;
     final RxBleServerState serverState;
     private final BluetoothGattServerProvider gattServerProvider;
@@ -160,7 +158,7 @@ public class RxBleGattServerCallback {
                 return;
             }
 
-            if (descriptor.getUuid().compareTo(RxBleServer.CLIENT_CONFIG) == 0) {
+            if (descriptor.getUuid().compareTo(RxBleClient.CLIENT_CONFIG) == 0) {
                 connectionInfo.blindAck(
                         requestId,
                         BluetoothGatt.GATT_SUCCESS,
@@ -205,7 +203,7 @@ public class RxBleGattServerCallback {
                         = connectionInfo.openLongWriteDescriptorOutput(requestId, descriptor);
                 longWriteOutput.valueRelay.accept(value); //TODO: offset?
             }  else {
-                if (descriptor.getUuid().compareTo(RxBleServer.CLIENT_CONFIG) == 0) {
+                if (descriptor.getUuid().compareTo(RxBleClient.CLIENT_CONFIG) == 0) {
                     serverState.setNotifications(descriptor.getCharacteristic().getUuid(), value);
                     connectionInfo.blindAck(requestId, BluetoothGatt.GATT_SUCCESS, null)
                             .subscribe();
@@ -288,7 +286,7 @@ public class RxBleGattServerCallback {
 
     @Inject
     public RxBleGattServerCallback(
-            @Named(ServerComponent.NamedSchedulers.BLUETOOTH_SERVER) Scheduler callbackScheduler,
+            @Named(ClientComponent.NamedSchedulers.BLUETOOTH_CALLBACKS) Scheduler callbackScheduler,
             BluetoothGattServerProvider gattServerProvider,
             RxBleServerState serverState,
             BluetoothManager bluetoothManager

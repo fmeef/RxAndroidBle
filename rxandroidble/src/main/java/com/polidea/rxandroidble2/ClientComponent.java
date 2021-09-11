@@ -4,17 +4,21 @@ import android.Manifest;
 import android.annotation.SuppressLint;
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothGattDescriptor;
+import android.bluetooth.BluetoothGattServer;
 import android.bluetooth.BluetoothManager;
 import android.content.ContentResolver;
 import android.content.Context;
 import android.content.pm.PackageManager;
 import android.location.LocationManager;
 import android.os.Build;
+
 import androidx.annotation.Nullable;
 import androidx.annotation.RestrictTo;
 
 import com.polidea.rxandroidble2.helpers.LocationServicesOkObservable;
 import com.polidea.rxandroidble2.internal.DeviceComponent;
+import com.polidea.rxandroidble2.internal.connection.ServerConnector;
+import com.polidea.rxandroidble2.internal.connection.ServerConnectorImpl;
 import com.polidea.rxandroidble2.internal.scan.BackgroundScannerImpl;
 import com.polidea.rxandroidble2.internal.scan.InternalToExternalScanResultConverter;
 import com.polidea.rxandroidble2.internal.scan.RxBleInternalScanResult;
@@ -28,6 +32,9 @@ import com.polidea.rxandroidble2.internal.scan.ScanSetupBuilderImplApi23;
 import com.polidea.rxandroidble2.internal.serialization.ClientOperationQueue;
 import com.polidea.rxandroidble2.internal.serialization.ClientOperationQueueImpl;
 import com.polidea.rxandroidble2.internal.serialization.RxBleThreadFactory;
+import com.polidea.rxandroidble2.internal.server.BluetoothGattServerProvider;
+import com.polidea.rxandroidble2.internal.server.RxBleServerState;
+import com.polidea.rxandroidble2.internal.server.RxBleServerStateImpl;
 import com.polidea.rxandroidble2.internal.util.LocationServicesOkObservableApi23Factory;
 import com.polidea.rxandroidble2.internal.util.LocationServicesStatus;
 import com.polidea.rxandroidble2.internal.util.LocationServicesStatusApi18;
@@ -113,7 +120,7 @@ public interface ClientComponent {
         Builder applicationContext(Context context);
     }
 
-    @Module(subcomponents = DeviceComponent.class)
+    @Module(subcomponents = { DeviceComponent.class, DeviceComponent.class, ServerConnectionComponent.class })
     abstract class ClientModule {
 
         @Provides
@@ -302,6 +309,21 @@ public interface ClientComponent {
             }
         }
 
+
+        @Provides
+        @ClientScope
+        static BluetoothGattServer provideBluetoothGattServer(BluetoothGattServerProvider bluetoothGattServerProvider) {
+            return bluetoothGattServerProvider.getBluetoothGatt();
+        }
+
+        @Binds
+        @ClientScope
+        abstract ServerConnector bindServerConnector(ServerConnectorImpl serverConnector);
+
+        @Binds
+        @ClientScope
+        abstract RxBleServerState bindServerState(RxBleServerStateImpl serverState);
+
         @Binds
         abstract Observable<RxBleAdapterStateObservable.BleAdapterState> bindStateObs(RxBleAdapterStateObservable stateObservable);
 
@@ -333,4 +355,5 @@ public interface ClientComponent {
 
         void onFinalize();
     }
+
 }

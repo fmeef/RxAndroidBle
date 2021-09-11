@@ -1,5 +1,6 @@
 package com.polidea.rxandroidble2.mockrxandroidble;
 
+import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothGattCharacteristic;
 import android.bluetooth.BluetoothGattDescriptor;
 
@@ -9,6 +10,8 @@ import androidx.annotation.Nullable;
 import com.polidea.rxandroidble2.RxBleClient;
 import com.polidea.rxandroidble2.RxBleDevice;
 import com.polidea.rxandroidble2.RxBleScanResult;
+import com.polidea.rxandroidble2.RxBleServerConnection;
+import com.polidea.rxandroidble2.ServerConfig;
 import com.polidea.rxandroidble2.scan.BackgroundScanner;
 import com.polidea.rxandroidble2.scan.ScanCallbackType;
 import com.polidea.rxandroidble2.scan.ScanFilter;
@@ -411,5 +414,15 @@ public class RxBleClientMock extends RxBleClient {
     @Override
     public String[] getRecommendedScanRuntimePermissions() {
         return new String[0];
+    }
+
+    @Override
+    public RxBleServerConnection getConnection(BluetoothDevice device) {
+        return null;
+    }
+
+    @Override
+    public Observable<RxBleServerConnection> openServer(ServerConfig config) {
+        return Observable.never();
     }
 }

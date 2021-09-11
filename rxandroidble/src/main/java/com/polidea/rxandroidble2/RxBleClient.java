@@ -1,6 +1,8 @@
 package com.polidea.rxandroidble2;
 
+import android.bluetooth.BluetoothDevice;
 import android.content.Context;
+
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
@@ -17,6 +19,8 @@ import io.reactivex.Observable;
 
 
 public abstract class RxBleClient {
+
+    public static final UUID CLIENT_CONFIG = UUID.fromString("00002902-0000-1000-8000-00805f9b34fb");
 
     @SuppressWarnings("WeakerAccess")
     public enum State {
@@ -214,4 +218,8 @@ public abstract class RxBleClient {
      * @return an ordered array of possible scan permissions
      */
     public abstract String[] getRecommendedScanRuntimePermissions();
+
+    public abstract RxBleServerConnection getConnection(BluetoothDevice device);
+
+    public abstract Observable<RxBleServerConnection> openServer(ServerConfig config);
 }

@@ -10,8 +10,8 @@ import androidx.annotation.Nullable;
 
 import com.jakewharton.rxrelay2.BehaviorRelay;
 import com.jakewharton.rxrelay2.PublishRelay;
+import com.polidea.rxandroidble2.RxBleClient;
 import com.polidea.rxandroidble2.RxBleConnection;
-import com.polidea.rxandroidble2.RxBleServer;
 import com.polidea.rxandroidble2.RxBleServerConnection;
 import com.polidea.rxandroidble2.ServerResponseTransaction;
 import com.polidea.rxandroidble2.exceptions.BleDisconnectedException;
@@ -126,7 +126,7 @@ public class RxBleServerConnectionMock implements RxBleServerConnection, RxBleSe
         final Flowable<byte[]> notifications,
         final boolean isIndication
     ) {
-        final BluetoothGattDescriptor clientConfig = characteristic.getDescriptor(RxBleServer.CLIENT_CONFIG);
+        final BluetoothGattDescriptor clientConfig = characteristic.getDescriptor(RxBleClient.CLIENT_CONFIG);
         if (clientConfig == null) {
             return Completable.error(new BleGattServerException(
                     device,
