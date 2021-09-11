@@ -48,13 +48,13 @@ public class ServerResponseTransactionImpl implements ServerResponseTransaction,
     }
 
     @Override
-    public Completable sendReply(int status, int offset, byte[] value) {
+    public Completable sendReply(byte[] value, int status) {
         RxBleLog.d("sendReply to remote: " + remoteDevice.getAddress());
         return operationQueue.queue(operationsProvider.provideReplyOperation(
                 remoteDevice,
                 requestID,
                 status,
-                offset,
+                0,
                 value
         )).flatMapCompletable(new Function<Boolean, CompletableSource>() {
             @Override
