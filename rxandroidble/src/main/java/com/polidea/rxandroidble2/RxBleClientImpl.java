@@ -27,7 +27,6 @@ import com.polidea.rxandroidble2.scan.BackgroundScanner;
 import com.polidea.rxandroidble2.scan.ScanFilter;
 import com.polidea.rxandroidble2.scan.ScanResult;
 import com.polidea.rxandroidble2.scan.ScanSettings;
-import io.reactivex.functions.Consumer;
 
 import java.util.Arrays;
 import java.util.HashMap;
