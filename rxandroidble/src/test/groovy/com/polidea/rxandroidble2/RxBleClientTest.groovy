@@ -6,6 +6,7 @@ import android.os.Build
 import com.polidea.rxandroidble2.exceptions.BleScanException
 
 import com.polidea.rxandroidble2.internal.RxBleDeviceProvider
+import com.polidea.rxandroidble2.internal.connection.ServerConnector
 import com.polidea.rxandroidble2.internal.operations.Operation
 import com.polidea.rxandroidble2.internal.scan.*
 import com.polidea.rxandroidble2.internal.serialization.ClientOperationQueue
@@ -31,6 +32,7 @@ import static com.polidea.rxandroidble2.exceptions.BleScanException.*
 class RxBleClientTest extends ElectricSpecification {
 
     BackgroundScanner backgroundScanner = Mock(BackgroundScanner)
+    ServerConnector serverConnector = Mock(ServerConnector)
     DummyOperationQueue dummyQueue = new DummyOperationQueue()
     RxBleClient objectUnderTest
     Context contextMock = Mock Context
@@ -90,7 +92,8 @@ class RxBleClientTest extends ElectricSpecification {
                 new TestScheduler(),
                 Mock(ClientComponent.ClientComponentFinalizer),
                 backgroundScanner,
-                mockCheckerLocationPermission
+                mockCheckerLocationPermission,
+                serverConnector
         )
     }
 
