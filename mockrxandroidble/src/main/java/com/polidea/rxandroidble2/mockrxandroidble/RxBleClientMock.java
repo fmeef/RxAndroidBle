@@ -1,6 +1,5 @@
 package com.polidea.rxandroidble2.mockrxandroidble;
 
-import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothGattCharacteristic;
 import android.bluetooth.BluetoothGattDescriptor;
 
@@ -414,11 +413,6 @@ public class RxBleClientMock extends RxBleClient {
     @Override
     public String[] getRecommendedScanRuntimePermissions() {
         return new String[0];
-    }
-
-    @Override
-    public RxBleServerConnection getConnection(BluetoothDevice device) {
-        return null;
     }
 
     @Override

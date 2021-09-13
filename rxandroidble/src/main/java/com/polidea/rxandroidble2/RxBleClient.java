@@ -1,6 +1,5 @@
 package com.polidea.rxandroidble2;
 
-import android.bluetooth.BluetoothDevice;
 import android.content.Context;
 
 import androidx.annotation.NonNull;
@@ -218,8 +217,6 @@ public abstract class RxBleClient {
      * @return an ordered array of possible scan permissions
      */
     public abstract String[] getRecommendedScanRuntimePermissions();
-
-    public abstract RxBleServerConnection getConnection(BluetoothDevice device);
 
     public abstract Observable<RxBleServerConnection> openServer(ServerConfig config);
 }

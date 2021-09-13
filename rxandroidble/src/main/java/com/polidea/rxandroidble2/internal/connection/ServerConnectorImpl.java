@@ -25,7 +25,6 @@ import com.polidea.rxandroidble2.internal.server.RxBleServerState;
 import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.Callable;
-import java.util.concurrent.ConcurrentHashMap;
 
 import bleshadow.javax.inject.Inject;
 import bleshadow.javax.inject.Named;
@@ -47,7 +46,6 @@ public class ServerConnectorImpl implements ServerConnector {
     private final ServerConnectionComponent.Builder connectionComponentBuilder;
     private final RxBleGattServerCallback rxBleGattServerCallback;
     private final RxBleServerState serverState;
-    private final ConcurrentHashMap<BluetoothDevice, RxBleServerConnection> localConnectionmap = new ConcurrentHashMap<>();
 
     @Inject
     public ServerConnectorImpl(
@@ -117,11 +115,6 @@ public class ServerConnectorImpl implements ServerConnector {
                 return internal.getConnection();
             }
         });
-    }
-
-    @Override
-    public RxBleServerConnection getConnection(BluetoothDevice device) {
-        return localConnectionmap.get(device);
     }
 
     @Override
