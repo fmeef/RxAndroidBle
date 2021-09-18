@@ -1,7 +1,6 @@
 buildscript {
     repositories {
-        mavenCentral()
-        gradlePluginPortal()
+        jcenter()
     }
     dependencies {
         classpath "com.github.jengelman.gradle.plugins:shadow:$rootProject.ext.shadowPluginVersion"
@@ -10,6 +9,7 @@ buildscript {
 
 apply plugin: 'java'
 apply plugin: 'com.github.johnrengelman.shadow'
+apply from: rootProject.file('gradle/gradle-mvn-push.gradle')
 
 def buildSrcDir = '../gradle'
 apply from: "${buildSrcDir}/shadow.gradle"

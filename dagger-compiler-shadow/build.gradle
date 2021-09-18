@@ -1,7 +1,6 @@
 buildscript {
     repositories {
-        mavenCentral()
-        gradlePluginPortal()
+        jcenter()
     }
     dependencies {
         classpath "com.github.jengelman.gradle.plugins:shadow:$rootProject.ext.shadowPluginVersion"
