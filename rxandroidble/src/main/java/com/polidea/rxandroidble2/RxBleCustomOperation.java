@@ -13,7 +13,7 @@ import io.reactivex.Scheduler;
 /**
  * Represents a custom operation that will be enqueued for future execution within the client instance.
  */
-public interface RxBleCustomOperation<T, V, C> {
+public interface RxBleCustomOperation<T, V, U> {
 
     /**
      * Return an observable that implement a custom operation using low-level Android BLE API.
@@ -44,6 +44,6 @@ public interface RxBleCustomOperation<T, V, C> {
      */
     @NonNull
     Observable<T> asObservable(V bluetoothGatt,
-                               C rxBleCallback,
+                               U rxBleCallback,
                                Scheduler scheduler) throws Throwable;
 }
