@@ -443,7 +443,7 @@ public interface RxBleConnection {
      */
     LongWriteOperationBuilder createNewLongWriteBuilder();
 
-    /**LongWriteOperation
+    /**
      * Performs GATT read operation on a descriptor from a characteristic with a given UUID from a service with a given UUID.
      *
      * @param serviceUuid Requested {@link android.bluetooth.BluetoothGattService} UUID
@@ -582,17 +582,17 @@ public interface RxBleConnection {
      * <p>
      * Queue an operation for future execution. The method accepts a {@link RxBleCustomOperation} concrete implementation
      * and will queue it inside connection operation queue. When ready to execute, the {@link Observable} returned
-     * by the {@link RxBleCustomOperation#asObservable(Object, Object, Scheduler)} will be
+     * by the {@link RxBleCustomOperation#asObservable(BluetoothGatt, RxBleGattCallback, Scheduler)} will be
      * subscribed to.
      * <p>
      * Every event emitted by the {@link Observable} returned by
-     * {@link RxBleCustomOperation#asObservable(Object, Object, Scheduler)} will be forwarded
+     * {@link RxBleCustomOperation#asObservable(BluetoothGatt, RxBleGattCallback, Scheduler)} will be forwarded
      * to the {@link Observable} returned by this method.
      * <p>
      * You <b>must</b> ensure the custom operation's {@link Observable} does terminate either via {@code onCompleted}
      * or {@code onError(Throwable)}. Otherwise, the internal queue orchestrator will wait forever for
      * your {@link Observable} to complete. Normal queue processing will be resumed after the {@link Observable}
-     * returned by {@link RxBleCustomOperation#asObservable(Object, Object, Scheduler)}
+     * returned by {@link RxBleCustomOperation#asObservable(BluetoothGatt, RxBleGattCallback, Scheduler)}
      * completes.
      * <p>
      * The operation will be added to the queue using a {@link Priority#NORMAL}
@@ -610,17 +610,17 @@ public interface RxBleConnection {
      * <p>
      * Queue an operation for future execution. The method accepts a {@link RxBleCustomOperation} concrete implementation
      * and will queue it inside connection operation queue. When ready to execute, the {@link Observable} returned
-     * by the {@link RxBleCustomOperation#asObservable(Object, Object, Scheduler)} will be
+     * by the {@link RxBleCustomOperation#asObservable(BluetoothGatt, RxBleGattCallback, Scheduler)} will be
      * subscribed to.
      * <p>
      * Every event emitted by the {@link Observable} returned by
-     * {@link RxBleCustomOperation#asObservable(Object, Object, Scheduler)} will be forwarded
+     * {@link RxBleCustomOperation#asObservable(BluetoothGatt, RxBleGattCallback, Scheduler)} will be forwarded
      * to the {@link Observable} returned by this method.
      * <p>
      * You <b>must</b> ensure the custom operation's {@link Observable} does terminate either via {@code onCompleted}
      * or {@code onError(Throwable)}. Otherwise, the internal queue orchestrator will wait forever for
      * your {@link Observable} to complete. Normal queue processing will be resumed after the {@link Observable}
-     * returned by {@link RxBleCustomOperation#asObservable(Object, Object, Scheduler)}
+     * returned by {@link RxBleCustomOperation#asObservable(BluetoothGatt, RxBleGattCallback, Scheduler)}
      * completes.
      * <p>
      *
