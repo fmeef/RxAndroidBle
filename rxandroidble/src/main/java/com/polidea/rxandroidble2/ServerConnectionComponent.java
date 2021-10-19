@@ -2,8 +2,6 @@ package com.polidea.rxandroidble2;
 
 import android.bluetooth.BluetoothDevice;
 
-import androidx.annotation.RestrictTo;
-
 import com.polidea.rxandroidble2.internal.connection.DisconnectionRouterOutput;
 import com.polidea.rxandroidble2.internal.operations.TimeoutConfiguration;
 import com.polidea.rxandroidble2.internal.operations.server.ServerConnectionOperationsProvider;
@@ -71,19 +69,6 @@ public interface ServerConnectionComponent {
         abstract ServerOperationQueue bindServerOperationQueue(ServerOperationQueueImpl impl);
 
         @Provides
-        @ServerConnectionScope
-        static ServerConnectionComponent.ServerConnectionComponentFinalizer finalizer(
-                @Named(ClientComponent.NamedSchedulers.BLUETOOTH_INTERACTION) final Scheduler scheduler
-                ) {
-            return new ServerConnectionComponentFinalizer() {
-                @Override
-                public void onFinalize() {
-                    scheduler.shutdown();
-                }
-            };
-        }
-
-        @Provides
         @Named(OPERATION_TIMEOUT)
         static TimeoutConfiguration providesOperationTimeoutConf(
                 @Named(ClientComponent.NamedSchedulers.TIMEOUT) Scheduler timeoutScheduler,
@@ -97,11 +82,5 @@ public interface ServerConnectionComponent {
     }
 
     RxBleServerConnectionInternal serverConnectionInternal();
-
-    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
-    interface ServerConnectionComponentFinalizer {
-
-        void onFinalize();
-    }
 
 }
