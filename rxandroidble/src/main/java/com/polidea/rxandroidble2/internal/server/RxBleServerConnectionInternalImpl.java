@@ -12,7 +12,6 @@ import com.polidea.rxandroidble2.ClientComponent;
 import com.polidea.rxandroidble2.RxBleClient;
 import com.polidea.rxandroidble2.RxBleConnection;
 import com.polidea.rxandroidble2.RxBleServerConnection;
-import com.polidea.rxandroidble2.ServerConnectionComponent;
 import com.polidea.rxandroidble2.ServerResponseTransaction;
 import com.polidea.rxandroidble2.ServerTransactionFactory;
 import com.polidea.rxandroidble2.exceptions.BleDisconnectedException;
@@ -63,7 +62,6 @@ public class RxBleServerConnectionInternalImpl implements RxBleServerConnectionI
     private final CompositeDisposable compositeDisposable = new CompositeDisposable();
     private final BluetoothGattServerProvider gattServerProvider;
     private final RxBleServerState serverState;
-    private final ServerConnectionComponent.ServerConnectionComponentFinalizer finalizer;
 
     private final Function<BleException, Observable<?>> errorMapper = new Function<BleException, Observable<?>>() {
         @Override
@@ -81,9 +79,7 @@ public class RxBleServerConnectionInternalImpl implements RxBleServerConnectionI
         ServerDisconnectionRouter disconnectionRouter,
         ServerTransactionFactory serverTransactionFactory,
         BluetoothGattServerProvider serverProvider,
-        RxBleServerState serverState,
-        ServerConnectionComponent.ServerConnectionComponentFinalizer finalizer
-
+        RxBleServerState serverState
     ) {
         this.connectionScheduler = connectionScheduler;
         this.operationsProvider = operationsProvider;
@@ -93,7 +89,6 @@ public class RxBleServerConnectionInternalImpl implements RxBleServerConnectionI
         this.serverTransactionFactory = serverTransactionFactory;
         this.gattServerProvider = serverProvider;
         this.serverState = serverState;
-        this.finalizer = finalizer;
     }
 
 
@@ -111,13 +106,6 @@ public class RxBleServerConnectionInternalImpl implements RxBleServerConnectionI
             new Output<>();
     private final Output<Integer> changedMtuOutput =
             new Output<>();
-
-
-    @Override
-    protected void finalize() throws Throwable {
-        finalizer.onFinalize();
-        super.finalize();
-    }
 
     @NonNull
     @Override
