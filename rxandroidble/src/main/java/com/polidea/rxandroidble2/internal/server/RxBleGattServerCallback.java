@@ -50,27 +50,30 @@ public class RxBleGattServerCallback {
                             new BleDisconnectedException(device.getAddress(), status)
                     );
                     gattServerProvider.closeConnection(device);
-                } else if (status != BluetoothGatt.GATT_SUCCESS) {
-                        RxBleLog.e("GattServer state change failed %i", status);
-                        //TODO: is this the same as client
-                        connectionInfo.onGattConnectionStateException(
-                                new BleGattServerException(
-                                        status,
-                                        device,
-                                        BleGattServerOperationType.CONNECTION_STATE,
-                                        "onConnectionStateChange GATT_FAILURE"
-                                )
-                        );
-                        gattServerProvider.closeConnection(device);
+                }
+
+                if (status != BluetoothGatt.GATT_SUCCESS) {
+                    RxBleLog.e("GattServer state change failed %i", status);
+                    //TODO: is this the same as client
+                    connectionInfo.onGattConnectionStateException(
+                            new BleGattServerException(
+                                    status,
+                                    device,
+                                    BleGattServerOperationType.CONNECTION_STATE,
+                                    "onConnectionStateChange GATT_FAILURE"
+                            )
+                    );
                 }
             } else {
                 RxBleLog.e("connectionInfo was null for " + device);
             }
 
-            connectionStatePublishRelay.accept(new Pair<>(
-                    device,
-                    mapConnectionStateToRxBleConnectionStatus(newState)
-            ));
+            if (status == BluetoothGatt.GATT_SUCCESS) {
+                connectionStatePublishRelay.accept(new Pair<>(
+                        device,
+                        mapConnectionStateToRxBleConnectionStatus(newState)
+                ));
+            }
         }
 
         @Override
