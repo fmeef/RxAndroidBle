@@ -41,12 +41,11 @@ public class RxBleGattServerCallback {
         @Override
         public void onConnectionStateChange(final BluetoothDevice device, final int status, final int newState) {
             super.onConnectionStateChange(device, status, newState);
-            int state = bluetoothManager.getConnectionState(device, BluetoothProfile.GATT_SERVER);
-            RxBleLog.v("gatt server onConnectionStateChange: " + device.getAddress() + " " + status + " " + state);
+            RxBleLog.v("gatt server onConnectionStateChange: " + device.getAddress() + " " + status + " " + newState);
             RxBleServerConnectionInternal connectionInfo = gattServerProvider.getConnection(device);
             if (connectionInfo != null) {
-                if (state == BluetoothProfile.STATE_DISCONNECTED
-                        || state == BluetoothProfile.STATE_DISCONNECTING) {
+                if (newState == BluetoothProfile.STATE_DISCONNECTED
+                        || newState == BluetoothProfile.STATE_DISCONNECTING) {
                     connectionInfo.onDisconnectedException(
                             new BleDisconnectedException(device.getAddress(), status)
                     );
@@ -70,7 +69,7 @@ public class RxBleGattServerCallback {
 
             connectionStatePublishRelay.accept(new Pair<>(
                     device,
-                    mapConnectionStateToRxBleConnectionStatus(state)
+                    mapConnectionStateToRxBleConnectionStatus(newState)
             ));
         }
 
