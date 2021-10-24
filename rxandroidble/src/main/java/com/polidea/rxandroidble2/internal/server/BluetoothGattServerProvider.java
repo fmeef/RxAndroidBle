@@ -39,6 +39,10 @@ public class BluetoothGattServerProvider {
         connections.putIfAbsent(device, connection);
     }
 
+    public boolean isConnected(final BluetoothDevice device) {
+        return connections.containsKey(device);
+    }
+
     public synchronized void closeConnection(final BluetoothDevice device) {
         RxBleServerConnectionInternal c = connections.get(device);
         if (c != null) {
