@@ -37,6 +37,26 @@ public class RxBleGattServerCallback {
     final RxBleServerState serverState;
     private final BluetoothGattServerProvider gattServerProvider;
 
+    private boolean isDisconnecting(int newState) {
+        return newState == BluetoothProfile.STATE_DISCONNECTED || newState == BluetoothProfile.STATE_DISCONNECTING;
+    }
+
+    private void acceptDevice(final BluetoothDevice device, int newState) {
+        if (!gattServerProvider.isConnected(device) || isDisconnecting(newState)) {
+            connectionStatePublishRelay.accept(new Pair<>(
+                    device, mapConnectionStateToRxBleConnectionStatus(newState)
+            ));
+        }
+    }
+
+    private void acceptDevice(final BluetoothDevice device) {
+        if (!gattServerProvider.isConnected(device)) {
+            connectionStatePublishRelay.accept(new Pair<>(
+                    device, mapConnectionStateToRxBleConnectionStatus(BluetoothProfile.STATE_CONNECTED)
+            ));
+        }
+    }
+
     private final BluetoothGattServerCallback gattServerCallback = new BluetoothGattServerCallback() {
         @Override
         public void onConnectionStateChange(final BluetoothDevice device, final int status, final int newState) {
@@ -67,13 +87,7 @@ public class RxBleGattServerCallback {
                     );
                 }
             }
-
-            if (status == BluetoothGatt.GATT_SUCCESS) {
-                connectionStatePublishRelay.accept(new Pair<>(
-                        device,
-                        mapConnectionStateToRxBleConnectionStatus(newState)
-                ));
-            }
+            acceptDevice(device, newState);
         }
 
         @Override
@@ -88,6 +102,7 @@ public class RxBleGattServerCallback {
                                                 final int offset,
                                                 final BluetoothGattCharacteristic characteristic) {
             super.onCharacteristicReadRequest(device, requestId, offset, characteristic);
+            acceptDevice(device);
 
             RxBleServerConnectionInternal connectionInfo = gattServerProvider.getConnection(device);
 
@@ -118,6 +133,7 @@ public class RxBleGattServerCallback {
                                                  final int offset,
                                                  final byte[] value) {
             super.onCharacteristicWriteRequest(device, requestId, characteristic, preparedWrite, responseNeeded, offset, value);
+            acceptDevice(device);
             RxBleLog.d("onCharacteristicWriteRequest characteristic: " + characteristic.getUuid()
                     + " device: " + device.getAddress());
 
@@ -151,6 +167,7 @@ public class RxBleGattServerCallback {
                                             final int offset,
                                             final BluetoothGattDescriptor descriptor) {
             super.onDescriptorReadRequest(device, requestId, offset, descriptor);
+            acceptDevice(device);
             RxBleLog.d("onDescriptorReadRequest: " + descriptor.getUuid());
 
             RxBleServerConnectionInternal connectionInfo = gattServerProvider.getConnection(device);
@@ -190,6 +207,7 @@ public class RxBleGattServerCallback {
                                              final int offset,
                                              final byte[] value) {
             super.onDescriptorWriteRequest(device, requestId, descriptor, preparedWrite, responseNeeded, offset, value);
+            acceptDevice(device);
             RxBleLog.d("onDescriptorWriteRequest: " + descriptor.getUuid());
 
             RxBleServerConnectionInternal connectionInfo = gattServerProvider.getConnection(device);
@@ -262,6 +280,7 @@ public class RxBleGattServerCallback {
         @Override
         public void onMtuChanged(final BluetoothDevice device, final int mtu) {
             super.onMtuChanged(device, mtu);
+            acceptDevice(device);
 
             RxBleServerConnectionInternal connectionInfo = gattServerProvider.getConnection(device);
 
@@ -278,11 +297,15 @@ public class RxBleGattServerCallback {
         @Override
         public void onPhyUpdate(BluetoothDevice device, int txPhy, int rxPhy, int status) {
             super.onPhyUpdate(device, txPhy, rxPhy, status);
+            acceptDevice(device);
+            //TODO: handle phy change
         }
 
         @Override
         public void onPhyRead(BluetoothDevice device, int txPhy, int rxPhy, int status) {
             super.onPhyRead(device, txPhy, rxPhy, status);
+            acceptDevice(device);
+            //TODO: handle phy read
         }
     };
 
