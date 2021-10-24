@@ -77,14 +77,7 @@ public class RxBleServerConnectionInternalTest extends Specification {
                 disconnectionRouter,
                 serverTransactionFactory,
                 serverProvider,
-                serverState,
-                new ServerConnectionComponent.ServerConnectionComponentFinalizer() {
-
-                    @Override
-                    void onFinalize() {
-
-                    }
-                }
+                serverState
         )
     }
 
