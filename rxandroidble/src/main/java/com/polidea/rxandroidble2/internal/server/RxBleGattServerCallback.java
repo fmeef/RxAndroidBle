@@ -41,20 +41,22 @@ public class RxBleGattServerCallback {
         @Override
         public void onConnectionStateChange(final BluetoothDevice device, final int status, final int newState) {
             super.onConnectionStateChange(device, status, newState);
-            RxBleLog.v("gatt server onConnectionStateChange: " + device.getAddress() + " " + status + " " + newState);
+            RxBleLog.d("gatt server onConnectionStateChange: " + device.getAddress() + " " + status + " " + newState);
             RxBleServerConnectionInternal connectionInfo = gattServerProvider.getConnection(device);
-            if (connectionInfo != null) {
-                if (newState == BluetoothProfile.STATE_DISCONNECTED
-                        || newState == BluetoothProfile.STATE_DISCONNECTING) {
+            if (newState == BluetoothProfile.STATE_DISCONNECTED
+                    || newState == BluetoothProfile.STATE_DISCONNECTING) {
+                if (connectionInfo != null) {
                     connectionInfo.onDisconnectedException(
                             new BleDisconnectedException(device.getAddress(), status)
                     );
-                    gattServerProvider.closeConnection(device);
                 }
+                RxBleLog.e("device " + device.getAddress() + " disconnecting");
+                gattServerProvider.closeConnection(device);
+            }
 
-                if (status != BluetoothGatt.GATT_SUCCESS) {
-                    RxBleLog.e("GattServer state change failed %i", status);
-                    //TODO: is this the same as client
+            if (status != BluetoothGatt.GATT_SUCCESS) {
+                RxBleLog.e("GattServer state change failed %i", status);
+                if (connectionInfo != null) {
                     connectionInfo.onGattConnectionStateException(
                             new BleGattServerException(
                                     status,
@@ -64,8 +66,6 @@ public class RxBleGattServerCallback {
                             )
                     );
                 }
-            } else {
-                RxBleLog.e("connectionInfo was null for " + device);
             }
 
             if (status == BluetoothGatt.GATT_SUCCESS) {
