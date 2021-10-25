@@ -49,7 +49,6 @@ public class ServerConnectionOperationsProviderImpl implements ServerConnectionO
             byte[] value
     ) {
         return new ServerReplyOperation(
-                timeoutConfiguration,
                 server.get(),
                 device,
                 requestID,

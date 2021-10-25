@@ -62,6 +62,7 @@ import io.reactivex.disposables.CompositeDisposable;
 import io.reactivex.disposables.Disposable;
 import io.reactivex.functions.Action;
 import io.reactivex.functions.BiFunction;
+import io.reactivex.functions.Consumer;
 import io.reactivex.functions.Function;
 import io.reactivex.functions.Predicate;
 
@@ -280,13 +281,13 @@ public class RxBleServerConnectionImpl implements RxBleServerConnectionInternal,
                             .subscribe();
                 }
 
-                if (getWriteDescriptorOutput().hasObservers()) {
+                if (writeDescriptorOutput.hasObservers()) {
                     prepareDescriptorTransaction(
                             descriptor,
                             requestId,
                             offset,
                             device,
-                            getWriteDescriptorOutput().valueRelay,
+                            writeDescriptorOutput.valueRelay,
                             value
                     );
                 }
@@ -547,51 +548,59 @@ public class RxBleServerConnectionImpl implements RxBleServerConnectionInternal,
         return Single.defer(new Callable<SingleSource<? extends NotificationSetupTransaction>>() {
             @Override
             public SingleSource<? extends NotificationSetupTransaction> call() throws Exception {
-                final BluetoothGattCharacteristic ch = serverState.getCharacteristic(characteristic);
-                final BluetoothGattDescriptor clientconfig = ch.getDescriptor(RxBleClient.CLIENT_CONFIG);
+                try {
+                    final BluetoothGattCharacteristic ch = serverState.getCharacteristic(characteristic);
+                    final BluetoothGattDescriptor clientconfig = ch.getDescriptor(RxBleClient.CLIENT_CONFIG);
 
-                if (clientconfig == null) {
-                    return Single.error(new BleGattServerException(
-                            BleGattServerOperationType.NOTIFICATION_SENT,
-                            "client config was null when setting up notifications"
-                    ));
-                } else {
-                    return withDisconnectionHandling(getWriteDescriptorOutput())
-                            .filter(new Predicate<GattServerTransaction<BluetoothGattDescriptor>>() {
-                                @Override
-                                public boolean test(GattServerTransaction<BluetoothGattDescriptor> transaction) throws Exception {
-                                    return transaction.getPayload().getUuid().compareTo(clientconfig.getUuid()) == 0
-                                            && transaction.getPayload().getCharacteristic().getUuid()
-                                            .compareTo(clientconfig.getCharacteristic().getUuid()) == 0;
-                                }
-                            })
-                            .takeWhile(new Predicate<GattServerTransaction<BluetoothGattDescriptor>>() {
-                                @Override
-                                public boolean test(
-                                        @io.reactivex.annotations.NonNull GattServerTransaction<BluetoothGattDescriptor> trans
-                                ) throws Exception {
-                                    return Arrays.equals(
-                                            trans.getTransaction().getValue(),
-                                            BluetoothGattDescriptor.DISABLE_NOTIFICATION_VALUE
-                                    );
-                                }
-                            })
-                            .firstOrError()
-                            .flatMap(
-                                    new Function<
-                                            GattServerTransaction<BluetoothGattDescriptor>,
-                                            SingleSource<? extends NotificationSetupTransaction
-                                                    >
-                                            >() {
-                                @Override
-                                public SingleSource<? extends NotificationSetupTransaction> apply(
-                                        @NonNull GattServerTransaction<BluetoothGattDescriptor> trans
-                                ) throws Exception {
-                                    return serverTransactionFactory.prepareNotificationSetupTransaction(
-                                            trans.getTransaction().getRemoteDevice()
-                                    );
-                                }
-                            });
+                    if (clientconfig == null) {
+                        return Single.error(new BleGattServerException(
+                                BleGattServerOperationType.NOTIFICATION_SENT,
+                                "client config was null when setting up notifications"
+                        ));
+                    } else {
+                        return withDisconnectionHandling(writeDescriptorOutput)
+                                .filter(new Predicate<GattServerTransaction<BluetoothGattDescriptor>>() {
+                                    @Override
+                                    public boolean test(
+                                            @NonNull GattServerTransaction<BluetoothGattDescriptor> transaction
+                                    ) throws Exception {
+                                        return transaction.getPayload().getUuid().compareTo(RxBleClient.CLIENT_CONFIG) == 0
+                                                && transaction.getPayload().getCharacteristic().getUuid()
+                                                .compareTo(characteristic) == 0;
+                                    }
+                                })
+                                .takeUntil(new Predicate<GattServerTransaction<BluetoothGattDescriptor>>() {
+                                    @Override
+                                    public boolean test(
+                                            @io.reactivex.annotations.NonNull GattServerTransaction<BluetoothGattDescriptor> trans
+                                    ) throws Exception {
+                                        return !Arrays.equals(
+                                                trans.getTransaction().getValue(),
+                                                BluetoothGattDescriptor.DISABLE_NOTIFICATION_VALUE
+                                        );
+                                    }
+                                })
+                                .firstOrError()
+                                .flatMap(
+                                        new Function<
+                                                GattServerTransaction<BluetoothGattDescriptor>,
+                                                SingleSource<? extends NotificationSetupTransaction
+                                                        >
+                                                >() {
+                                            @Override
+                                            public SingleSource<? extends NotificationSetupTransaction> apply(
+                                                    @NonNull GattServerTransaction<BluetoothGattDescriptor> trans
+                                            ) throws Exception {
+                                                return serverTransactionFactory.prepareNotificationSetupTransaction(
+                                                        trans.getTransaction().getRemoteDevice()
+                                                );
+                                            }
+                                        });
+                    }
+                } catch (Exception e) {
+                    RxBleLog.e("BADDD");
+                    e.printStackTrace();
+                    return Single.never();
                 }
 
             }
@@ -991,8 +1000,14 @@ public class RxBleServerConnectionImpl implements RxBleServerConnectionInternal,
                 .map(new Function<ServerResponseTransaction, GattServerTransaction<BluetoothGattDescriptor>>() {
                     @Override
                     public GattServerTransaction<BluetoothGattDescriptor> apply(
-                            ServerResponseTransaction serverResponseTransaction) throws Exception {
+                            @NonNull ServerResponseTransaction serverResponseTransaction) throws Exception {
                         return new GattServerTransaction<>(descriptor, serverResponseTransaction);
+                    }
+                })
+                .doOnError(new Consumer<Throwable>() {
+                    @Override
+                    public void accept(Throwable throwable) throws Exception {
+                        RxBleLog.e("cryy found a badd " + throwable.toString());
                     }
                 })
                 .subscribe(valueRelay);
