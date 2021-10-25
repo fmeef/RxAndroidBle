@@ -1,7 +1,6 @@
 package com.polidea.rxandroidble2.exceptions;
 
 
-import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothGattServer;
 
 /**
@@ -12,10 +11,9 @@ import android.bluetooth.BluetoothGattServer;
 public class BleGattServerCallbackTimeoutException extends BleGattServerException {
 
     public BleGattServerCallbackTimeoutException(
-                                                 BluetoothDevice device,
                                                  BleGattServerOperationType bleGattOperationType,
                                                  String reason
     ) {
-        super(device, bleGattOperationType, reason);
+        super(bleGattOperationType, reason);
     }
 }

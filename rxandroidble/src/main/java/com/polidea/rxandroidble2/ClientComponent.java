@@ -357,6 +357,10 @@ public interface ClientComponent {
         }
 
         @Binds
+        @ClientScope
+        abstract ServerConnector bindServerConnector(ServerConnectorImpl serverConnector);
+
+        @Binds
         abstract Observable<RxBleAdapterStateObservable.BleAdapterState> bindStateObs(RxBleAdapterStateObservable stateObservable);
 
         @Binds

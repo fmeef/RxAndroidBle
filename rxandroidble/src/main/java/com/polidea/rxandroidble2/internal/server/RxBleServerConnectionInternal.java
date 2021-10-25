@@ -3,10 +3,12 @@ package com.polidea.rxandroidble2.internal.server;
 import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothGattCharacteristic;
 import android.bluetooth.BluetoothGattDescriptor;
+import android.util.Pair;
 
 import androidx.annotation.NonNull;
 
 import com.jakewharton.rxrelay2.PublishRelay;
+import com.polidea.rxandroidble2.RxBleConnection;
 import com.polidea.rxandroidble2.RxBleServerConnection;
 import com.polidea.rxandroidble2.ServerConnectionScope;
 import com.polidea.rxandroidble2.exceptions.BleDisconnectedException;
@@ -45,9 +47,6 @@ public interface RxBleServerConnectionInternal extends Disposable {
     @NonNull
     Output<Integer> getChangedMtuOutput();
 
-    @NonNull
-    BluetoothDevice getDevice();
-
     void onGattConnectionStateException(BleGattServerException exception);
 
     void onDisconnectedException(BleDisconnectedException exception);
@@ -68,11 +67,14 @@ public interface RxBleServerConnectionInternal extends Disposable {
 
     Observable<Integer> getOnNotification();
 
-    void disconnect();
+    void disconnect(BluetoothDevice device);
 
     RxBleServerConnection getConnection();
 
     <T> Observable<T> observeDisconnect();
+
+    Observable<Pair<BluetoothDevice, RxBleConnection.RxBleConnectionState>> getOnConnectionStateChange();
+
 
     void prepareDescriptorTransaction(
             BluetoothGattDescriptor descriptor,
@@ -95,7 +97,8 @@ public interface RxBleServerConnectionInternal extends Disposable {
     Observable<Boolean> blindAck(
             int requestID,
             int status,
-            byte[] value
+            byte[] value,
+            BluetoothDevice device
     );
 
     class Output<T> {

@@ -1,6 +1,5 @@
 package com.polidea.rxandroidble2.exceptions;
 
-import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothGattDescriptor;
 
 public class BleGattServerDescriptorException extends BleGattServerException {
@@ -9,11 +8,10 @@ public class BleGattServerDescriptorException extends BleGattServerException {
 
     public BleGattServerDescriptorException(
             BluetoothGattDescriptor descriptor,
-            BluetoothDevice device,
             int status,
             BleGattServerOperationType bleGattOperationType
     ) {
-        super(status, device, bleGattOperationType, "descriptor exception");
+        super(status, bleGattOperationType, "descriptor exception");
         this.descriptor = descriptor;
     }
 }

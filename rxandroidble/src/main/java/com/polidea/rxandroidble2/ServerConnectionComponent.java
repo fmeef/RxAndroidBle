@@ -1,6 +1,6 @@
 package com.polidea.rxandroidble2;
 
-import android.bluetooth.BluetoothDevice;
+import android.bluetooth.BluetoothGattServer;
 
 import com.polidea.rxandroidble2.internal.connection.DisconnectionRouterOutput;
 import com.polidea.rxandroidble2.internal.operations.TimeoutConfiguration;
@@ -8,8 +8,8 @@ import com.polidea.rxandroidble2.internal.operations.server.ServerConnectionOper
 import com.polidea.rxandroidble2.internal.operations.server.ServerConnectionOperationsProviderImpl;
 import com.polidea.rxandroidble2.internal.serialization.ServerOperationQueue;
 import com.polidea.rxandroidble2.internal.serialization.ServerOperationQueueImpl;
+import com.polidea.rxandroidble2.internal.server.RxBleServerConnectionImpl;
 import com.polidea.rxandroidble2.internal.server.RxBleServerConnectionInternal;
-import com.polidea.rxandroidble2.internal.server.RxBleServerConnectionInternalImpl;
 import com.polidea.rxandroidble2.internal.server.ServerDisconnectionRouter;
 
 import bleshadow.dagger.Binds;
@@ -36,18 +36,18 @@ public interface ServerConnectionComponent {
         Builder operationTimeout(Timeout operationTimeout);
 
         @BindsInstance
-        Builder bluetoothDevice(BluetoothDevice device);
+        Builder config(ServerConfig config);
     }
 
     @Module(subcomponents = {ServerTransactionComponent.class})
     abstract class ConnectionModule {
         @Binds
         @ServerConnectionScope
-        abstract RxBleServerConnectionInternal bindRxBleServerConnectionInternal(RxBleServerConnectionInternalImpl rxBleServerConnection);
+        abstract RxBleServerConnectionInternal bindRxBleServerConnectionInternal(RxBleServerConnectionImpl rxBleServerConnection);
 
         @Binds
         @ServerConnectionScope
-        abstract RxBleServerConnection bindRxBleServerConnection(RxBleServerConnectionInternalImpl connection);
+        abstract RxBleServerConnection bindRxBleServerConnection(RxBleServerConnectionImpl connection);
 
         @Binds
         @ServerConnectionScope
@@ -75,6 +75,14 @@ public interface ServerConnectionComponent {
                 Timeout operationTimeout
         ) {
             return new TimeoutConfiguration(operationTimeout.timeout, operationTimeout.timeUnit, timeoutScheduler);
+        }
+
+        @Provides
+        @ServerConnectionScope
+        static BluetoothGattServer provideBluetoothGattServer(
+                RxBleServerConnectionImpl connection
+        ) {
+                return connection.getBluetoothGattServer();
         }
 
 

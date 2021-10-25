@@ -15,6 +15,7 @@ import java.util.Set;
 import java.util.UUID;
 
 import io.reactivex.Observable;
+import io.reactivex.Single;
 
 
 public abstract class RxBleClient {
@@ -46,6 +47,13 @@ public abstract class RxBleClient {
          * Everything is ready to be used.
          */
         READY
+    }
+
+
+    public enum NotificationStatus {
+        NOTIFICATIONS_INDICATIONS_DISABLED,
+        NOTIFICATIONS_ENABLED,
+        INDICATIONS_ENABLED
     }
 
     /**
@@ -226,5 +234,5 @@ public abstract class RxBleClient {
      */
     public abstract String[] getRecommendedScanRuntimePermissions();
 
-    public abstract Observable<RxBleServerConnection> openServer(ServerConfig config);
+    public abstract Single<RxBleServerConnection> openServer(ServerConfig config);
 }

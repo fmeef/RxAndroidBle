@@ -2,45 +2,43 @@ package com.polidea.rxandroidble2.internal.operations.server;
 
 import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothGattCharacteristic;
+import android.bluetooth.BluetoothGattServer;
 import android.bluetooth.BluetoothManager;
 
 import com.polidea.rxandroidble2.ClientComponent;
 import com.polidea.rxandroidble2.ServerConnectionComponent;
 import com.polidea.rxandroidble2.ServerConnectionScope;
 import com.polidea.rxandroidble2.internal.operations.TimeoutConfiguration;
-import com.polidea.rxandroidble2.internal.server.BluetoothGattServerProvider;
-import com.polidea.rxandroidble2.internal.server.RxBleGattServerCallback;
+import com.polidea.rxandroidble2.internal.server.RxBleServerConnectionInternal;
 
 import bleshadow.javax.inject.Inject;
 import bleshadow.javax.inject.Named;
+import bleshadow.javax.inject.Provider;
 import io.reactivex.Scheduler;
 
 @ServerConnectionScope
 public class ServerConnectionOperationsProviderImpl implements ServerConnectionOperationsProvider {
 
     private final Scheduler gattServerScheduler;
-    private final BluetoothDevice bluetoothDevice;
-    private final RxBleGattServerCallback callback;
     private final BluetoothManager bluetoothManager;
     private final TimeoutConfiguration timeoutConfiguration;
-    private final BluetoothGattServerProvider serverProvider;
+    private final Provider<BluetoothGattServer> server;
+    private final Provider<RxBleServerConnectionInternal> connection;
 
 
     @Inject
     public ServerConnectionOperationsProviderImpl(
             @Named(ClientComponent.NamedSchedulers.BLUETOOTH_INTERACTION) Scheduler gattServerScheduler,
-            BluetoothDevice bluetoothDevice,
-            RxBleGattServerCallback callback,
             BluetoothManager bluetoothManager,
             @Named(ServerConnectionComponent.OPERATION_TIMEOUT) TimeoutConfiguration timeoutConfiguration,
-            BluetoothGattServerProvider serverProvider
+            Provider<BluetoothGattServer> server,
+            Provider<RxBleServerConnectionInternal> connection
     ) {
         this.gattServerScheduler = gattServerScheduler;
-        this.bluetoothDevice = bluetoothDevice;
-        this.callback = callback;
         this.bluetoothManager = bluetoothManager;
         this.timeoutConfiguration = timeoutConfiguration;
-        this.serverProvider = serverProvider;
+        this.server = server;
+        this.connection = connection;
     }
 
 
@@ -55,7 +53,7 @@ public class ServerConnectionOperationsProviderImpl implements ServerConnectionO
     ) {
         return new ServerReplyOperation(
                 timeoutConfiguration,
-                serverProvider.getBluetoothGatt(),
+                server.get(),
                 device,
                 requestID,
                 status,
@@ -66,9 +64,9 @@ public class ServerConnectionOperationsProviderImpl implements ServerConnectionO
 
     public ServerDisconnectOperation provideDisconnectOperation(BluetoothDevice device) {
         return new ServerDisconnectOperation(
-                serverProvider,
+                server.get(),
                 device,
-                callback,
+                connection.get(),
                 gattServerScheduler,
                 bluetoothManager,
                 timeoutConfiguration
@@ -79,15 +77,17 @@ public class ServerConnectionOperationsProviderImpl implements ServerConnectionO
     public NotifyCharacteristicChangedOperation provideNotifyOperation(
             BluetoothGattCharacteristic characteristic,
             byte[] value,
-            boolean isIndication
+            boolean isIndication,
+            BluetoothDevice device
     ) {
         return new NotifyCharacteristicChangedOperation(
-                serverProvider,
+                server.get(),
                 characteristic,
                 timeoutConfiguration,
-                serverProvider.getConnection(bluetoothDevice),
+                connection.get(),
                 value,
-                isIndication
+                isIndication,
+                device
         );
     }
 }

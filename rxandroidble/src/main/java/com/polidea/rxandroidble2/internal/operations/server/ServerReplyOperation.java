@@ -58,6 +58,6 @@ public class ServerReplyOperation extends QueueOperation<Boolean> {
 
     @Override
     protected BleException provideException(DeadObjectException deadObjectException) {
-        return new BleGattServerException(device, BleGattServerOperationType.REPLY, "ServerReplyOperation failed");
+        return new BleGattServerException(BleGattServerOperationType.REPLY, "ServerReplyOperation failed");
     }
 }

@@ -11,11 +11,11 @@ public class BleGattServerCannotStartException extends BleGattServerException {
 
     @Deprecated
     public BleGattServerCannotStartException(BleGattServerOperationType bleGattOperationType) {
-        super(null, bleGattOperationType, "server cannot start");
+        super(bleGattOperationType, "server cannot start");
     }
 
     public BleGattServerCannotStartException(BluetoothGattServer gatt,
                                              BleGattServerOperationType bleGattServerOperationType) {
-        super(null, bleGattServerOperationType, "server cannot start");
+        super(bleGattServerOperationType, "server cannot start");
     }
 }

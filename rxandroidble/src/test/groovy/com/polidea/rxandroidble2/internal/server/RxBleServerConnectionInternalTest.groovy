@@ -2,7 +2,6 @@ package com.polidea.rxandroidble2.internal.server
 
 import android.bluetooth.*
 import com.polidea.rxandroidble2.DummyOperationQueue
-import com.polidea.rxandroidble2.ServerConnectionComponent
 import com.polidea.rxandroidble2.ServerTransactionFactory
 import com.polidea.rxandroidble2.internal.operations.server.ServerConnectionOperationsProvider
 import com.polidea.rxandroidble2.internal.operations.server.ServerConnectionOperationsProviderImpl
@@ -32,7 +31,7 @@ public class RxBleServerConnectionInternalTest extends Specification {
     BluetoothGattServer bluetoothGattServer = Mock BluetoothGattServer
     RxBleServerConnectionInternalImpl objectUnderTest
     BluetoothManager bluetoothManager = Mock BluetoothManager
-    RxBleGattServerCallback callback = Mock RxBleGattServerCallback
+    RxBleServerConnectionImpl callback = Mock RxBleServerConnectionImpl
     ServerTransactionFactory serverTransactionFactory = Mock ServerTransactionFactory
     BluetoothGattCharacteristic characteristic = Mock BluetoothGattCharacteristic
     BluetoothGattServerProvider serverProvider = Mock(BluetoothGattServerProvider)

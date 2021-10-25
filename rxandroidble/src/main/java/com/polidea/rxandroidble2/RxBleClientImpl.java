@@ -44,6 +44,7 @@ import io.reactivex.MaybeSource;
 import io.reactivex.Observable;
 import io.reactivex.ObservableSource;
 import io.reactivex.Scheduler;
+import io.reactivex.Single;
 import io.reactivex.functions.Action;
 import io.reactivex.functions.Consumer;
 import io.reactivex.functions.Function;
@@ -285,7 +286,7 @@ class RxBleClientImpl extends RxBleClient {
     }
 
     @Override
-    public Observable<RxBleServerConnection> openServer(ServerConfig config) {
+    public Single<RxBleServerConnection> openServer(ServerConfig config) {
         return serverConnector.subscribeToConnections(config);
     }
 }

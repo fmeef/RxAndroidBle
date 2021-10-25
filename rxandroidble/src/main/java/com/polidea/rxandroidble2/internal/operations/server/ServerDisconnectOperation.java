@@ -14,8 +14,7 @@ import com.polidea.rxandroidble2.internal.QueueOperation;
 import com.polidea.rxandroidble2.internal.RxBleLog;
 import com.polidea.rxandroidble2.internal.operations.TimeoutConfiguration;
 import com.polidea.rxandroidble2.internal.serialization.QueueReleaseInterface;
-import com.polidea.rxandroidble2.internal.server.BluetoothGattServerProvider;
-import com.polidea.rxandroidble2.internal.server.RxBleGattServerCallback;
+import com.polidea.rxandroidble2.internal.server.RxBleServerConnectionInternal;
 
 import io.reactivex.ObservableEmitter;
 import io.reactivex.Scheduler;
@@ -27,22 +26,22 @@ import io.reactivex.functions.Predicate;
 
 public class ServerDisconnectOperation extends QueueOperation<Void> {
 
-    private final BluetoothGattServerProvider provider;
+    private final BluetoothGattServer server;
     private final BluetoothDevice device;
-    private final RxBleGattServerCallback callback;
+    private final RxBleServerConnectionInternal callback;
     private final Scheduler gattServerScheduler;
     private final BluetoothManager bluetoothManager;
     private final TimeoutConfiguration timeoutConfiguration;
 
     ServerDisconnectOperation(
-            BluetoothGattServerProvider provider,
+            BluetoothGattServer server,
             BluetoothDevice device,
-            RxBleGattServerCallback callback,
+            RxBleServerConnectionInternal callback,
             Scheduler gattServerScheduler,
             BluetoothManager bluetoothManager,
             TimeoutConfiguration timeoutConfiguration
     ) {
-        this.provider = provider;
+        this.server = server;
         this.device = device;
         this.callback = callback;
         this.gattServerScheduler = gattServerScheduler;
@@ -52,12 +51,6 @@ public class ServerDisconnectOperation extends QueueOperation<Void> {
 
     @Override
     protected void protectedRun(final ObservableEmitter<Void> emitter, final QueueReleaseInterface queueReleaseInterface) throws Throwable {
-        final BluetoothGattServer bluetoothGattServer = provider.getBluetoothGatt();
-        if (bluetoothGattServer == null) {
-            RxBleLog.w("Server disconnect operation on client " + device.getAddress() + " with null BluetoothGattServer");
-            queueReleaseInterface.release();
-            emitter.onComplete();
-        } else {
             disconnectIfRequired()
              .timeout(
                      timeoutConfiguration.timeout,
@@ -87,19 +80,18 @@ public class ServerDisconnectOperation extends QueueOperation<Void> {
                     emitter.onComplete();
                 }
             });
-        }
     }
 
     private Single<BluetoothGattServer> disconnectIfRequired() {
         return isDisconnected()
-                ? Single.just(provider.getBluetoothGatt())
+                ? Single.just(server)
                 : disconnect();
     }
 
     private Single<BluetoothGattServer> disconnect() {
         //TODO: handle timeout
         return new DisconnectGattServerObservable(
-                provider.getBluetoothGatt(),
+                server,
                 callback,
                 gattServerScheduler,
                 device
@@ -118,13 +110,13 @@ public class ServerDisconnectOperation extends QueueOperation<Void> {
 
     public static class DisconnectGattServerObservable extends Single<BluetoothGattServer> {
         private final BluetoothGattServer bluetoothGattServer;
-        private final RxBleGattServerCallback callback;
+        private final RxBleServerConnectionInternal callback;
         private final Scheduler disconnectScheduler;
         private final BluetoothDevice device;
 
         public DisconnectGattServerObservable(
                 BluetoothGattServer bluetoothGattServer,
-                RxBleGattServerCallback callback,
+                RxBleServerConnectionInternal callback,
                 Scheduler disconnectScheduler,
                 BluetoothDevice device
         ) {

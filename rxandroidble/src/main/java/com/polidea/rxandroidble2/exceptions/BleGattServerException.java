@@ -1,7 +1,6 @@
 package com.polidea.rxandroidble2.exceptions;
 
 import android.annotation.SuppressLint;
-import android.bluetooth.BluetoothDevice;
 
 import com.polidea.rxandroidble2.utils.GattStatusParser;
 
@@ -9,26 +8,22 @@ public class BleGattServerException extends BleException {
     public static final int UNKNOWN_STATUS = -1;
     private final int status;
     private final BleGattServerOperationType bleGattOperationType;
-    private final BluetoothDevice device;
 
     public BleGattServerException(
             int status,
-            BluetoothDevice device,
             BleGattServerOperationType bleGattOperationType,
             String reason
     ) {
         super(createMessage(reason, status, bleGattOperationType));
         this.status = status;
-        this.device = device;
         this.bleGattOperationType = bleGattOperationType;
     }
 
     public BleGattServerException(
-            BluetoothDevice device,
             BleGattServerOperationType bleGattOperationType,
             String reason
     ) {
-        this(UNKNOWN_STATUS, device, bleGattOperationType, reason);
+        this(UNKNOWN_STATUS, bleGattOperationType, reason);
     }
 
     public BleGattServerOperationType getBleGattOperationType() {

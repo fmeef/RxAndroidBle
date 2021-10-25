@@ -17,6 +17,7 @@ public interface ServerConnectionOperationsProvider {
     NotifyCharacteristicChangedOperation provideNotifyOperation(
             BluetoothGattCharacteristic characteristic,
             byte[] value,
-            boolean isIndication
+            boolean isIndication,
+            BluetoothDevice device
     );
 }

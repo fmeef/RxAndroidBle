@@ -1,6 +1,5 @@
 package com.polidea.rxandroidble2.exceptions;
 
-import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothGattCharacteristic;
 
 public class BleGattServerCharacteristicException extends BleGattServerException {
@@ -9,11 +8,10 @@ public class BleGattServerCharacteristicException extends BleGattServerException
 
     public BleGattServerCharacteristicException(
             BluetoothGattCharacteristic characteristic,
-            BluetoothDevice device,
             int status,
             BleGattServerOperationType bleGattOperationType
     ) {
-        super(status, device, bleGattOperationType, "characteristic exception");
+        super(status, bleGattOperationType, "characteristic exception");
         this.characteristic = characteristic;
     }
 }

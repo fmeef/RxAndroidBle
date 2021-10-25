@@ -1,5 +1,6 @@
 package com.polidea.rxandroidble2.internal.operations.server;
 
+import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothGattCharacteristic;
 import android.bluetooth.BluetoothGattServer;
 import android.os.DeadObjectException;
@@ -11,7 +12,6 @@ import com.polidea.rxandroidble2.internal.QueueOperation;
 import com.polidea.rxandroidble2.internal.RxBleLog;
 import com.polidea.rxandroidble2.internal.operations.TimeoutConfiguration;
 import com.polidea.rxandroidble2.internal.serialization.QueueReleaseInterface;
-import com.polidea.rxandroidble2.internal.server.BluetoothGattServerProvider;
 import com.polidea.rxandroidble2.internal.server.RxBleServerConnectionInternal;
 import com.polidea.rxandroidble2.internal.util.QueueReleasingEmitterWrapper;
 
@@ -21,28 +21,31 @@ import io.reactivex.functions.Action;
 
 public class NotifyCharacteristicChangedOperation extends QueueOperation<Integer> {
 
-    private final BluetoothGattServerProvider serverProvider;
+    private final BluetoothGattServer server;
     private final BluetoothGattCharacteristic characteristic;
     private final TimeoutConfiguration timeoutConfiguration;
     private final RxBleServerConnectionInternal connection;
     private final byte[] value;
     private final boolean isIndication;
+    private final BluetoothDevice device;
 
 
     public NotifyCharacteristicChangedOperation(
-            BluetoothGattServerProvider serverProvider,
+            BluetoothGattServer server,
             BluetoothGattCharacteristic characteristic,
             TimeoutConfiguration timeoutConfiguration,
             RxBleServerConnectionInternal connection,
             byte[] value,
-            boolean isindication
+            boolean isindication,
+            BluetoothDevice device
             ) {
-        this.serverProvider = serverProvider;
+        this.server = server;
         this.characteristic = characteristic;
         this.timeoutConfiguration = timeoutConfiguration;
         this.connection = connection;
         this.value = value;
         this.isIndication = isindication;
+        this.device = device;
     }
 
 
@@ -51,12 +54,10 @@ public class NotifyCharacteristicChangedOperation extends QueueOperation<Integer
             final ObservableEmitter<Integer> emitter,
             final QueueReleaseInterface queueReleaseInterface
     ) throws Throwable {
-        final BluetoothGattServer server = serverProvider.getBluetoothGatt();
         final QueueReleasingEmitterWrapper<Integer> emitterWrapper = new QueueReleasingEmitterWrapper<>(emitter, queueReleaseInterface);
         if (server == null) {
             RxBleLog.w("NotificationSendOperation encountered null gatt server");
             emitter.onError(new BleGattServerException(
-                    connection.getDevice(),
                     BleGattServerOperationType.CONNECTION_STATE,
                     "server handle was null in NotifyCharacteristicChangedOperation"
                     )
@@ -64,13 +65,11 @@ public class NotifyCharacteristicChangedOperation extends QueueOperation<Integer
             emitterWrapper.cancel();
         } else if (characteristic.getService() == null) {
             emitterWrapper.onError(new BleGattServerException(
-                    connection.getDevice(),
                     BleGattServerOperationType.NOTIFICATION_SENT,
                     "service for characteristic " + characteristic.getUuid() + " was null"
             ));
         } else {
-            RxBleLog.d("running notifycharacteristic notification/indication operation device: "
-                    + connection.getDevice());
+            RxBleLog.d("running notifycharacteristic notification/indication operation device: ");
 
 
             getCompleted()
@@ -89,9 +88,8 @@ public class NotifyCharacteristicChangedOperation extends QueueOperation<Integer
                     .subscribe(emitterWrapper);
 
             characteristic.setValue(value);
-            if (!server.notifyCharacteristicChanged(connection.getDevice(), characteristic, isIndication)) {
+            if (!server.notifyCharacteristicChanged(device, characteristic, isIndication)) {
                 emitterWrapper.onError(new BleGattServerException(
-                        connection.getDevice(),
                         BleGattServerOperationType.CONNECTION_STATE,
                         "NotifyCharacteristicChangedOperation failed"
                 ));
@@ -107,7 +105,6 @@ public class NotifyCharacteristicChangedOperation extends QueueOperation<Integer
     @Override
     protected BleException provideException(DeadObjectException deadObjectException) {
         return new BleGattServerException(
-                connection.getDevice(),
                 BleGattServerOperationType.NOTIFICATION_SENT,
                 "notification failed"
         );
