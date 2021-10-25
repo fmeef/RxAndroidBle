@@ -11,6 +11,7 @@ import androidx.annotation.Nullable;
 
 import com.jakewharton.rxrelay2.BehaviorRelay;
 import com.jakewharton.rxrelay2.PublishRelay;
+import com.polidea.rxandroidble2.NotificationSetupTransaction;
 import com.polidea.rxandroidble2.RxBleClient;
 import com.polidea.rxandroidble2.RxBleConnection;
 import com.polidea.rxandroidble2.RxBleServerConnection;
@@ -166,6 +167,11 @@ public class RxBleServerConnectionMock implements RxBleServerConnection, RxBleSe
     @Override
     public Completable setupIndication(UUID ch, Flowable<byte[]> indications, BluetoothDevice device) {
         return Completable.complete();
+    }
+
+    @Override
+    public Single<NotificationSetupTransaction> awaitNotifications(UUID characteristic) {
+        return Single.never();
     }
 
     @Override

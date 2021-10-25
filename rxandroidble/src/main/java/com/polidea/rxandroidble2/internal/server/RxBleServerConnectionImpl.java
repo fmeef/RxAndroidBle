@@ -543,7 +543,7 @@ public class RxBleServerConnectionImpl implements RxBleServerConnectionInternal,
     }
 
     @Override
-    public Single<NotificationSetupTransaction> awaitNotifications(final UUID characteristic, Flowable<byte[]> notifications) {
+    public Single<NotificationSetupTransaction> awaitNotifications(final UUID characteristic) {
         return Single.defer(new Callable<SingleSource<? extends NotificationSetupTransaction>>() {
             @Override
             public SingleSource<? extends NotificationSetupTransaction> call() throws Exception {

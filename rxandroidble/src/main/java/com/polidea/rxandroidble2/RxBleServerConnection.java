@@ -18,7 +18,7 @@ public interface RxBleServerConnection extends Disposable {
 
     Completable setupIndication(UUID characteristic, Flowable<byte[]> indications, BluetoothDevice device);
 
-    Single<NotificationSetupTransaction> awaitNotifications(UUID characteristic, Flowable<byte[]> notifications);
+    Single<NotificationSetupTransaction> awaitNotifications(UUID characteristic);
 
     Observable<Integer> getOnMtuChanged();
 
