@@ -1,8 +1,12 @@
 package com.polidea.rxandroidble2.internal.server
 
 import android.bluetooth.*
+import android.content.Context
+import bleshadow.javax.inject.Provider
 import com.polidea.rxandroidble2.DummyOperationQueue
+import com.polidea.rxandroidble2.ServerConfig
 import com.polidea.rxandroidble2.ServerTransactionFactory
+import com.polidea.rxandroidble2.Timeout
 import com.polidea.rxandroidble2.internal.operations.server.ServerConnectionOperationsProvider
 import com.polidea.rxandroidble2.internal.operations.server.ServerConnectionOperationsProviderImpl
 import com.polidea.rxandroidble2.internal.serialization.ServerOperationQueue
@@ -18,24 +22,22 @@ import spock.lang.Specification
 import java.util.concurrent.TimeUnit
 
 public class RxBleServerConnectionInternalTest extends Specification {
-    static long timeout = 30
     static final UUID CLIENT_CONFIG = UUID.fromString("00002902-0000-1000-8000-00805f9b34fb");
-    static TimeUnit timeoutTimeUnit = TimeUnit.SECONDS
     public static long DEFAULT_WRITE_DELAY = 1
     UUID testUuid = UUID.randomUUID()
     TestScheduler testScheduler = new TestScheduler()
+    def mockTimeout = new MockOperationTimeoutConfiguration(10, testScheduler)
     ServerConnectionOperationsProvider operationsProvider
     ServerOperationQueue dummyQueue = new DummyOperationQueue()
     ServerDisconnectionRouter disconnectionRouter = Mock ServerDisconnectionRouter
     BluetoothDevice bluetoothDevice = Mock BluetoothDevice
     BluetoothGattServer bluetoothGattServer = Mock BluetoothGattServer
-    RxBleServerConnectionInternalImpl objectUnderTest
+    RxBleServerConnectionImpl objectUnderTest
     BluetoothManager bluetoothManager = Mock BluetoothManager
-    RxBleServerConnectionImpl callback = Mock RxBleServerConnectionImpl
+    ServerConfig config = ServerConfig.newInstance(Mock(Timeout))
+    RxBleServerState serverState = Mock(RxBleServerState)
     ServerTransactionFactory serverTransactionFactory = Mock ServerTransactionFactory
     BluetoothGattCharacteristic characteristic = Mock BluetoothGattCharacteristic
-    BluetoothGattServerProvider serverProvider = Mock(BluetoothGattServerProvider)
-    RxBleServerState serverState = Mock(RxBleServerState)
 
 
     BluetoothGattDescriptor clientConfig = new BluetoothGattDescriptor(
@@ -61,21 +63,32 @@ public class RxBleServerConnectionInternalTest extends Specification {
 
         operationsProvider = new ServerConnectionOperationsProviderImpl(
                 testScheduler,
-                bluetoothDevice,
-                callback,
                 bluetoothManager,
-                new MockOperationTimeoutConfiguration(timeout.intValue(), testScheduler),
-                serverProvider
+                mockTimeout,
+                new Provider<BluetoothGattServer>() {
+                    @Override
+                    BluetoothGattServer get() {
+                        return bluetoothGattServer
+                    }
+                },
+                new Provider<RxBleServerConnectionInternal>() {
+                    @Override
+                    RxBleServerConnectionInternal get() {
+                        return objectUnderTest
+                    }
+                }
         )
 
-        objectUnderTest = new RxBleServerConnectionInternalImpl(
+        objectUnderTest = new RxBleServerConnectionImpl(
+                testScheduler,
                 testScheduler,
                 operationsProvider,
                 dummyQueue,
-                bluetoothDevice,
+                bluetoothManager,
                 disconnectionRouter,
                 serverTransactionFactory,
-                serverProvider,
+                config,
+                Mock(Context),
                 serverState
         )
     }
@@ -87,8 +100,8 @@ public class RxBleServerConnectionInternalTest extends Specification {
         when:
         def notif = Flowable.just(data).repeat(4);
         def indicationnotif = Flowable.just(data).repeat(4)
-        TestObserver res = objectUnderTest.setupNotifications(ch.getUuid(), notif).test();
-        TestObserver indicationres = objectUnderTest.setupIndication(ch.getUuid(), indicationnotif).test()
+        TestObserver res = objectUnderTest.setupNotifications(ch.getUuid(), notif, Mock(BluetoothDevice)).test();
+        TestObserver indicationres = objectUnderTest.setupIndication(ch.getUuid(), indicationnotif, Mock(BluetoothDevice)).test()
         for (int i=0;i<4*2;i++) {
             objectUnderTest.getNotificationPublishRelay().valueRelay.accept(BluetoothGatt.GATT_SUCCESS)
             advanceTimeForWritesToComplete(1)
@@ -96,7 +109,7 @@ public class RxBleServerConnectionInternalTest extends Specification {
 
         then:
 
-        2 * serverState.getCharacteristic(_) >> characteristic
+        2 * _.getCharacteristic(_) >> characteristic
         characteristic.getService() >> new BluetoothGattService(UUID.randomUUID(), BluetoothGattService.SERVICE_TYPE_PRIMARY)
         _.getDescriptor(_) >>  new BluetoothGattDescriptor(
                 CLIENT_CONFIG,
@@ -106,8 +119,6 @@ public class RxBleServerConnectionInternalTest extends Specification {
         disconnectionRouter.asErrorOnlyObservable() >> Observable.empty()
         serverState.getNotifications(_) >> true
         serverState.getIndications(_) >> true
-        serverProvider.getBluetoothGatt() >> bluetoothGattServer
-        serverProvider.getConnection(_) >> objectUnderTest
         bluetoothGattServer.notifyCharacteristicChanged(_, _, _) >> true
         res.assertComplete()
         indicationres.assertComplete()

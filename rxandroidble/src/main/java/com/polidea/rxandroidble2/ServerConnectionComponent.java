@@ -10,6 +10,8 @@ import com.polidea.rxandroidble2.internal.serialization.ServerOperationQueue;
 import com.polidea.rxandroidble2.internal.serialization.ServerOperationQueueImpl;
 import com.polidea.rxandroidble2.internal.server.RxBleServerConnectionImpl;
 import com.polidea.rxandroidble2.internal.server.RxBleServerConnectionInternal;
+import com.polidea.rxandroidble2.internal.server.RxBleServerState;
+import com.polidea.rxandroidble2.internal.server.RxBleServerStateImpl;
 import com.polidea.rxandroidble2.internal.server.ServerDisconnectionRouter;
 
 import bleshadow.dagger.Binds;
@@ -58,6 +60,10 @@ public interface ServerConnectionComponent {
         @Binds
         @ServerConnectionScope
         abstract ServerTransactionFactory bindServerTransactionFactory(ServerTransactionFactoryImpl transactionFactory);
+
+        @Binds
+        @ServerConnectionScope
+        abstract RxBleServerState bindServerState(RxBleServerStateImpl state);
 
         @Binds
         @ServerConnectionScope

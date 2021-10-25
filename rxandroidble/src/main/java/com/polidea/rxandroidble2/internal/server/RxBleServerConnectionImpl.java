@@ -44,7 +44,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.Callable;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 
@@ -72,11 +71,8 @@ public class RxBleServerConnectionImpl implements RxBleServerConnectionInternal,
     private final AtomicReference<BluetoothGattServer> server = new AtomicReference<>(null);
     private final Context context;
 
-    private final ConcurrentHashMap<UUID, RxBleClient.NotificationStatus> notificationState = new ConcurrentHashMap<>();
-    private final ConcurrentHashMap<UUID, BluetoothGattCharacteristic> characteristicMap = new ConcurrentHashMap<>();
-
-
     private final Scheduler connectionScheduler;
+    private final RxBleServerState serverState;
     private final ServerConnectionOperationsProvider operationsProvider;
     private final ServerOperationQueue operationQueue;
     private final ServerDisconnectionRouter disconnectionRouter;
@@ -131,26 +127,13 @@ public class RxBleServerConnectionImpl implements RxBleServerConnectionInternal,
                         BluetoothGattDescriptor.PERMISSION_WRITE | BluetoothGattDescriptor.PERMISSION_READ
                 ));
             }
-            characteristicMap.put(characteristic.getUuid(), characteristic);
+
+            serverState.addCharacteristic(characteristic.getUuid(), characteristic);
         }
         getBluetoothGattServer().addService(service);
     }
 
-    public void enableNotifications(UUID uuid) {
-        notificationState.put(uuid, RxBleClient.NotificationStatus.NOTIFICATIONS_ENABLED);
-    }
 
-    public void enableIndications(UUID uuid) {
-        notificationState.put(uuid, RxBleClient.NotificationStatus.INDICATIONS_ENABLED);
-    }
-
-    public void disableNotifications(UUID uuid) {
-        notificationState.put(uuid, RxBleClient.NotificationStatus.NOTIFICATIONS_INDICATIONS_DISABLED);
-    }
-
-    public BluetoothGattCharacteristic getCharacteristic(UUID uuid) {
-        return characteristicMap.get(uuid);
-    }
 
     @Nullable
     public BluetoothGattService getService(UUID uuid) {
@@ -161,57 +144,6 @@ public class RxBleServerConnectionImpl implements RxBleServerConnectionInternal,
     public List<BluetoothGattService> getServiceList() {
         return getBluetoothGattServer().getServices();
     }
-
-    @Nullable
-    public BluetoothGattDescriptor getDescriptor(UUID characteristic, UUID uuid) {
-        BluetoothGattCharacteristic ch = characteristicMap.get(characteristic);
-        if (ch == null) {
-            return null;
-        }
-        return ch.getDescriptor(uuid);
-    }
-
-    public byte[] getNotificationValue(UUID uuid) {
-        final RxBleClient.NotificationStatus status = notificationState.get(uuid);
-        if (status != null) {
-            switch (status) {
-                case INDICATIONS_ENABLED:
-                    return BluetoothGattDescriptor.ENABLE_INDICATION_VALUE;
-                case NOTIFICATIONS_ENABLED:
-                    return BluetoothGattDescriptor.ENABLE_NOTIFICATION_VALUE;
-                default:
-                    return BluetoothGattDescriptor.DISABLE_NOTIFICATION_VALUE;
-            }
-        } else {
-            return BluetoothGattDescriptor.DISABLE_NOTIFICATION_VALUE;
-        }
-    }
-
-    public void setNotifications(UUID characteristic, byte[] value) {
-        if (Arrays.equals(value, BluetoothGattDescriptor.ENABLE_NOTIFICATION_VALUE)) {
-            enableNotifications(characteristic);
-        } else if (Arrays.equals(value, BluetoothGattDescriptor.ENABLE_INDICATION_VALUE)) {
-            enableIndications(characteristic);
-        } else {
-            disableNotifications(characteristic);
-        }
-    }
-
-
-    public RxBleClient.NotificationStatus getNotificationStatus(UUID characteristic) {
-        return notificationState.get(characteristic);
-    }
-
-    public boolean getNotifications(UUID uuid) {
-        RxBleClient.NotificationStatus status = notificationState.get(uuid);
-        return status == RxBleClient.NotificationStatus.NOTIFICATIONS_ENABLED;
-    }
-
-    public boolean getIndications(UUID uuid) {
-        RxBleClient.NotificationStatus status = notificationState.get(uuid);
-        return status == RxBleClient.NotificationStatus.INDICATIONS_ENABLED;
-    }
-
 
     private final BluetoothGattServerCallback gattServerCallback = new BluetoothGattServerCallback() {
         @Override
@@ -342,7 +274,7 @@ public class RxBleServerConnectionImpl implements RxBleServerConnectionInternal,
                 longWriteOutput.valueRelay.accept(value); //TODO: offset?
             }  else {
                 if (descriptor.getUuid().compareTo(RxBleClient.CLIENT_CONFIG) == 0) {
-                    setNotifications(descriptor.getCharacteristic().getUuid(), value);
+                    serverState.setNotifications(descriptor.getCharacteristic().getUuid(), value);
                     blindAck(requestId, BluetoothGatt.GATT_SUCCESS, null, device)
                             .subscribe();
                 }
@@ -415,7 +347,8 @@ public class RxBleServerConnectionImpl implements RxBleServerConnectionInternal,
             ServerDisconnectionRouter disconnectionRouter,
             ServerTransactionFactory serverTransactionFactory,
             ServerConfig config,
-            Context context
+            Context context,
+            RxBleServerState serverState
     ) {
         this.connectionScheduler = connectionScheduler;
         this.operationsProvider = operationsProvider;
@@ -426,6 +359,7 @@ public class RxBleServerConnectionImpl implements RxBleServerConnectionInternal,
         this.serverTransactionFactory = serverTransactionFactory;
         this.context = context;
         this.callbackScheduler = callbackScheduler;
+        this.serverState = serverState;
         initializeServer(config);
     }
 
@@ -639,7 +573,7 @@ public class RxBleServerConnectionImpl implements RxBleServerConnectionInternal,
         return Single.fromCallable(new Callable<Single<Integer>>() {
             @Override
             public Single<Integer> call() throws Exception {
-                final BluetoothGattCharacteristic characteristic = getCharacteristic(ch);
+                final BluetoothGattCharacteristic characteristic = serverState.getCharacteristic(ch);
 
                 if (characteristic == null) {
                     return Single.error(
@@ -668,7 +602,7 @@ public class RxBleServerConnectionImpl implements RxBleServerConnectionInternal,
         return Single.fromCallable(new Callable<Single<Integer>>() {
             @Override
             public Single<Integer> call() throws Exception {
-                final BluetoothGattCharacteristic characteristic = getCharacteristic(ch);
+                final BluetoothGattCharacteristic characteristic = serverState.getCharacteristic(ch);
 
                 if (characteristic == null) {
                     return Single.error(
@@ -698,7 +632,7 @@ public class RxBleServerConnectionImpl implements RxBleServerConnectionInternal,
 
             @Override
             public Completable call() throws Exception {
-                final BluetoothGattCharacteristic characteristic = getCharacteristic(ch);
+                final BluetoothGattCharacteristic characteristic = serverState.getCharacteristic(ch);
 
                 if (characteristic == null) {
                     throw new BleGattServerException(BleGattServerOperationType.NOTIFICATION_SENT, "characteristic not found");
@@ -723,12 +657,12 @@ public class RxBleServerConnectionImpl implements RxBleServerConnectionInternal,
             @Override
             public Completable call() throws Exception {
                 if (isIndication) {
-                    if (getIndications(characteristic.getUuid())) {
+                    if (serverState.getIndications(characteristic.getUuid())) {
                         RxBleLog.d("immediate start indication");
                         return Completable.complete();
                     }
                 } else {
-                    if (getNotifications(characteristic.getUuid())) {
+                    if (serverState.getNotifications(characteristic.getUuid())) {
                         RxBleLog.d("immediate start notification");
                         return Completable.complete();
                     }
@@ -767,7 +701,7 @@ public class RxBleServerConnectionImpl implements RxBleServerConnectionInternal,
         return Single.fromCallable(new Callable<Completable>() {
             @Override
             public Completable call() throws Exception {
-                final BluetoothGattCharacteristic characteristic = getCharacteristic(ch);
+                final BluetoothGattCharacteristic characteristic = serverState.getCharacteristic(ch);
 
                 if (characteristic == null) {
                     return Completable.error(

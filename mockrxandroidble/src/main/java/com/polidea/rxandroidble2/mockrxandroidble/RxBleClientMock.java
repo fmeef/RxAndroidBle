@@ -27,6 +27,7 @@ import java.util.Set;
 import java.util.UUID;
 
 import io.reactivex.Observable;
+import io.reactivex.Single;
 import io.reactivex.functions.Function;
 import io.reactivex.functions.Predicate;
 import io.reactivex.subjects.ReplaySubject;
@@ -416,7 +417,7 @@ public class RxBleClientMock extends RxBleClient {
     }
 
     @Override
-    public Observable<RxBleServerConnection> openServer(ServerConfig config) {
-        return Observable.never();
+    public Single<RxBleServerConnection> openServer(ServerConfig config) {
+        return Single.never();
     }
 }

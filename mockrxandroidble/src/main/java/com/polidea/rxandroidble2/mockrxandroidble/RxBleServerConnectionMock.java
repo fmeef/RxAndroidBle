@@ -4,6 +4,7 @@ import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothGatt;
 import android.bluetooth.BluetoothGattCharacteristic;
 import android.bluetooth.BluetoothGattDescriptor;
+import android.util.Pair;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -21,7 +22,6 @@ import com.polidea.rxandroidble2.exceptions.BleGattServerOperationType;
 import com.polidea.rxandroidble2.internal.server.MultiIndex;
 import com.polidea.rxandroidble2.internal.server.MultiIndexImpl;
 import com.polidea.rxandroidble2.internal.server.RxBleServerConnectionInternal;
-import com.polidea.rxandroidble2.internal.server.RxBleServerState;
 import com.polidea.rxandroidble2.internal.util.GattServerTransaction;
 
 import java.util.Arrays;
@@ -43,8 +43,6 @@ public class RxBleServerConnectionMock implements RxBleServerConnection, RxBleSe
 
 
     private final BluetoothDevice device;
-    private final RxBleServerState serverState;
-
     private final Output<GattServerTransaction<UUID>> readCharacteristicOutput =
             new Output<>();
     private final Output<GattServerTransaction<UUID>> writeCharacteristicOutput =
@@ -85,12 +83,10 @@ public class RxBleServerConnectionMock implements RxBleServerConnection, RxBleSe
 
     private RxBleServerConnectionMock(
             BluetoothDevice device,
-            RxBleServerState serverState,
             @Nullable Queue<Integer> notificationResults,
             @Nullable Queue<Integer> indicationResults
     ) {
         this.device = device;
-        this.serverState = serverState;
         this.notificationResults = notificationResults;
         this.indicationResults = indicationResults;
         disconnectionExceptionObservable = disconnectionBehaviorRelay
@@ -115,12 +111,6 @@ public class RxBleServerConnectionMock implements RxBleServerConnection, RxBleSe
         );
     }
 
-    @NonNull
-    @Override
-    public BluetoothDevice getDevice() {
-        return device;
-    }
-
     public Completable setupNotifications(
         final BluetoothGattCharacteristic characteristic,
         final Flowable<byte[]> notifications,
@@ -129,7 +119,6 @@ public class RxBleServerConnectionMock implements RxBleServerConnection, RxBleSe
         final BluetoothGattDescriptor clientConfig = characteristic.getDescriptor(RxBleClient.CLIENT_CONFIG);
         if (clientConfig == null) {
             return Completable.error(new BleGattServerException(
-                    device,
                     BleGattServerOperationType.NOTIFICATION_SENT,
                     "clientConfig is null"
             ));
@@ -142,7 +131,7 @@ public class RxBleServerConnectionMock implements RxBleServerConnection, RxBleSe
                         return notifications.takeWhile(new Predicate<byte[]>() {
                             @Override
                             public boolean test(byte[] bytes) throws Exception {
-                                return serverState.getNotifications(characteristic.getUuid());
+                                return false;
                             }
                         }).toObservable().flatMap(new Function<byte[], ObservableSource<Integer>>() {
                             @Override
@@ -150,7 +139,6 @@ public class RxBleServerConnectionMock implements RxBleServerConnection, RxBleSe
                                 if (isIndication) {
                                     if (indicationResults.remove() != BluetoothGatt.GATT_SUCCESS) {
                                         return Observable.error(new BleGattServerException(
-                                                device,
                                                 BleGattServerOperationType.NOTIFICATION_SENT,
                                                 "GATT_FAILURE"
                                         ));
@@ -158,7 +146,6 @@ public class RxBleServerConnectionMock implements RxBleServerConnection, RxBleSe
                                 } else {
                                     if (notificationResults.remove() != BluetoothGatt.GATT_SUCCESS) {
                                         return Observable.error(new BleGattServerException(
-                                                device,
                                                 BleGattServerOperationType.NOTIFICATION_SENT,
                                                 "GATT_FAILURE"
                                         ));
@@ -172,29 +159,13 @@ public class RxBleServerConnectionMock implements RxBleServerConnection, RxBleSe
     }
 
     @Override
-    public Completable setupNotifications(UUID ch, Flowable<byte[]> notifications) {
-        final BluetoothGattCharacteristic characteristic = serverState.getCharacteristic(ch);
-
-        if (characteristic == null) {
-            return Completable.error(
-                    new BleGattServerException(device, BleGattServerOperationType.NOTIFICATION_SENT, "characteristic not found")
-            );
-        }
-
-        return setupNotifications(characteristic, notifications, false);
+    public Completable setupNotifications(UUID ch, Flowable<byte[]> notifications, BluetoothDevice device) {
+        return Completable.complete();
     }
 
     @Override
-    public Completable setupIndication(UUID ch, Flowable<byte[]> indications) {
-        final BluetoothGattCharacteristic characteristic = serverState.getCharacteristic(ch);
-
-        if (characteristic == null) {
-            return Completable.error(
-                    new BleGattServerException(device, BleGattServerOperationType.NOTIFICATION_SENT, "characteristic not found")
-            );
-        }
-
-        return setupNotifications(characteristic, indications, true);
+    public Completable setupIndication(UUID ch, Flowable<byte[]> indications, BluetoothDevice device) {
+        return Completable.complete();
     }
 
     @Override
@@ -219,7 +190,6 @@ public class RxBleServerConnectionMock implements RxBleServerConnection, RxBleSe
     public Observable<ServerResponseTransaction> getOnCharacteristicWriteRequest(
             UUID ch
     ) {
-        final BluetoothGattCharacteristic characteristic = serverState.getCharacteristic(ch);
         return withDisconnectionHandling(writeCharacteristicOutput)
                 .map(new Function<GattServerTransaction<UUID>, ServerResponseTransaction>() {
                     @Override
@@ -234,7 +204,6 @@ public class RxBleServerConnectionMock implements RxBleServerConnection, RxBleSe
             UUID c,
             UUID d
     ) {
-        final BluetoothGattDescriptor descriptor = serverState.getDescriptor(c, d);
         return withDisconnectionHandling(readDescriptorOutput)
                 .map(new Function<GattServerTransaction<BluetoothGattDescriptor>, ServerResponseTransaction>() {
                     @Override
@@ -259,7 +228,7 @@ public class RxBleServerConnectionMock implements RxBleServerConnection, RxBleSe
     }
 
     @Override
-    public Single<Integer> indicationSingle(UUID ch, byte[] value) {
+    public Single<Integer> indicationSingle(UUID ch, byte[] value, BluetoothDevice device) {
         if (indicationResults != null) {
             return Single.just(indicationResults.remove());
         } else {
@@ -268,7 +237,7 @@ public class RxBleServerConnectionMock implements RxBleServerConnection, RxBleSe
     }
 
     @Override
-    public Single<Integer> notificationSingle(UUID characteristic, byte[] value) {
+    public Single<Integer> notificationSingle(UUID characteristic, byte[] value, BluetoothDevice device) {
         if (notificationResults != null) {
             return Single.just(notificationResults.remove());
         } else {
@@ -286,7 +255,7 @@ public class RxBleServerConnectionMock implements RxBleServerConnection, RxBleSe
     }
 
     @Override
-    public void disconnect() {
+    public void disconnect(BluetoothDevice device) {
         disconnectionBehaviorRelay.accept(new BleDisconnectedException(device.getAddress(), 0));
     }
 
@@ -297,7 +266,12 @@ public class RxBleServerConnectionMock implements RxBleServerConnection, RxBleSe
     }
 
     @Override
-    public Observable<Boolean> blindAck(int requestID, int status, byte[] value) {
+    public Observable<Pair<BluetoothDevice, RxBleConnection.RxBleConnectionState>> getOnConnectionStateChange() {
+        return null;
+    }
+
+    @Override
+    public Observable<Boolean> blindAck(int requestID, int status, byte[] value, BluetoothDevice device) {
         return null;
     }
 
@@ -496,7 +470,6 @@ public class RxBleServerConnectionMock implements RxBleServerConnection, RxBleSe
         private BluetoothDevice device;
         private Queue<Integer> notificationResults;
         private Queue<Integer> indicationResults;
-        private RxBleServerState serverState;
 
         public Builder setBluetoothDevice(BluetoothDevice device) {
             this.device = device;
@@ -513,23 +486,14 @@ public class RxBleServerConnectionMock implements RxBleServerConnection, RxBleSe
             return this;
         }
 
-        public Builder setServerState(RxBleServerState serverState) {
-            this.serverState = serverState;
-            return this;
-        }
 
         public RxBleServerConnectionMock build() {
-            if (serverState == null) {
-                throw new IllegalArgumentException("serverstate must be specified with setServerState");
-            }
-
             if (device == null) {
                 throw new IllegalArgumentException("BluetoothDevice must be specififed with setBluetoothDevice");
             }
 
             return new RxBleServerConnectionMock(
                     device,
-                    serverState,
                     notificationResults,
                     indicationResults
             );
