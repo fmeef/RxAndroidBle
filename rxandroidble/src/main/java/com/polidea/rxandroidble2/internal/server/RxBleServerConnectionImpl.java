@@ -20,6 +20,7 @@ import androidx.annotation.Nullable;
 
 import com.jakewharton.rxrelay2.PublishRelay;
 import com.polidea.rxandroidble2.ClientComponent;
+import com.polidea.rxandroidble2.NotificationSetupTransaction;
 import com.polidea.rxandroidble2.RxBleClient;
 import com.polidea.rxandroidble2.RxBleConnection;
 import com.polidea.rxandroidble2.RxBleServerConnection;
@@ -539,6 +540,62 @@ public class RxBleServerConnectionImpl implements RxBleServerConnectionInternal,
                         return Single.never();
                     }
                 });
+    }
+
+    @Override
+    public Single<NotificationSetupTransaction> awaitNotifications(final UUID characteristic, Flowable<byte[]> notifications) {
+        return Single.defer(new Callable<SingleSource<? extends NotificationSetupTransaction>>() {
+            @Override
+            public SingleSource<? extends NotificationSetupTransaction> call() throws Exception {
+                final BluetoothGattCharacteristic ch = serverState.getCharacteristic(characteristic);
+                final BluetoothGattDescriptor clientconfig = ch.getDescriptor(RxBleClient.CLIENT_CONFIG);
+
+                if (clientconfig == null) {
+                    return Single.error(new BleGattServerException(
+                            BleGattServerOperationType.NOTIFICATION_SENT,
+                            "client config was null when setting up notifications"
+                    ));
+                } else {
+                    return withDisconnectionHandling(getWriteDescriptorOutput())
+                            .filter(new Predicate<GattServerTransaction<BluetoothGattDescriptor>>() {
+                                @Override
+                                public boolean test(GattServerTransaction<BluetoothGattDescriptor> transaction) throws Exception {
+                                    return transaction.getPayload().getUuid().compareTo(clientconfig.getUuid()) == 0
+                                            && transaction.getPayload().getCharacteristic().getUuid()
+                                            .compareTo(clientconfig.getCharacteristic().getUuid()) == 0;
+                                }
+                            })
+                            .takeWhile(new Predicate<GattServerTransaction<BluetoothGattDescriptor>>() {
+                                @Override
+                                public boolean test(
+                                        @io.reactivex.annotations.NonNull GattServerTransaction<BluetoothGattDescriptor> trans
+                                ) throws Exception {
+                                    return Arrays.equals(
+                                            trans.getTransaction().getValue(),
+                                            BluetoothGattDescriptor.DISABLE_NOTIFICATION_VALUE
+                                    );
+                                }
+                            })
+                            .firstOrError()
+                            .flatMap(
+                                    new Function<
+                                            GattServerTransaction<BluetoothGattDescriptor>,
+                                            SingleSource<? extends NotificationSetupTransaction
+                                                    >
+                                            >() {
+                                @Override
+                                public SingleSource<? extends NotificationSetupTransaction> apply(
+                                        @NonNull GattServerTransaction<BluetoothGattDescriptor> trans
+                                ) throws Exception {
+                                    return serverTransactionFactory.prepareNotificationSetupTransaction(
+                                            trans.getTransaction().getRemoteDevice()
+                                    );
+                                }
+                            });
+                }
+
+            }
+        });
     }
 
     @Override

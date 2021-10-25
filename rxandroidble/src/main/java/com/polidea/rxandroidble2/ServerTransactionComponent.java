@@ -35,8 +35,15 @@ public interface ServerTransactionComponent {
     @Module
     abstract class TransactionModule {
         @Binds
+        @ServerTransactionScope
         abstract ServerResponseTransaction bindServerTransaction(ServerResponseTransactionImpl transaction);
+
+        @Binds
+        @ServerTransactionScope
+        abstract NotificationSetupTransaction bindNotificationSetupTransaction(NotificationSetupTransactionImpl transaction);
     }
 
     ServerResponseTransaction getCharacteristicTransaction();
+
+    NotificationSetupTransaction getNotificationSetupTransaction();
 }

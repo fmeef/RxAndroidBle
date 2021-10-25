@@ -11,4 +11,8 @@ public interface ServerTransactionFactory {
             int offset,
             BluetoothDevice device
     );
+
+    Single<NotificationSetupTransaction> prepareNotificationSetupTransaction(
+            BluetoothDevice device
+    );
 }

@@ -41,9 +41,6 @@ public class ServerConnectionOperationsProviderImpl implements ServerConnectionO
         this.connection = connection;
     }
 
-
-
-
     public ServerReplyOperation provideReplyOperation(
             BluetoothDevice device,
             int requestID,
