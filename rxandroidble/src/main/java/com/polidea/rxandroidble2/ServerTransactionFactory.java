@@ -2,6 +2,8 @@ package com.polidea.rxandroidble2;
 
 import android.bluetooth.BluetoothDevice;
 
+import java.util.UUID;
+
 import io.reactivex.Single;
 
 public interface ServerTransactionFactory {
@@ -13,6 +15,7 @@ public interface ServerTransactionFactory {
     );
 
     Single<NotificationSetupTransaction> prepareNotificationSetupTransaction(
-            BluetoothDevice device
+            BluetoothDevice device,
+            UUID characteristic
     );
 }

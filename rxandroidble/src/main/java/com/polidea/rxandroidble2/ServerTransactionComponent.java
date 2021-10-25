@@ -2,6 +2,8 @@ package com.polidea.rxandroidble2;
 
 import android.bluetooth.BluetoothDevice;
 
+import java.util.UUID;
+
 import bleshadow.dagger.Binds;
 import bleshadow.dagger.BindsInstance;
 import bleshadow.dagger.Module;
@@ -18,18 +20,13 @@ public interface ServerTransactionComponent {
         public BluetoothDevice device;
     }
 
-    class TransactionParameters {
-        private TransactionParameters() {
-        }
-        public static final String PARAM_REQUESTID = "requestID";
-        public static final String PARAM_OFFSET = "offset";
-    }
-
     @Subcomponent.Builder
     interface Builder {
         ServerTransactionComponent build();
 
         @BindsInstance Builder config(TransactionConfig config);
+        @BindsInstance Builder device(BluetoothDevice device);
+        @BindsInstance Builder characteristic(UUID characteristic);
     }
 
     @Module

@@ -14,13 +14,16 @@ import io.reactivex.Flowable;
 public class NotificationSetupTransactionImpl implements NotificationSetupTransaction {
     private final BluetoothDevice device;
     private final RxBleServerConnectionInternal connection;
+    private final UUID characteristic;
     @Inject
     public NotificationSetupTransactionImpl(
-            ServerTransactionComponent.TransactionConfig device,
-            RxBleServerConnectionInternal connection
+            BluetoothDevice device,
+            RxBleServerConnectionInternal connection,
+            UUID characteristic
     ) {
-        this.device = device.device;
+        this.device = device;
         this.connection = connection;
+        this.characteristic = characteristic;
     }
 
     @Override
@@ -29,12 +32,12 @@ public class NotificationSetupTransactionImpl implements NotificationSetupTransa
     }
 
     @Override
-    public Completable notify(UUID characteristic, Flowable<byte[]> notif) {
+    public Completable notify(Flowable<byte[]> notif) {
         return connection.getConnection().setupNotifications(characteristic, notif, device);
     }
 
     @Override
-    public Completable indicate(UUID characteristic, Flowable<byte[]> notif) {
+    public Completable indicate(Flowable<byte[]> notif) {
         return connection.getConnection().setupIndication(characteristic, notif, device);
     }
 }

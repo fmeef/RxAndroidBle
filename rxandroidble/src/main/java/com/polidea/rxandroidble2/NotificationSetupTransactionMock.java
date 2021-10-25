@@ -2,8 +2,6 @@ package com.polidea.rxandroidble2;
 
 import android.bluetooth.BluetoothDevice;
 
-import java.util.UUID;
-
 import io.reactivex.Completable;
 import io.reactivex.Flowable;
 
@@ -21,12 +19,12 @@ public class NotificationSetupTransactionMock implements NotificationSetupTransa
     }
 
     @Override
-    public Completable notify(UUID characteristic, Flowable<byte[]> notif) {
+    public Completable notify(Flowable<byte[]> notif) {
         return Completable.complete();
     }
 
     @Override
-    public Completable indicate(UUID characteristic, Flowable<byte[]> notif) {
+    public Completable indicate(Flowable<byte[]> notif) {
         return Completable.complete();
     }
 }

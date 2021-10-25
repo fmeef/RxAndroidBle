@@ -5,6 +5,7 @@ import android.bluetooth.BluetoothDevice;
 
 import androidx.annotation.NonNull;
 
+import java.util.UUID;
 import java.util.concurrent.Callable;
 
 import bleshadow.javax.inject.Inject;
@@ -52,16 +53,17 @@ public class ServerTransactionFactoryImpl implements ServerTransactionFactory {
     }
 
     @Override
-    public Single<NotificationSetupTransaction> prepareNotificationSetupTransaction(BluetoothDevice device) {
+    public Single<NotificationSetupTransaction> prepareNotificationSetupTransaction(
+            BluetoothDevice device,
+            UUID characteristic
+    ) {
 
         return Single.just(device)
                 .map(new Function<BluetoothDevice, NotificationSetupTransaction>() {
                     @Override
                     public NotificationSetupTransaction apply(@NonNull BluetoothDevice device) throws Exception {
-                        final ServerTransactionComponent.TransactionConfig config = new ServerTransactionComponent.TransactionConfig();
-                        config.device = device;
                         final ServerTransactionComponent transactionComponent = transactionComponentBuilder
-                                .config(config)
+                                .device(device)
                                 .build();
                         return transactionComponent.getNotificationSetupTransaction();
                     }
