@@ -239,7 +239,7 @@ public class RxBleServerConnectionImpl implements RxBleServerConnectionInternal,
                 blindAck(
                         requestId,
                         BluetoothGatt.GATT_SUCCESS,
-                        null,
+                        serverState.getNotificationValue(descriptor.getCharacteristic().getUuid()),
                         device
                 )
                         .subscribe();
