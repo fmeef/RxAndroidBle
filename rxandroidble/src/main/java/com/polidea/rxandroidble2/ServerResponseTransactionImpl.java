@@ -27,14 +27,15 @@ public class ServerResponseTransactionImpl implements ServerResponseTransaction,
     public ServerResponseTransactionImpl(
             ServerOperationQueue operationQueue,
             ServerConnectionOperationsProvider operationsProvider,
-            ServerTransactionComponent.TransactionConfig config
+            ServerTransactionComponent.TransactionConfig config,
+            BluetoothDevice device
     ) {
         this.operationQueue = operationQueue;
         this.operationsProvider = operationsProvider;
         this.value = config.value;
         this.requestID = config.requestID;
         this.offset = config.offset;
-        this.remoteDevice = config.device;
+        this.remoteDevice = device;
     }
 
     @Override

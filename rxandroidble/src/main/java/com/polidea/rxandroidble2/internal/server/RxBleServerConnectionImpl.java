@@ -854,7 +854,8 @@ public class RxBleServerConnectionImpl implements RxBleServerConnectionInternal,
                 value,
                 requestID,
                 offset,
-                device
+                device,
+                descriptor.getUuid()
         );
 
         valueRelay.accept(new GattServerTransaction<>(descriptor, transaction));
@@ -872,7 +873,8 @@ public class RxBleServerConnectionImpl implements RxBleServerConnectionInternal,
                 value,
                 requestID,
                 offset,
-                device
+                device,
+                characteristic.getUuid()
         );
         valueRelay.accept(new GattServerTransaction<>(characteristic.getUuid(), transaction));
     }

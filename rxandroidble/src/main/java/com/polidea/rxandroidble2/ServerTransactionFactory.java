@@ -9,7 +9,8 @@ public interface ServerTransactionFactory {
             byte[] value,
             int requestID,
             int offset,
-            BluetoothDevice device
+            BluetoothDevice device,
+            UUID characteristic
     );
 
     NotificationSetupTransaction prepareNotificationSetupTransaction(

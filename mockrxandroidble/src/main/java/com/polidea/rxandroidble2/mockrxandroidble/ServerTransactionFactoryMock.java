@@ -22,7 +22,8 @@ public class ServerTransactionFactoryMock implements ServerTransactionFactory {
             final byte[] value,
             final int requestID,
             final int offset,
-            final BluetoothDevice device
+            final BluetoothDevice device,
+            final UUID ch
     ) {
         return new ServerResponseTransactionMock(requestID, offset, value, device, response);
     }

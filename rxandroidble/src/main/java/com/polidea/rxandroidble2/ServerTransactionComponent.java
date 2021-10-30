@@ -2,6 +2,9 @@ package com.polidea.rxandroidble2;
 
 import android.bluetooth.BluetoothDevice;
 
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
+
 import java.util.UUID;
 
 import bleshadow.dagger.Binds;
@@ -14,10 +17,9 @@ import bleshadow.dagger.Subcomponent;
 public interface ServerTransactionComponent {
 
     class TransactionConfig {
-        public byte[] value;
-        public int requestID;
-        public int offset;
-        public BluetoothDevice device;
+        @Nullable public byte[] value;
+        @NonNull public int requestID;
+        @NonNull public int offset;
     }
 
     @Subcomponent.Builder

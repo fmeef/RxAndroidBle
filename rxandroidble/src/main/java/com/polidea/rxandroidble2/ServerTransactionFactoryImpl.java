@@ -23,15 +23,17 @@ public class ServerTransactionFactoryImpl implements ServerTransactionFactory {
             final byte[] value,
             final int requestID,
             final int offset,
-            final BluetoothDevice device
+            final BluetoothDevice device,
+            final UUID characteristic
     ) {
         final ServerTransactionComponent.TransactionConfig config = new ServerTransactionComponent.TransactionConfig();
-        config.device = device;
         config.offset = offset;
         config.requestID = requestID;
         config.value = value;
         final ServerTransactionComponent transactionComponent = transactionComponentBuilder
                 .config(config)
+                .device(device)
+                .characteristic(characteristic)
                 .build();
         return transactionComponent.getCharacteristicTransaction();
     }
@@ -43,6 +45,7 @@ public class ServerTransactionFactoryImpl implements ServerTransactionFactory {
     ) {
         final ServerTransactionComponent transactionComponent = transactionComponentBuilder
                 .device(device)
+                .characteristic(characteristic)
                 .build();
         return transactionComponent.getNotificationSetupTransaction();
     }
