@@ -219,11 +219,6 @@ public class RxBleServerConnectionMock implements RxBleServerConnection, RxBleSe
         disconnectionBehaviorRelay.accept(new BleDisconnectedException(device.getAddress(), 0));
     }
 
-    public <T> Observable<T> observeDisconnect() {
-        //noinspection unchecked
-        return (Observable<T>) disconnectionObservable;
-    }
-
     @Override
     public Observable<Pair<BluetoothDevice, RxBleConnection.RxBleConnectionState>> getOnConnectionStateChange() {
         return null;
@@ -392,6 +387,16 @@ public class RxBleServerConnectionMock implements RxBleServerConnection, RxBleSe
     @Override
     public void dispose() {
 
+    }
+
+    @Override
+    public Observable<BluetoothDevice> observeDisconnect() {
+        return Observable.never();
+    }
+
+    @Override
+    public Observable<BluetoothDevice> observeConnect() {
+        return Observable.never();
     }
 
     @Override

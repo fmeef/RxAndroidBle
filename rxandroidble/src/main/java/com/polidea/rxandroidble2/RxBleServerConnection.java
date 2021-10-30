@@ -28,5 +28,9 @@ public interface RxBleServerConnection extends Disposable {
 
     void disconnect(BluetoothDevice device);
 
+    Observable<BluetoothDevice> observeDisconnect();
+
+    Observable<BluetoothDevice> observeConnect();
+
 }
 

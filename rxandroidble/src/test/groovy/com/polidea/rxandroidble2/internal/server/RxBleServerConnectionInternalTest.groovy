@@ -36,7 +36,6 @@ public class RxBleServerConnectionInternalTest extends Specification {
     RxBleServerState serverState = Mock(RxBleServerState)
     ServerTransactionFactory serverTransactionFactory = Mock ServerTransactionFactory
     BluetoothGattCharacteristic characteristic = Mock BluetoothGattCharacteristic
-    ServerDisconnectionRouter disconnectionRouter = Mock(ServerDisconnectionRouter)
 
     BluetoothGattDescriptor descriptor = new BluetoothGattDescriptor(
             testUuid,
@@ -75,7 +74,6 @@ public class RxBleServerConnectionInternalTest extends Specification {
         objectUnderTest = new RxBleServerConnectionImpl(
                 testScheduler,
                 testScheduler,
-                disconnectionRouter,
                 operationsProvider,
                 dummyQueue,
                 bluetoothManager,

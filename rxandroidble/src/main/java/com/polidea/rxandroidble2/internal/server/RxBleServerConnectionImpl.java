@@ -27,7 +27,6 @@ import com.polidea.rxandroidble2.ServerConfig;
 import com.polidea.rxandroidble2.ServerConnectionScope;
 import com.polidea.rxandroidble2.ServerResponseTransaction;
 import com.polidea.rxandroidble2.ServerTransactionFactory;
-import com.polidea.rxandroidble2.exceptions.BleDisconnectedException;
 import com.polidea.rxandroidble2.exceptions.BleException;
 import com.polidea.rxandroidble2.exceptions.BleGattServerException;
 import com.polidea.rxandroidble2.exceptions.BleGattServerOperationType;
@@ -69,8 +68,6 @@ public class RxBleServerConnectionImpl implements RxBleServerConnectionInternal,
     private final BluetoothManager bluetoothManager;
     private final AtomicReference<BluetoothGattServer> server = new AtomicReference<>(null);
     private final Context context;
-    private final ServerDisconnectionRouter disconnectionRouter;
-
     private final Scheduler connectionScheduler;
     private final RxBleServerState serverState;
     private final ServerConnectionOperationsProvider operationsProvider;
@@ -127,16 +124,12 @@ public class RxBleServerConnectionImpl implements RxBleServerConnectionInternal,
             RxBleLog.d("gatt server onConnectionStateChange: " + device.getAddress() + " " + status + " " + newState);
             if (newState == BluetoothProfile.STATE_DISCONNECTED
                     || newState == BluetoothProfile.STATE_DISCONNECTING) {
-                disconnectionRouter.onDisconnectedException(device, new BleDisconnectedException(device.getAddress(), status));
+                //TODO:
                 RxBleLog.e("device " + device.getAddress() + " disconnecting");
             }
 
             if (status != BluetoothGatt.GATT_SUCCESS) {
-                disconnectionRouter.onGattConnectionStateException(device, new BleGattServerException(
-                        status,
-                        BleGattServerOperationType.CONNECTION_STATE,
-                        "GATT_FAILURE"
-                ));
+                //TODO:
                 RxBleLog.e("GattServer state change failed %i", status);
             }
         }
@@ -311,7 +304,6 @@ public class RxBleServerConnectionImpl implements RxBleServerConnectionInternal,
     public RxBleServerConnectionImpl(
             @Named(ClientComponent.NamedSchedulers.BLUETOOTH_INTERACTION) Scheduler connectionScheduler,
             @Named(ClientComponent.NamedSchedulers.BLUETOOTH_CALLBACKS) Scheduler callbackScheduler,
-            ServerDisconnectionRouter disconnectionRouter,
             ServerConnectionOperationsProvider operationsProvider,
             ServerOperationQueue operationQueue,
             BluetoothManager bluetoothManager,
@@ -329,7 +321,6 @@ public class RxBleServerConnectionImpl implements RxBleServerConnectionInternal,
         this.context = context;
         this.callbackScheduler = callbackScheduler;
         this.serverState = serverState;
-        this.disconnectionRouter = disconnectionRouter;
         initializeServer(config);
     }
 
@@ -741,16 +732,6 @@ public class RxBleServerConnectionImpl implements RxBleServerConnectionInternal,
             }
         });
     }
-
-    private <T> Observable<T> withDisconnectionHandling(Output<T> output, BluetoothDevice device) {
-        //noinspection unchecked
-        return Observable.merge(
-                output.valueRelay,
-                (Observable<T>) output.errorRelay.flatMap(errorMapper),
-                disconnectionRouter.<T>asErrorOnlyObservable(device)
-        );
-    }
-
     private <T> Observable<T> withDisconnectionHandling(Output<T> output) {
         //noinspection unchecked
         return Observable.merge(
@@ -766,9 +747,46 @@ public class RxBleServerConnectionImpl implements RxBleServerConnectionInternal,
     }
 
     @Override
-    public <T> Observable<T> observeDisconnect() {
-        //TODO
-        return null;
+    public Observable<BluetoothDevice> observeDisconnect() {
+        return connectionStatePublishRelay
+                .filter(new Predicate<Pair<BluetoothDevice, RxBleConnection.RxBleConnectionState>>() {
+                    @Override
+                    public boolean test(
+                            @NonNull Pair<BluetoothDevice, RxBleConnection.RxBleConnectionState> pair
+                    ) {
+                        return pair.second == RxBleConnection.RxBleConnectionState.DISCONNECTED;
+                    }
+                })
+                .map(new Function<Pair<BluetoothDevice, RxBleConnection.RxBleConnectionState>, BluetoothDevice>() {
+                    @Override
+                    public BluetoothDevice apply(
+                            @NonNull Pair<BluetoothDevice, RxBleConnection.RxBleConnectionState> pair) {
+                        return pair.first;
+                    }
+                })
+                .delay(0, TimeUnit.SECONDS, connectionScheduler);
+    }
+
+    @Override
+    public Observable<BluetoothDevice> observeConnect() {
+        return connectionStatePublishRelay
+                .filter(new Predicate<Pair<BluetoothDevice, RxBleConnection.RxBleConnectionState>>() {
+                    @Override
+                    public boolean test(
+                            @NonNull Pair<BluetoothDevice, RxBleConnection.RxBleConnectionState> pair
+                    ) {
+                        return pair.second == RxBleConnection.RxBleConnectionState.CONNECTED;
+                    }
+                })
+                .map(new Function<Pair<BluetoothDevice, RxBleConnection.RxBleConnectionState>, BluetoothDevice>() {
+                    @Override
+                    public BluetoothDevice apply(
+                            @NonNull Pair<BluetoothDevice, RxBleConnection.RxBleConnectionState> pair
+                    ) {
+                        return pair.first;
+                    }
+                })
+                .delay(0, TimeUnit.SECONDS, connectionScheduler);
     }
 
     @Override
