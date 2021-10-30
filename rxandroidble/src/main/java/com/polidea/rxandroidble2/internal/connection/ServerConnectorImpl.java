@@ -40,7 +40,7 @@ public class ServerConnectorImpl implements ServerConnector {
         final RxBleServerConnectionInternal internal = component.serverConnectionInternal();
         return Single.fromCallable(new Callable<RxBleServerConnection>() {
             @Override
-            public RxBleServerConnection call() throws Exception {
+            public RxBleServerConnection call() {
                 return internal.getConnection();
             }
         });
@@ -51,7 +51,7 @@ public class ServerConnectorImpl implements ServerConnector {
         return createConnection(serverConfig.getOperationTimeout(), serverConfig)
                 .doOnDispose(new Action() {
                     @Override
-                    public void run() throws Exception {
+                    public void run() {
                         RxBleLog.e("gatt server disposed, closing server");
                     }
                 })

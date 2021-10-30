@@ -54,7 +54,7 @@ public class ServerDisconnectionRouter implements DisconnectionRouterOutput {
                 .toObservable()
                 .doOnTerminate(new Action() {
                     @Override
-                    public void run() throws Exception {
+                    public void run() {
                         adapterMonitoringDisposable.dispose();
                     }
                 })
@@ -64,7 +64,7 @@ public class ServerDisconnectionRouter implements DisconnectionRouterOutput {
         firstDisconnectionExceptionObs = firstDisconnectionValueObs
                 .flatMap(new Function<BleException, ObservableSource<?>>() {
                     @Override
-                    public ObservableSource<?> apply(BleException e) throws Exception {
+                    public ObservableSource<?> apply(BleException e) {
                         return Observable.error(e);
                     }
                 });

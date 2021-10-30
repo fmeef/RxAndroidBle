@@ -24,18 +24,9 @@ public interface RxBleServerConnection extends Disposable {
 
     Observable<ServerResponseTransaction> getOnCharacteristicReadRequest(UUID characteristic);
 
-    Observable<ServerResponseTransaction> getOnCharacteristicWriteRequest(UUID characteristic);
-
-    Observable<ServerResponseTransaction> getOnDescriptorReadRequest(UUID characteristic, UUID descriptor);
-
     Observable<ServerResponseTransaction> getOnDescriptorWriteRequest(UUID characteristic, UUID descriptor);
-
-    Single<Integer> indicationSingle(UUID characteristic, byte[] value, BluetoothDevice device);
-
-    Single<Integer> notificationSingle(UUID characteristic, byte[] value, BluetoothDevice device);
 
     void disconnect(BluetoothDevice device);
 
-    <T> Observable<T> observeDisconnect();
 }
 

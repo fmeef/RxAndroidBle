@@ -58,7 +58,7 @@ public class ServerResponseTransactionImpl implements ServerResponseTransaction,
                 value
         )).flatMapCompletable(new Function<Boolean, CompletableSource>() {
             @Override
-            public CompletableSource apply(@io.reactivex.annotations.NonNull Boolean aBoolean) throws Exception {
+            public CompletableSource apply(@io.reactivex.annotations.NonNull Boolean aBoolean) {
                 if (aBoolean) {
                     return Completable.complete();
                 } else {

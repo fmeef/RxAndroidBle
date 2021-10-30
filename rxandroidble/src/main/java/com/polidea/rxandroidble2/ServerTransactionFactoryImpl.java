@@ -33,10 +33,10 @@ public class ServerTransactionFactoryImpl implements ServerTransactionFactory {
     ) {
         return Single.defer(new Callable<SingleSource<? extends ServerResponseTransaction>>() {
             @Override
-            public SingleSource<? extends ServerResponseTransaction> call() throws Exception {
+            public SingleSource<? extends ServerResponseTransaction> call() {
                 return Single.fromCallable(new Callable<ServerResponseTransaction>() {
                     @Override
-                    public ServerResponseTransaction call() throws Exception {
+                    public ServerResponseTransaction call() {
                         final ServerTransactionComponent.TransactionConfig config = new ServerTransactionComponent.TransactionConfig();
                         config.device = device;
                         config.offset = offset;
@@ -61,7 +61,7 @@ public class ServerTransactionFactoryImpl implements ServerTransactionFactory {
         return Single.just(device)
                 .map(new Function<BluetoothDevice, NotificationSetupTransaction>() {
                     @Override
-                    public NotificationSetupTransaction apply(@NonNull BluetoothDevice device) throws Exception {
+                    public NotificationSetupTransaction apply(@NonNull BluetoothDevice device) {
                         final ServerTransactionComponent transactionComponent = transactionComponentBuilder
                                 .device(device)
                                 .build();

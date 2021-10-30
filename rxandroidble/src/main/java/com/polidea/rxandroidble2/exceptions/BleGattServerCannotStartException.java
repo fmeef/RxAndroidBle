@@ -1,7 +1,6 @@
 package com.polidea.rxandroidble2.exceptions;
 
 import android.bluetooth.BluetoothGatt;
-import android.bluetooth.BluetoothGattServer;
 
 /**
  * An exception emitted from {@link com.polidea.rxandroidble2.RxBleConnection} functions when the underlying {@link BluetoothGatt}
@@ -14,8 +13,4 @@ public class BleGattServerCannotStartException extends BleGattServerException {
         super(bleGattOperationType, "server cannot start");
     }
 
-    public BleGattServerCannotStartException(BluetoothGattServer gatt,
-                                             BleGattServerOperationType bleGattServerOperationType) {
-        super(bleGattServerOperationType, "server cannot start");
-    }
 }

@@ -193,33 +193,6 @@ public class RxBleServerConnectionMock implements RxBleServerConnection, RxBleSe
     }
 
     @Override
-    public Observable<ServerResponseTransaction> getOnCharacteristicWriteRequest(
-            UUID ch
-    ) {
-        return withDisconnectionHandling(writeCharacteristicOutput)
-                .map(new Function<GattServerTransaction<UUID>, ServerResponseTransaction>() {
-                    @Override
-                    public ServerResponseTransaction apply(GattServerTransaction<UUID> uuidGattServerTransaction) throws Exception {
-                        return uuidGattServerTransaction.getTransaction();
-                    }
-                });
-    }
-
-    @Override
-    public Observable<ServerResponseTransaction> getOnDescriptorReadRequest(
-            UUID c,
-            UUID d
-    ) {
-        return withDisconnectionHandling(readDescriptorOutput)
-                .map(new Function<GattServerTransaction<BluetoothGattDescriptor>, ServerResponseTransaction>() {
-                    @Override
-                    public ServerResponseTransaction apply(GattServerTransaction<BluetoothGattDescriptor> transaction) throws Exception {
-                        return transaction.getTransaction();
-                    }
-                });
-    }
-
-    @Override
     public Observable<ServerResponseTransaction> getOnDescriptorWriteRequest(
             UUID c,
             UUID d
@@ -231,24 +204,6 @@ public class RxBleServerConnectionMock implements RxBleServerConnection, RxBleSe
                         return transaction.getTransaction();
                     }
                 });
-    }
-
-    @Override
-    public Single<Integer> indicationSingle(UUID ch, byte[] value, BluetoothDevice device) {
-        if (indicationResults != null) {
-            return Single.just(indicationResults.remove());
-        } else {
-            return Single.just(BluetoothGatt.GATT_SUCCESS);
-        }
-    }
-
-    @Override
-    public Single<Integer> notificationSingle(UUID characteristic, byte[] value, BluetoothDevice device) {
-        if (notificationResults != null) {
-            return Single.just(notificationResults.remove());
-        } else {
-            return Single.just(BluetoothGatt.GATT_SUCCESS);
-        }
     }
 
     @Override
@@ -265,7 +220,6 @@ public class RxBleServerConnectionMock implements RxBleServerConnection, RxBleSe
         disconnectionBehaviorRelay.accept(new BleDisconnectedException(device.getAddress(), 0));
     }
 
-    @Override
     public <T> Observable<T> observeDisconnect() {
         //noinspection unchecked
         return (Observable<T>) disconnectionObservable;

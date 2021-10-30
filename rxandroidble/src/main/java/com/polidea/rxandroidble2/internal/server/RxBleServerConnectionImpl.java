@@ -16,7 +16,6 @@ import android.util.Log;
 import android.util.Pair;
 
 import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 
 import com.jakewharton.rxrelay2.PublishRelay;
 import com.polidea.rxandroidble2.ClientComponent;
@@ -41,7 +40,6 @@ import com.polidea.rxandroidble2.internal.util.GattServerTransaction;
 import org.reactivestreams.Publisher;
 
 import java.util.Arrays;
-import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.Callable;
@@ -87,7 +85,7 @@ public class RxBleServerConnectionImpl implements RxBleServerConnectionInternal,
 
     private final Function<BleException, Observable<?>> errorMapper = new Function<BleException, Observable<?>>() {
         @Override
-        public Observable<?> apply(BleException bleGattException) {
+        public Observable<?> apply(@NonNull BleException bleGattException) {
             return Observable.error(bleGattException);
         }
     };
@@ -107,11 +105,6 @@ public class RxBleServerConnectionImpl implements RxBleServerConnectionInternal,
     private final RxBleServerConnectionInternal.Output<Integer> changedMtuOutput =
             new RxBleServerConnectionInternal.Output<>();
 
-
-
-    private boolean isDisconnecting(int newState) {
-        return newState == BluetoothProfile.STATE_DISCONNECTED || newState == BluetoothProfile.STATE_DISCONNECTING;
-    }
 
     private void acceptDevice(final BluetoothDevice device, int newState) {
         connectionStatePublishRelay.accept(new Pair<>(
@@ -133,18 +126,6 @@ public class RxBleServerConnectionImpl implements RxBleServerConnectionInternal,
             serverState.addCharacteristic(characteristic.getUuid(), characteristic);
         }
         getBluetoothGattServer().addService(service);
-    }
-
-
-
-    @Nullable
-    public BluetoothGattService getService(UUID uuid) {
-        return getBluetoothGattServer().getService(uuid);
-    }
-
-    @Nullable
-    public List<BluetoothGattService> getServiceList() {
-        return getBluetoothGattServer().getServices();
     }
 
     private final BluetoothGattServerCallback gattServerCallback = new BluetoothGattServerCallback() {
@@ -391,15 +372,6 @@ public class RxBleServerConnectionImpl implements RxBleServerConnectionInternal,
 
     }
 
-    private static boolean isException(int status) {
-        return status != BluetoothGatt.GATT_SUCCESS;
-    }
-
-    private static boolean propagateStatusError(RxBleServerConnectionInternal.Output<?> output, BleGattServerException exception) {
-        output.errorRelay.accept(exception);
-        return true;
-    }
-
     /**
      * @return Observable that emits RxBleConnectionState that matches BluetoothGatt's state.
      * Does NOT emit errors even if status != GATT_SUCCESS.
@@ -410,19 +382,13 @@ public class RxBleServerConnectionImpl implements RxBleServerConnectionInternal,
     }
 
 
-    private boolean initializeServer(ServerConfig config) {
+    private void initializeServer(ServerConfig config) {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            int phyval = 0;
             for (ServerConfig.BluetoothPhy phy : config.getPhySet()) {
                 switch (phy) {
                     case PHY_LE_1M:
-                        phyval |= BluetoothDevice.PHY_LE_1M_MASK;
-                        break;
                     case PHY_LE_2M:
-                        phyval |= BluetoothDevice.PHY_LE_2M_MASK;
-                        break;
                     case PHY_LE_CODED:
-                        phyval |= BluetoothDevice.PHY_LE_CODED_MASK;
                         break;
                     default:
                         // here to please linter
@@ -436,7 +402,6 @@ public class RxBleServerConnectionImpl implements RxBleServerConnectionInternal,
             registerService(entry.getValue());
         }
 
-        return true;
     }
 
     @NonNull
@@ -486,8 +451,9 @@ public class RxBleServerConnectionImpl implements RxBleServerConnectionInternal,
             output = new LongWriteClosableOutput<>();
             output.valueRelay
                     .reduce(new BiFunction<byte[], byte[], byte[]>() {
+                        @NonNull
                         @Override
-                        public byte[] apply(byte[] first, byte[] second) throws Exception {
+                        public byte[] apply(@NonNull byte[] first, @NonNull byte[] second) {
                             byte[] both = Arrays.copyOf(first, first.length + second.length);
                             System.arraycopy(second, 0, both, first.length, second.length);
                             return both;
@@ -510,8 +476,9 @@ public class RxBleServerConnectionImpl implements RxBleServerConnectionInternal,
             output = new LongWriteClosableOutput<>();
             output.valueRelay
                     .reduce(new BiFunction<byte[], byte[], byte[]>() {
+                        @NonNull
                         @Override
-                        public byte[] apply(byte[] first, byte[] second) throws Exception {
+                        public byte[] apply(@NonNull byte[] first, @NonNull byte[] second) {
                             byte[] both = Arrays.copyOf(first, first.length + second.length);
                             System.arraycopy(second, 0, both, first.length, second.length);
                             return both;
@@ -531,7 +498,7 @@ public class RxBleServerConnectionImpl implements RxBleServerConnectionInternal,
         return Single.just(requestid)
                 .flatMap(new Function<Integer, SingleSource<? extends byte[]>>() {
                     @Override
-                    public SingleSource<? extends byte[]> apply(@io.reactivex.annotations.NonNull Integer integer) throws Exception {
+                    public SingleSource<? extends byte[]> apply(@io.reactivex.annotations.NonNull Integer integer) {
                         LongWriteClosableOutput<byte[]> output = characteristicMultiIndex.get(integer);
                         if (output != null) {
                             output.valueRelay.onComplete();
@@ -547,7 +514,7 @@ public class RxBleServerConnectionImpl implements RxBleServerConnectionInternal,
     public Single<NotificationSetupTransaction> awaitNotifications(final UUID characteristic) {
         return Single.defer(new Callable<SingleSource<? extends NotificationSetupTransaction>>() {
             @Override
-            public SingleSource<? extends NotificationSetupTransaction> call() throws Exception {
+            public SingleSource<? extends NotificationSetupTransaction> call() {
                 final BluetoothGattCharacteristic ch = serverState.getCharacteristic(characteristic);
                 final BluetoothGattDescriptor clientconfig = ch.getDescriptor(RxBleClient.CLIENT_CONFIG);
 
@@ -562,7 +529,7 @@ public class RxBleServerConnectionImpl implements RxBleServerConnectionInternal,
                                 @Override
                                 public boolean test(
                                         @NonNull GattServerTransaction<BluetoothGattDescriptor> transaction
-                                ) throws Exception {
+                                ) {
                                     return transaction.getPayload().getUuid().compareTo(RxBleClient.CLIENT_CONFIG) == 0
                                             && transaction.getPayload().getCharacteristic().getUuid()
                                             .compareTo(characteristic) == 0;
@@ -572,7 +539,7 @@ public class RxBleServerConnectionImpl implements RxBleServerConnectionInternal,
                                 @Override
                                 public boolean test(
                                         @io.reactivex.annotations.NonNull GattServerTransaction<BluetoothGattDescriptor> trans
-                                ) throws Exception {
+                                ) {
                                     return !Arrays.equals(
                                             trans.getTransaction().getValue(),
                                             BluetoothGattDescriptor.DISABLE_NOTIFICATION_VALUE
@@ -589,7 +556,7 @@ public class RxBleServerConnectionImpl implements RxBleServerConnectionInternal,
                                         @Override
                                         public SingleSource<? extends NotificationSetupTransaction> apply(
                                                 @NonNull GattServerTransaction<BluetoothGattDescriptor> trans
-                                        ) throws Exception {
+                                        ) {
                                             return serverTransactionFactory.prepareNotificationSetupTransaction(
                                                     trans.getTransaction().getRemoteDevice(),
                                                     characteristic
@@ -607,7 +574,7 @@ public class RxBleServerConnectionImpl implements RxBleServerConnectionInternal,
         return Single.just(requestid)
                 .flatMap(new Function<Integer, SingleSource<? extends byte[]>>() {
                     @Override
-                    public SingleSource<? extends byte[]> apply(@io.reactivex.annotations.NonNull Integer integer) throws Exception {
+                    public SingleSource<? extends byte[]> apply(@io.reactivex.annotations.NonNull Integer integer) {
                         LongWriteClosableOutput<byte[]> output = descriptorMultiIndex.get(integer);
                         if (output != null) {
                             output.valueRelay.onComplete();
@@ -630,69 +597,11 @@ public class RxBleServerConnectionImpl implements RxBleServerConnectionInternal,
     }
 
     @Override
-    public Single<Integer> indicationSingle(final UUID ch, final byte[] value, final BluetoothDevice device) {
-        return Single.fromCallable(new Callable<Single<Integer>>() {
-            @Override
-            public Single<Integer> call() throws Exception {
-                final BluetoothGattCharacteristic characteristic = serverState.getCharacteristic(ch);
-
-                if (characteristic == null) {
-                    return Single.error(
-                            new BleGattServerException(BleGattServerOperationType.NOTIFICATION_SENT, "characteristic not found")
-                    );
-                }
-
-                NotifyCharacteristicChangedOperation operation = operationsProvider.provideNotifyOperation(
-                        characteristic,
-                        value,
-                        true,
-                        device
-                );
-                return operationQueue.queue(operation).firstOrError();
-            }
-        }).flatMap(new Function<Single<Integer>, SingleSource<? extends Integer>>() {
-            @Override
-            public SingleSource<? extends Integer> apply(@io.reactivex.annotations.NonNull Single<Integer> integerSingle) throws Exception {
-                return integerSingle;
-            }
-        });
-    }
-
-    @Override
-    public Single<Integer> notificationSingle(final UUID ch, final byte[] value, final BluetoothDevice device) {
-        return Single.fromCallable(new Callable<Single<Integer>>() {
-            @Override
-            public Single<Integer> call() throws Exception {
-                final BluetoothGattCharacteristic characteristic = serverState.getCharacteristic(ch);
-
-                if (characteristic == null) {
-                    return Single.error(
-                            new BleGattServerException(BleGattServerOperationType.NOTIFICATION_SENT, "characteristic not found")
-                    );
-                }
-
-                NotifyCharacteristicChangedOperation operation = operationsProvider.provideNotifyOperation(
-                        characteristic,
-                        value,
-                        false,
-                        device
-                );
-                return operationQueue.queue(operation).firstOrError();
-            }
-        }).flatMap(new Function<Single<Integer>, SingleSource<? extends Integer>>() {
-            @Override
-            public SingleSource<? extends Integer> apply(@io.reactivex.annotations.NonNull Single<Integer> integerSingle) throws Exception {
-                return integerSingle;
-            }
-        });
-    }
-
-    @Override
     public Completable setupIndication(final UUID ch, final Flowable<byte[]> indications, final BluetoothDevice device) {
         return Single.fromCallable(new Callable<Completable>() {
 
             @Override
-            public Completable call() throws Exception {
+            public Completable call() {
                 final BluetoothGattCharacteristic characteristic = serverState.getCharacteristic(ch);
 
                 if (characteristic == null) {
@@ -702,7 +611,7 @@ public class RxBleServerConnectionImpl implements RxBleServerConnectionInternal,
             }
         }).flatMapCompletable(new Function<Completable, CompletableSource>() {
             @Override
-            public CompletableSource apply(@io.reactivex.annotations.NonNull Completable completable) throws Exception {
+            public CompletableSource apply(@io.reactivex.annotations.NonNull Completable completable) {
                 return completable;
             }
         });
@@ -716,7 +625,7 @@ public class RxBleServerConnectionImpl implements RxBleServerConnectionInternal,
         return Single.fromCallable(new Callable<Completable>() {
 
             @Override
-            public Completable call() throws Exception {
+            public Completable call() {
                 if (isIndication) {
                     if (serverState.getIndications(characteristic.getUuid())) {
                         RxBleLog.d("immediate start indication");
@@ -732,7 +641,7 @@ public class RxBleServerConnectionImpl implements RxBleServerConnectionInternal,
                 return withDisconnectionHandling(getWriteDescriptorOutput())
                         .filter(new Predicate<GattServerTransaction<BluetoothGattDescriptor>>() {
                             @Override
-                            public boolean test(GattServerTransaction<BluetoothGattDescriptor> transaction) throws Exception {
+                            public boolean test(@NonNull GattServerTransaction<BluetoothGattDescriptor> transaction) {
                                 return transaction.getPayload().getUuid().compareTo(clientconfig.getUuid()) == 0
                                         && transaction.getPayload().getCharacteristic().getUuid()
                                         .compareTo(clientconfig.getCharacteristic().getUuid()) == 0;
@@ -742,7 +651,7 @@ public class RxBleServerConnectionImpl implements RxBleServerConnectionInternal,
                             @Override
                             public boolean test(
                                     @io.reactivex.annotations.NonNull GattServerTransaction<BluetoothGattDescriptor> trans
-                            ) throws Exception {
+                            ) {
                                 return Arrays.equals(trans.getTransaction().getValue(), BluetoothGattDescriptor.DISABLE_NOTIFICATION_VALUE);
                             }
                         })
@@ -750,7 +659,7 @@ public class RxBleServerConnectionImpl implements RxBleServerConnectionInternal,
             }
         }).flatMapCompletable(new Function<Completable, CompletableSource>() {
             @Override
-            public CompletableSource apply(@io.reactivex.annotations.NonNull Completable completable) throws Exception {
+            public CompletableSource apply(@io.reactivex.annotations.NonNull Completable completable) {
                 return completable;
             }
         });
@@ -761,7 +670,7 @@ public class RxBleServerConnectionImpl implements RxBleServerConnectionInternal,
     public Completable setupNotifications(final UUID ch, final Flowable<byte[]> notifications, final BluetoothDevice device) {
         return Single.fromCallable(new Callable<Completable>() {
             @Override
-            public Completable call() throws Exception {
+            public Completable call() {
                 final BluetoothGattCharacteristic characteristic = serverState.getCharacteristic(ch);
 
                 if (characteristic == null) {
@@ -774,7 +683,7 @@ public class RxBleServerConnectionImpl implements RxBleServerConnectionInternal,
             }
         }).flatMapCompletable(new Function<Completable, CompletableSource>() {
             @Override
-            public CompletableSource apply(@io.reactivex.annotations.NonNull Completable completable) throws Exception {
+            public CompletableSource apply(@io.reactivex.annotations.NonNull Completable completable) {
                 return completable;
             }
         });
@@ -788,7 +697,7 @@ public class RxBleServerConnectionImpl implements RxBleServerConnectionInternal,
     ) {
         return Single.fromCallable(new Callable<Completable>() {
             @Override
-            public Completable call() throws Exception {
+            public Completable call() {
                 RxBleLog.d("setupNotifictions: " + characteristic.getUuid());
                 final BluetoothGattDescriptor clientconfig = characteristic.getDescriptor(RxBleClient.CLIENT_CONFIG);
                 if (clientconfig == null) {
@@ -801,14 +710,14 @@ public class RxBleServerConnectionImpl implements RxBleServerConnectionInternal,
                         .subscribeOn(connectionScheduler)
                         .delay(new Function<byte[], Publisher<byte[]>>() {
                             @Override
-                            public Publisher<byte[]> apply(@io.reactivex.annotations.NonNull byte[] bytes) throws Exception {
+                            public Publisher<byte[]> apply(@io.reactivex.annotations.NonNull byte[] bytes) {
                                 return setupNotificationsDelay(clientconfig, characteristic, isIndication)
                                         .toFlowable();
                             }
                         })
                         .concatMap(new Function<byte[], Publisher<Integer>>() {
                             @Override
-                            public Publisher<Integer> apply(@io.reactivex.annotations.NonNull final byte[] bytes) throws Exception {
+                            public Publisher<Integer> apply(@io.reactivex.annotations.NonNull final byte[] bytes) {
                                 RxBleLog.d("processing bytes length: " + bytes.length);
                                 final NotifyCharacteristicChangedOperation operation
                                         = operationsProvider.provideNotifyOperation(
@@ -823,7 +732,7 @@ public class RxBleServerConnectionImpl implements RxBleServerConnectionInternal,
                         })
                         .flatMap(new Function<Integer, Publisher<Integer>>() {
                             @Override
-                            public Publisher<Integer> apply(@io.reactivex.annotations.NonNull Integer integer) throws Exception {
+                            public Publisher<Integer> apply(@io.reactivex.annotations.NonNull Integer integer) {
                                 RxBleLog.d("notification result: " + integer);
                                 if (integer != BluetoothGatt.GATT_SUCCESS) {
                                     return Flowable.error(new BleGattServerException(
@@ -838,14 +747,14 @@ public class RxBleServerConnectionImpl implements RxBleServerConnectionInternal,
                         .ignoreElements()
                         .doOnComplete(new Action() {
                             @Override
-                            public void run() throws Exception {
+                            public void run() {
                                 RxBleLog.d("notifications completed!");
                             }
                         });
             }
         }).flatMapCompletable(new Function<Completable, CompletableSource>() {
             @Override
-            public CompletableSource apply(@io.reactivex.annotations.NonNull Completable completable) throws Exception {
+            public CompletableSource apply(@io.reactivex.annotations.NonNull Completable completable) {
                 return completable;
             }
         });
@@ -881,7 +790,6 @@ public class RxBleServerConnectionImpl implements RxBleServerConnectionInternal,
      * @throws BleDisconnectedException emitted in case of a disconnect that is a part of the normal flow
      * @throws BleGattServerException         emitted in case of connection was interrupted unexpectedly.
      */
-    @Override
     public <T> Observable<T> observeDisconnect() {
         return disconnectionRouter.asErrorOnlyObservable();
     }
@@ -891,55 +799,14 @@ public class RxBleServerConnectionImpl implements RxBleServerConnectionInternal,
         return withDisconnectionHandling(getReadCharacteristicOutput())
                 .filter(new Predicate<GattServerTransaction<UUID>>() {
                     @Override
-                    public boolean test(GattServerTransaction<UUID> uuidGattServerTransaction) throws Exception {
+                    public boolean test(@NonNull GattServerTransaction<UUID> uuidGattServerTransaction) {
                         return uuidGattServerTransaction.getPayload().compareTo(characteristic) == 0;
                     }
                 })
                 .map(new Function<GattServerTransaction<UUID>, ServerResponseTransaction>() {
                     @Override
-                    public ServerResponseTransaction apply(GattServerTransaction<UUID> uuidGattServerTransaction) throws Exception {
+                    public ServerResponseTransaction apply(@NonNull GattServerTransaction<UUID> uuidGattServerTransaction) {
                         return uuidGattServerTransaction.getTransaction();
-                    }
-                })
-                .delay(0, TimeUnit.SECONDS, connectionScheduler);
-    }
-
-    @Override
-    public Observable<ServerResponseTransaction> getOnCharacteristicWriteRequest(final UUID characteristic) {
-        return withDisconnectionHandling(getWriteCharacteristicOutput())
-                .filter(new Predicate<GattServerTransaction<UUID>>() {
-                    @Override
-                    public boolean test(GattServerTransaction<UUID> uuidGattServerTransaction) throws Exception {
-                        return uuidGattServerTransaction.getPayload().compareTo(characteristic) == 0;
-                    }
-                })
-                .map(new Function<GattServerTransaction<UUID>, ServerResponseTransaction>() {
-                    @Override
-                    public ServerResponseTransaction apply(GattServerTransaction<UUID> uuidGattServerTransaction) throws Exception {
-                        return uuidGattServerTransaction.getTransaction();
-                    }
-                })
-                .delay(0, TimeUnit.SECONDS, connectionScheduler);
-    }
-
-    @Override
-    public Observable<ServerResponseTransaction> getOnDescriptorReadRequest(
-            final UUID characteristic,
-            final UUID descriptor
-    ) {
-        return withDisconnectionHandling(getReadDescriptorOutput())
-                .filter(new Predicate<GattServerTransaction<BluetoothGattDescriptor>>() {
-                    @Override
-                    public boolean test(GattServerTransaction<BluetoothGattDescriptor> transaction) throws Exception {
-                        return transaction.getPayload().getUuid().compareTo(descriptor) == 0
-                                && transaction.getPayload().getCharacteristic().getUuid()
-                                .compareTo(characteristic) == 0;
-                    }
-                })
-                .map(new Function<GattServerTransaction<BluetoothGattDescriptor>, ServerResponseTransaction>() {
-                    @Override
-                    public ServerResponseTransaction apply(GattServerTransaction<BluetoothGattDescriptor> transaction) throws Exception {
-                        return transaction.getTransaction();
                     }
                 })
                 .delay(0, TimeUnit.SECONDS, connectionScheduler);
@@ -953,7 +820,7 @@ public class RxBleServerConnectionImpl implements RxBleServerConnectionInternal,
         return withDisconnectionHandling(getWriteDescriptorOutput())
                 .filter(new Predicate<GattServerTransaction<BluetoothGattDescriptor>>() {
                     @Override
-                    public boolean test(GattServerTransaction<BluetoothGattDescriptor> transaction) throws Exception {
+                    public boolean test(@NonNull GattServerTransaction<BluetoothGattDescriptor> transaction) {
                         return transaction.getPayload().getUuid().compareTo(descriptoruuid) == 0
                                 && transaction.getPayload().getCharacteristic().getUuid()
                                 .compareTo(characteristicuuid) == 0;
@@ -961,7 +828,9 @@ public class RxBleServerConnectionImpl implements RxBleServerConnectionInternal,
                 })
                 .map(new Function<GattServerTransaction<BluetoothGattDescriptor>, ServerResponseTransaction>() {
                     @Override
-                    public ServerResponseTransaction apply(GattServerTransaction<BluetoothGattDescriptor> transaction) throws Exception {
+                    public ServerResponseTransaction apply(
+                            @NonNull GattServerTransaction<BluetoothGattDescriptor> transaction
+                    ) {
                         return transaction.getTransaction();
                     }
                 })
@@ -995,13 +864,13 @@ public class RxBleServerConnectionImpl implements RxBleServerConnectionInternal,
                 .map(new Function<ServerResponseTransaction, GattServerTransaction<BluetoothGattDescriptor>>() {
                     @Override
                     public GattServerTransaction<BluetoothGattDescriptor> apply(
-                            @NonNull ServerResponseTransaction serverResponseTransaction) throws Exception {
+                            @NonNull ServerResponseTransaction serverResponseTransaction) {
                         return new GattServerTransaction<>(descriptor, serverResponseTransaction);
                     }
                 })
                 .doOnError(new Consumer<Throwable>() {
                     @Override
-                    public void accept(Throwable throwable) throws Exception {
+                    public void accept(Throwable throwable) {
                         RxBleLog.e("cryy found a badd " + throwable.toString());
                     }
                 })
@@ -1026,7 +895,7 @@ public class RxBleServerConnectionImpl implements RxBleServerConnectionInternal,
                 .map(new Function<ServerResponseTransaction, GattServerTransaction<UUID>>() {
                     @Override
                     public GattServerTransaction<UUID> apply(
-                            ServerResponseTransaction serverResponseTransaction) throws Exception {
+                            @NonNull ServerResponseTransaction serverResponseTransaction) {
                         return new GattServerTransaction<>(characteristic.getUuid(), serverResponseTransaction);
                     }
                 })

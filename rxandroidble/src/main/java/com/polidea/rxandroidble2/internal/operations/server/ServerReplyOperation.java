@@ -41,12 +41,12 @@ public class ServerReplyOperation extends QueueOperation<Boolean> {
     }
 
     @Override
-    protected void protectedRun(ObservableEmitter<Boolean> emitter, QueueReleaseInterface queueReleaseInterface) throws Throwable {
+    protected void protectedRun(ObservableEmitter<Boolean> emitter, QueueReleaseInterface queueReleaseInterface) {
 
         final QueueReleasingEmitterWrapper<Boolean> emitterWrapper = new QueueReleasingEmitterWrapper<>(emitter, queueReleaseInterface);
         Observable.fromCallable(new Callable<Boolean>() {
             @Override
-            public Boolean call() throws Exception {
+            public Boolean call() {
                 return bluetoothGattServer.sendResponse(device, requestID, status, offset, value);
             }
         }).subscribe(emitterWrapper);

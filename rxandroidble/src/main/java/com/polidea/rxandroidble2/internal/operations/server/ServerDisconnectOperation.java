@@ -50,7 +50,7 @@ public class ServerDisconnectOperation extends QueueOperation<Void> {
     }
 
     @Override
-    protected void protectedRun(final ObservableEmitter<Void> emitter, final QueueReleaseInterface queueReleaseInterface) throws Throwable {
+    protected void protectedRun(final ObservableEmitter<Void> emitter, final QueueReleaseInterface queueReleaseInterface) {
             disconnectIfRequired()
              .timeout(
                      timeoutConfiguration.timeout,
@@ -133,7 +133,7 @@ public class ServerDisconnectOperation extends QueueOperation<Void> {
                     .getOnConnectionStateChange()
                     .filter(new Predicate<Pair<BluetoothDevice, RxBleConnection.RxBleConnectionState>>() {
                         @Override
-                        public boolean test(Pair<BluetoothDevice, RxBleConnection.RxBleConnectionState> pair) throws Exception {
+                        public boolean test(Pair<BluetoothDevice, RxBleConnection.RxBleConnectionState> pair) {
                             return pair.first.equals(device) && pair.second == RxBleConnection.RxBleConnectionState.DISCONNECTED;
                         }
                     })
@@ -142,7 +142,7 @@ public class ServerDisconnectOperation extends QueueOperation<Void> {
                         @Override
                         public BluetoothGattServer apply(
                                 Pair<BluetoothDevice, RxBleConnection.RxBleConnectionState> pair
-                        ) throws Exception {
+                        ) {
                             return bluetoothGattServer;
                         }
                     })
