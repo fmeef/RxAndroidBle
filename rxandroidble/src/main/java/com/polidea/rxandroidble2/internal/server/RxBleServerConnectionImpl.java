@@ -27,7 +27,6 @@ import com.polidea.rxandroidble2.ServerConfig;
 import com.polidea.rxandroidble2.ServerConnectionScope;
 import com.polidea.rxandroidble2.ServerResponseTransaction;
 import com.polidea.rxandroidble2.ServerTransactionFactory;
-import com.polidea.rxandroidble2.exceptions.BleDisconnectedException;
 import com.polidea.rxandroidble2.exceptions.BleException;
 import com.polidea.rxandroidble2.exceptions.BleGattServerException;
 import com.polidea.rxandroidble2.exceptions.BleGattServerOperationType;
@@ -75,7 +74,6 @@ public class RxBleServerConnectionImpl implements RxBleServerConnectionInternal,
     private final RxBleServerState serverState;
     private final ServerConnectionOperationsProvider operationsProvider;
     private final ServerOperationQueue operationQueue;
-    private final ServerDisconnectionRouter disconnectionRouter;
     private final MultiIndex<Integer, BluetoothGattCharacteristic, RxBleServerConnectionInternal.LongWriteClosableOutput<byte[]>>
             characteristicMultiIndex = new MultiIndexImpl<>();
     private final MultiIndex<Integer, BluetoothGattDescriptor, RxBleServerConnectionInternal.LongWriteClosableOutput<byte[]>>
@@ -135,21 +133,13 @@ public class RxBleServerConnectionImpl implements RxBleServerConnectionInternal,
             RxBleLog.d("gatt server onConnectionStateChange: " + device.getAddress() + " " + status + " " + newState);
             if (newState == BluetoothProfile.STATE_DISCONNECTED
                     || newState == BluetoothProfile.STATE_DISCONNECTING) {
-                    onDisconnectedException(
-                            new BleDisconnectedException(device.getAddress(), status)
-                    );
+                //TODO: handle disconnections
                 RxBleLog.e("device " + device.getAddress() + " disconnecting");
             }
 
             if (status != BluetoothGatt.GATT_SUCCESS) {
                 RxBleLog.e("GattServer state change failed %i", status);
-                onGattConnectionStateException(
-                        new BleGattServerException(
-                                status,
-                                BleGattServerOperationType.CONNECTION_STATE,
-                                "onConnectionStateChange GATT_FAILURE"
-                        )
-                );
+                //TODO: handle gatt error
             }
             acceptDevice(device, newState);
         }
@@ -327,7 +317,6 @@ public class RxBleServerConnectionImpl implements RxBleServerConnectionInternal,
             ServerConnectionOperationsProvider operationsProvider,
             ServerOperationQueue operationQueue,
             BluetoothManager bluetoothManager,
-            ServerDisconnectionRouter disconnectionRouter,
             ServerTransactionFactory serverTransactionFactory,
             ServerConfig config,
             Context context,
@@ -338,7 +327,6 @@ public class RxBleServerConnectionImpl implements RxBleServerConnectionInternal,
         this.operationQueue = operationQueue;
         this.bluetoothManager = bluetoothManager;
 
-        this.disconnectionRouter = disconnectionRouter;
         this.serverTransactionFactory = serverTransactionFactory;
         this.context = context;
         this.callbackScheduler = callbackScheduler;
@@ -763,7 +751,6 @@ public class RxBleServerConnectionImpl implements RxBleServerConnectionInternal,
     private <T> Observable<T> withDisconnectionHandling(Output<T> output) {
         //noinspection unchecked
         return Observable.merge(
-                disconnectionRouter.<T>asErrorOnlyObservable(),
                 output.valueRelay,
                 (Observable<T>) output.errorRelay.flatMap(errorMapper)
         );
@@ -776,22 +763,9 @@ public class RxBleServerConnectionImpl implements RxBleServerConnectionInternal,
     }
 
     @Override
-    public void onGattConnectionStateException(BleGattServerException exception) {
-        disconnectionRouter.onGattConnectionStateException(exception);
-    }
-
-    @Override
-    public void onDisconnectedException(BleDisconnectedException exception) {
-        disconnectionRouter.onDisconnectedException(exception);
-    }
-
-    /**
-     * @return Observable that never emits onNext.
-     * @throws BleDisconnectedException emitted in case of a disconnect that is a part of the normal flow
-     * @throws BleGattServerException         emitted in case of connection was interrupted unexpectedly.
-     */
     public <T> Observable<T> observeDisconnect() {
-        return disconnectionRouter.asErrorOnlyObservable();
+        //TODO
+        return null;
     }
 
     @Override

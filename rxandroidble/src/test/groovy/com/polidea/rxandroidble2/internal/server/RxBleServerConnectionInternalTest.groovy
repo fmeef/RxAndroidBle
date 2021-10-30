@@ -12,7 +12,6 @@ import com.polidea.rxandroidble2.internal.operations.server.ServerConnectionOper
 import com.polidea.rxandroidble2.internal.serialization.ServerOperationQueue
 import com.polidea.rxandroidble2.internal.util.MockOperationTimeoutConfiguration
 import io.reactivex.Flowable
-import io.reactivex.Observable
 import io.reactivex.annotations.NonNull
 import io.reactivex.functions.Predicate
 import io.reactivex.observers.TestObserver
@@ -29,7 +28,6 @@ public class RxBleServerConnectionInternalTest extends Specification {
     def mockTimeout = new MockOperationTimeoutConfiguration(10, testScheduler)
     ServerConnectionOperationsProvider operationsProvider
     ServerOperationQueue dummyQueue = new DummyOperationQueue()
-    ServerDisconnectionRouter disconnectionRouter = Mock ServerDisconnectionRouter
     BluetoothDevice bluetoothDevice = Mock BluetoothDevice
     BluetoothGattServer bluetoothGattServer = Mock BluetoothGattServer
     RxBleServerConnectionImpl objectUnderTest
@@ -38,12 +36,6 @@ public class RxBleServerConnectionInternalTest extends Specification {
     RxBleServerState serverState = Mock(RxBleServerState)
     ServerTransactionFactory serverTransactionFactory = Mock ServerTransactionFactory
     BluetoothGattCharacteristic characteristic = Mock BluetoothGattCharacteristic
-
-
-    BluetoothGattDescriptor clientConfig = new BluetoothGattDescriptor(
-            CLIENT_CONFIG,
-            BluetoothGattDescriptor.PERMISSION_READ
-    )
 
     BluetoothGattDescriptor descriptor = new BluetoothGattDescriptor(
             testUuid,
@@ -85,7 +77,6 @@ public class RxBleServerConnectionInternalTest extends Specification {
                 operationsProvider,
                 dummyQueue,
                 bluetoothManager,
-                disconnectionRouter,
                 serverTransactionFactory,
                 config,
                 Mock(Context),
@@ -116,7 +107,6 @@ public class RxBleServerConnectionInternalTest extends Specification {
                 BluetoothGattDescriptor.PERMISSION_READ_ENCRYPTED  | BluetoothGattDescriptor.PERMISSION_WRITE
         )
 
-        disconnectionRouter.asErrorOnlyObservable() >> Observable.empty()
         serverState.getNotifications(_) >> true
         serverState.getIndications(_) >> true
         bluetoothGattServer.notifyCharacteristicChanged(_, _, _) >> true

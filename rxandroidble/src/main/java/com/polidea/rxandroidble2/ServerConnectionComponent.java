@@ -2,7 +2,6 @@ package com.polidea.rxandroidble2;
 
 import android.bluetooth.BluetoothGattServer;
 
-import com.polidea.rxandroidble2.internal.connection.DisconnectionRouterOutput;
 import com.polidea.rxandroidble2.internal.operations.TimeoutConfiguration;
 import com.polidea.rxandroidble2.internal.operations.server.ServerConnectionOperationsProvider;
 import com.polidea.rxandroidble2.internal.operations.server.ServerConnectionOperationsProviderImpl;
@@ -12,7 +11,6 @@ import com.polidea.rxandroidble2.internal.server.RxBleServerConnectionImpl;
 import com.polidea.rxandroidble2.internal.server.RxBleServerConnectionInternal;
 import com.polidea.rxandroidble2.internal.server.RxBleServerState;
 import com.polidea.rxandroidble2.internal.server.RxBleServerStateImpl;
-import com.polidea.rxandroidble2.internal.server.ServerDisconnectionRouter;
 
 import bleshadow.dagger.Binds;
 import bleshadow.dagger.BindsInstance;
@@ -27,8 +25,6 @@ import io.reactivex.Scheduler;
 public interface ServerConnectionComponent {
 
     String OPERATION_TIMEOUT = "server-operation-timeout";
-    String SERVER_DISCONNECTION_ROUTER = "server-disconnection-router";
-    String SERVER_CONNECTION_SUBSCRIPTION_WATCHER = "connection-subscription-watcher";
 
     @Subcomponent.Builder
     interface Builder {
@@ -64,11 +60,6 @@ public interface ServerConnectionComponent {
         @Binds
         @ServerConnectionScope
         abstract RxBleServerState bindServerState(RxBleServerStateImpl state);
-
-        @Binds
-        @ServerConnectionScope
-        @Named(SERVER_DISCONNECTION_ROUTER)
-        abstract DisconnectionRouterOutput bindDisconnectionRouterOutput(ServerDisconnectionRouter disconnectionRouter);
 
         @Binds
         @ServerConnectionScope
