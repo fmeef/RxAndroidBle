@@ -61,8 +61,6 @@ public interface RxBleServerConnectionInternal extends Disposable {
 
     Observable<Integer> getOnNotification();
 
-    void disconnect(BluetoothDevice device);
-
     RxBleServerConnection getConnection();
 
     Observable<Pair<BluetoothDevice, RxBleConnection.RxBleConnectionState>> getOnConnectionStateChange();

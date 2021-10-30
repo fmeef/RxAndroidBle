@@ -35,6 +35,7 @@ import io.reactivex.Observable;
 import io.reactivex.ObservableSource;
 import io.reactivex.Single;
 import io.reactivex.disposables.CompositeDisposable;
+import io.reactivex.functions.Action;
 import io.reactivex.functions.BiFunction;
 import io.reactivex.functions.Function;
 import io.reactivex.functions.Predicate;
@@ -215,8 +216,13 @@ public class RxBleServerConnectionMock implements RxBleServerConnection, RxBleSe
     }
 
     @Override
-    public void disconnect(BluetoothDevice device) {
-        disconnectionBehaviorRelay.accept(new BleDisconnectedException(device.getAddress(), 0));
+    public Completable disconnect(final BluetoothDevice device) {
+        return Completable.fromAction(new Action() {
+            @Override
+            public void run() throws Exception {
+                disconnectionBehaviorRelay.accept(new BleDisconnectedException(device.getAddress(), 0));
+            }
+        });
     }
 
     @Override
@@ -361,7 +367,8 @@ public class RxBleServerConnectionMock implements RxBleServerConnection, RxBleSe
                 value,
                 requestID,
                 offset,
-                device
+                device,
+                descriptor.getUuid()
         );
         valueRelay.accept(new GattServerTransaction<>(descriptor, transaction));
     }
@@ -378,7 +385,8 @@ public class RxBleServerConnectionMock implements RxBleServerConnection, RxBleSe
                 value,
                 requestID,
                 offset,
-                device
+                device,
+                descriptor.getUuid()
         );
 
         valueRelay.accept(new GattServerTransaction<>(descriptor.getUuid(), transaction));

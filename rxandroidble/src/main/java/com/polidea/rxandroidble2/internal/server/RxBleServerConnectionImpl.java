@@ -838,8 +838,8 @@ public class RxBleServerConnectionImpl implements RxBleServerConnectionInternal,
     }
 
     @Override
-    public void disconnect(final BluetoothDevice device) {
-        operationQueue.queue(operationsProvider.provideDisconnectOperation(device));
+    public Completable disconnect(final BluetoothDevice device) {
+        return operationQueue.queue(operationsProvider.provideDisconnectOperation(device)).ignoreElements();
     }
 
     @Override
