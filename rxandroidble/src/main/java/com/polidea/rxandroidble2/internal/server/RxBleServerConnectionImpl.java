@@ -897,6 +897,7 @@ public class RxBleServerConnectionImpl implements RxBleServerConnectionInternal,
 
     @Override
     public void dispose() {
+        getBluetoothGattServer().close();
         connectionScheduler.shutdown();
         compositeDisposable.dispose();
     }
