@@ -1,5 +1,12 @@
 package com.polidea.rxandroidble2.internal.serialization;
 
+import static com.polidea.rxandroidble2.internal.logger.LoggerUtil.commonMacMessage;
+import static com.polidea.rxandroidble2.internal.logger.LoggerUtil.logOperationFinished;
+import static com.polidea.rxandroidble2.internal.logger.LoggerUtil.logOperationQueued;
+import static com.polidea.rxandroidble2.internal.logger.LoggerUtil.logOperationRemoved;
+import static com.polidea.rxandroidble2.internal.logger.LoggerUtil.logOperationRunning;
+import static com.polidea.rxandroidble2.internal.logger.LoggerUtil.logOperationStarted;
+
 import androidx.annotation.RestrictTo;
 
 import com.polidea.rxandroidble2.ClientComponent;
@@ -7,6 +14,7 @@ import com.polidea.rxandroidble2.exceptions.BleDisconnectedException;
 import com.polidea.rxandroidble2.exceptions.BleException;
 import com.polidea.rxandroidble2.internal.DeviceModule;
 import com.polidea.rxandroidble2.internal.RxBleLog;
+import com.polidea.rxandroidble2.internal.connection.ConnectionModule;
 import com.polidea.rxandroidble2.internal.connection.ConnectionScope;
 import com.polidea.rxandroidble2.internal.connection.ConnectionSubscriptionWatcher;
 import com.polidea.rxandroidble2.internal.connection.DisconnectionRouterOutput;
@@ -17,20 +25,12 @@ import java.util.concurrent.Future;
 
 import bleshadow.javax.inject.Inject;
 import bleshadow.javax.inject.Named;
-
 import io.reactivex.Observable;
 import io.reactivex.ObservableEmitter;
 import io.reactivex.ObservableOnSubscribe;
 import io.reactivex.Scheduler;
 import io.reactivex.functions.Cancellable;
 import io.reactivex.observers.DisposableObserver;
-
-import static com.polidea.rxandroidble2.internal.logger.LoggerUtil.commonMacMessage;
-import static com.polidea.rxandroidble2.internal.logger.LoggerUtil.logOperationFinished;
-import static com.polidea.rxandroidble2.internal.logger.LoggerUtil.logOperationQueued;
-import static com.polidea.rxandroidble2.internal.logger.LoggerUtil.logOperationRemoved;
-import static com.polidea.rxandroidble2.internal.logger.LoggerUtil.logOperationRunning;
-import static com.polidea.rxandroidble2.internal.logger.LoggerUtil.logOperationStarted;
 
 @ConnectionScope
 public class ConnectionOperationQueueImpl implements ConnectionOperationQueue, ConnectionSubscriptionWatcher {
@@ -46,7 +46,7 @@ public class ConnectionOperationQueueImpl implements ConnectionOperationQueue, C
     @Inject
     ConnectionOperationQueueImpl(
             @Named(DeviceModule.MAC_ADDRESS) final String deviceMacAddress,
-            final DisconnectionRouterOutput disconnectionRouterOutput,
+            @Named(ConnectionModule.CLIENT_DISCONNECTION_ROUTER) final DisconnectionRouterOutput disconnectionRouterOutput,
             @Named(ClientComponent.NamedExecutors.CONNECTION_QUEUE) final ExecutorService executorService,
             @Named(ClientComponent.NamedSchedulers.BLUETOOTH_INTERACTION) final Scheduler callbackScheduler
     ) {

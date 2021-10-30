@@ -1,5 +1,9 @@
 package com.polidea.rxandroidble2.internal.connection;
 
+import static com.polidea.rxandroidble2.internal.connection.ConnectionComponent.NamedBooleans.SUPPRESS_OPERATION_CHECKS;
+import static com.polidea.rxandroidble2.internal.connection.ConnectionComponent.NamedInts.GATT_MTU_MINIMUM;
+import static com.polidea.rxandroidble2.internal.connection.ConnectionComponent.NamedInts.GATT_WRITE_MTU_OVERHEAD;
+
 import android.bluetooth.BluetoothGatt;
 import android.bluetooth.BluetoothGattCharacteristic;
 
@@ -21,14 +25,11 @@ import bleshadow.javax.inject.Named;
 import bleshadow.javax.inject.Provider;
 import io.reactivex.Scheduler;
 
-import static com.polidea.rxandroidble2.internal.connection.ConnectionComponent.NamedBooleans.SUPPRESS_OPERATION_CHECKS;
-import static com.polidea.rxandroidble2.internal.connection.ConnectionComponent.NamedInts.GATT_MTU_MINIMUM;
-import static com.polidea.rxandroidble2.internal.connection.ConnectionComponent.NamedInts.GATT_WRITE_MTU_OVERHEAD;
-
 @Module
 public abstract class ConnectionModule {
 
     public static final String OPERATION_TIMEOUT = "operation-timeout";
+    public static final String CLIENT_DISCONNECTION_ROUTER = "client-disconnection-router";
 
     @Provides
     @Named(OPERATION_TIMEOUT)
@@ -111,5 +112,6 @@ public abstract class ConnectionModule {
     abstract DisconnectionRouterInput bindDisconnectionRouterInput(DisconnectionRouter disconnectionRouter);
 
     @Binds
+    @Named(CLIENT_DISCONNECTION_ROUTER)
     abstract DisconnectionRouterOutput bindDisconnectionRouterOutput(DisconnectionRouter disconnectionRouter);
 }
