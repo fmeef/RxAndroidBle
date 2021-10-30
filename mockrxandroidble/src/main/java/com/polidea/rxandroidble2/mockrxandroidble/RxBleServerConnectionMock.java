@@ -35,7 +35,6 @@ import io.reactivex.Observable;
 import io.reactivex.ObservableSource;
 import io.reactivex.Single;
 import io.reactivex.disposables.CompositeDisposable;
-import io.reactivex.disposables.Disposable;
 import io.reactivex.functions.BiFunction;
 import io.reactivex.functions.Function;
 import io.reactivex.functions.Predicate;
@@ -271,16 +270,6 @@ public class RxBleServerConnectionMock implements RxBleServerConnection, RxBleSe
         return changedMtuOutput;
     }
 
-    @Override
-    public void onGattConnectionStateException(BleGattServerException exception) {
-        disconnectionBehaviorRelay.accept(exception);
-    }
-
-    @Override
-    public void onDisconnectedException(BleDisconnectedException exception) {
-        disconnectionBehaviorRelay.accept(exception);
-    }
-
     @NonNull
     @Override
     public Output<byte[]> openLongWriteCharacteristicOutput(Integer requestid, BluetoothGattCharacteristic characteristic) {
@@ -373,22 +362,13 @@ public class RxBleServerConnectionMock implements RxBleServerConnection, RxBleSe
             PublishRelay<GattServerTransaction<BluetoothGattDescriptor>> valueRelay,
             byte[] value
     ) {
-        Disposable disposable = serverTransactionFactory.prepareCharacteristicTransaction(
+        final ServerResponseTransaction transaction = serverTransactionFactory.prepareCharacteristicTransaction(
                 value,
                 requestID,
                 offset,
                 device
-        )
-                .map(new Function<ServerResponseTransaction, GattServerTransaction<BluetoothGattDescriptor>>() {
-                    @Override
-                    public GattServerTransaction<BluetoothGattDescriptor> apply(
-                            ServerResponseTransaction serverResponseTransaction) throws Exception {
-                        return new GattServerTransaction<>(descriptor, serverResponseTransaction);
-                    }
-                })
-                .subscribe(valueRelay);
-        compositeDisposable.add(disposable);
-
+        );
+        valueRelay.accept(new GattServerTransaction<>(descriptor, transaction));
     }
 
     @Override
@@ -399,21 +379,14 @@ public class RxBleServerConnectionMock implements RxBleServerConnection, RxBleSe
             BluetoothDevice device,
             final PublishRelay<GattServerTransaction<UUID>> valueRelay,
             byte[] value) {
-        Disposable disposable = serverTransactionFactory.prepareCharacteristicTransaction(
+        final ServerResponseTransaction transaction = serverTransactionFactory.prepareCharacteristicTransaction(
                 value,
                 requestID,
                 offset,
                 device
-        )
-                .map(new Function<ServerResponseTransaction, GattServerTransaction<UUID>>() {
-                    @Override
-                    public GattServerTransaction<UUID> apply(
-                            ServerResponseTransaction serverResponseTransaction) throws Exception {
-                        return new GattServerTransaction<>(descriptor.getUuid(), serverResponseTransaction);
-                    }
-                })
-                .subscribe(valueRelay);
-        compositeDisposable.add(disposable);
+        );
+
+        valueRelay.accept(new GattServerTransaction<>(descriptor.getUuid(), transaction));
     }
 
     @Override

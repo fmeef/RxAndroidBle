@@ -102,13 +102,6 @@ public class RxBleServerConnectionImpl implements RxBleServerConnectionInternal,
     private final RxBleServerConnectionInternal.Output<Integer> changedMtuOutput =
             new RxBleServerConnectionInternal.Output<>();
 
-
-    private void acceptDevice(final BluetoothDevice device, int newState) {
-        connectionStatePublishRelay.accept(new Pair<>(
-                device, mapConnectionStateToRxBleConnectionStatus(newState)
-        ));
-    }
-
     public void registerService(BluetoothGattService service) {
         for (BluetoothGattCharacteristic characteristic : service.getCharacteristics()) {
             if ((characteristic.getProperties() & BluetoothGattCharacteristic.PROPERTY_NOTIFY) == 0
@@ -140,7 +133,6 @@ public class RxBleServerConnectionImpl implements RxBleServerConnectionInternal,
                 RxBleLog.e("GattServer state change failed %i", status);
                 //TODO: handle gatt error
             }
-            acceptDevice(device, newState);
         }
 
         @Override
