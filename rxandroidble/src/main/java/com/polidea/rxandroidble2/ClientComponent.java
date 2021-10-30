@@ -18,6 +18,8 @@ import androidx.annotation.RestrictTo;
 import com.polidea.rxandroidble2.helpers.LocationServicesOkObservable;
 import com.polidea.rxandroidble2.internal.DeviceComponent;
 import com.polidea.rxandroidble2.internal.RxBleLog;
+import com.polidea.rxandroidble2.internal.connection.ServerConnector;
+import com.polidea.rxandroidble2.internal.connection.ServerConnectorImpl;
 import com.polidea.rxandroidble2.internal.scan.BackgroundScannerImpl;
 import com.polidea.rxandroidble2.internal.scan.InternalToExternalScanResultConverter;
 import com.polidea.rxandroidble2.internal.scan.RxBleInternalScanResult;
@@ -123,7 +125,7 @@ public interface ClientComponent {
         Builder applicationContext(Context context);
     }
 
-    @Module(subcomponents = DeviceComponent.class)
+    @Module(subcomponents = {DeviceComponent.class, ServerConnectionComponent.class})
     abstract class ClientModule {
 
         @Provides
