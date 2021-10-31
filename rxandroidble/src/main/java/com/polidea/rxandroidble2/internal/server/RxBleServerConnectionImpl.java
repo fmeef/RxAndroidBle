@@ -481,7 +481,7 @@ public class RxBleServerConnectionImpl implements RxBleServerConnectionInternal,
                         if (output != null) {
                             output.valueRelay.onComplete();
                             characteristicMultiIndex.remove(integer);
-                            return output.out.delay(0, TimeUnit.SECONDS, connectionScheduler);
+                            return output.out.delay(0, TimeUnit.SECONDS, callbackScheduler);
                         }
                         return Single.never();
                     }
@@ -535,7 +535,8 @@ public class RxBleServerConnectionImpl implements RxBleServerConnectionInternal,
                                             characteristic
                                     );
                                 }
-                            });
+                            })
+                            .delay(0, TimeUnit.SECONDS, callbackScheduler);
                     }
 
             }
@@ -743,7 +744,7 @@ public class RxBleServerConnectionImpl implements RxBleServerConnectionInternal,
     @Override
     public Observable<Integer> getOnMtuChanged() {
         return withDisconnectionHandling(getChangedMtuOutput())
-                .delay(0, TimeUnit.SECONDS, connectionScheduler);
+                .delay(0, TimeUnit.SECONDS, callbackScheduler);
     }
 
     @Override
@@ -764,7 +765,7 @@ public class RxBleServerConnectionImpl implements RxBleServerConnectionInternal,
                         return pair.first;
                     }
                 })
-                .delay(0, TimeUnit.SECONDS, connectionScheduler);
+                .delay(0, TimeUnit.SECONDS, callbackScheduler);
     }
 
     @Override
@@ -786,7 +787,7 @@ public class RxBleServerConnectionImpl implements RxBleServerConnectionInternal,
                         return pair.first;
                     }
                 })
-                .delay(0, TimeUnit.SECONDS, connectionScheduler);
+                .delay(0, TimeUnit.SECONDS, callbackScheduler);
     }
 
     @Override
@@ -804,7 +805,7 @@ public class RxBleServerConnectionImpl implements RxBleServerConnectionInternal,
                         return uuidGattServerTransaction.getTransaction();
                     }
                 })
-                .delay(0, TimeUnit.SECONDS, connectionScheduler);
+                .delay(0, TimeUnit.SECONDS, callbackScheduler);
     }
 
     @Override
@@ -829,7 +830,7 @@ public class RxBleServerConnectionImpl implements RxBleServerConnectionInternal,
                         return transaction.getTransaction();
                     }
                 })
-                .delay(0, TimeUnit.SECONDS, connectionScheduler);
+                .delay(0, TimeUnit.SECONDS, callbackScheduler);
     }
 
     @Override
@@ -899,6 +900,7 @@ public class RxBleServerConnectionImpl implements RxBleServerConnectionInternal,
     public void dispose() {
         getBluetoothGattServer().close();
         connectionScheduler.shutdown();
+        callbackScheduler.shutdown();
         compositeDisposable.dispose();
     }
 
