@@ -1,11 +1,11 @@
 package com.polidea.rxandroidble2.internal.operations.server;
 
-import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothGattCharacteristic;
 import android.bluetooth.BluetoothGattServer;
 import android.bluetooth.BluetoothManager;
 
 import com.polidea.rxandroidble2.ClientComponent;
+import com.polidea.rxandroidble2.RxBleDevice;
 import com.polidea.rxandroidble2.ServerConnectionComponent;
 import com.polidea.rxandroidble2.ServerConnectionScope;
 import com.polidea.rxandroidble2.internal.operations.TimeoutConfiguration;
@@ -42,7 +42,7 @@ public class ServerConnectionOperationsProviderImpl implements ServerConnectionO
     }
 
     public ServerReplyOperation provideReplyOperation(
-            BluetoothDevice device,
+            RxBleDevice device,
             int requestID,
             int status,
             int offset,
@@ -58,7 +58,7 @@ public class ServerConnectionOperationsProviderImpl implements ServerConnectionO
         );
     }
 
-    public ServerDisconnectOperation provideDisconnectOperation(BluetoothDevice device) {
+    public ServerDisconnectOperation provideDisconnectOperation(RxBleDevice device) {
         return new ServerDisconnectOperation(
                 server.get(),
                 device,
@@ -74,7 +74,7 @@ public class ServerConnectionOperationsProviderImpl implements ServerConnectionO
             BluetoothGattCharacteristic characteristic,
             byte[] value,
             boolean isIndication,
-            BluetoothDevice device
+            RxBleDevice device
     ) {
         return new NotifyCharacteristicChangedOperation(
                 server.get(),

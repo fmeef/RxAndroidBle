@@ -3,10 +3,8 @@ package com.polidea.rxandroidble2.internal.server
 import android.bluetooth.*
 import android.content.Context
 import bleshadow.javax.inject.Provider
-import com.polidea.rxandroidble2.DummyOperationQueue
-import com.polidea.rxandroidble2.ServerConfig
-import com.polidea.rxandroidble2.ServerTransactionFactory
-import com.polidea.rxandroidble2.Timeout
+import com.polidea.rxandroidble2.*
+import com.polidea.rxandroidble2.internal.RxBleDeviceProvider
 import com.polidea.rxandroidble2.internal.operations.server.ServerConnectionOperationsProvider
 import com.polidea.rxandroidble2.internal.operations.server.ServerConnectionOperationsProviderImpl
 import com.polidea.rxandroidble2.internal.serialization.ServerOperationQueue
@@ -28,7 +26,7 @@ public class RxBleServerConnectionInternalTest extends Specification {
     def mockTimeout = new MockOperationTimeoutConfiguration(10, testScheduler)
     ServerConnectionOperationsProvider operationsProvider
     ServerOperationQueue dummyQueue = new DummyOperationQueue()
-    BluetoothDevice bluetoothDevice = Mock BluetoothDevice
+    RxBleDevice bluetoothDevice = Mock RxBleDevice
     BluetoothGattServer bluetoothGattServer = Mock BluetoothGattServer
     RxBleServerConnectionImpl objectUnderTest
     BluetoothManager bluetoothManager = Mock BluetoothManager
@@ -80,7 +78,8 @@ public class RxBleServerConnectionInternalTest extends Specification {
                 serverTransactionFactory,
                 config,
                 Mock(Context),
-                serverState
+                serverState,
+                Mock(RxBleDeviceProvider)
         )
     }
 
@@ -91,8 +90,8 @@ public class RxBleServerConnectionInternalTest extends Specification {
         when:
         def notif = Flowable.just(data).repeat(4);
         def indicationnotif = Flowable.just(data).repeat(4)
-        TestObserver res = objectUnderTest.setupNotifications(ch.getUuid(), notif, Mock(BluetoothDevice)).test();
-        TestObserver indicationres = objectUnderTest.setupIndication(ch.getUuid(), indicationnotif, Mock(BluetoothDevice)).test()
+        TestObserver res = objectUnderTest.setupNotifications(ch.getUuid(), notif, Mock(RxBleDevice)).test();
+        TestObserver indicationres = objectUnderTest.setupIndication(ch.getUuid(), indicationnotif, Mock(RxBleDevice)).test()
         for (int i=0;i<4*2;i++) {
             objectUnderTest.getNotificationPublishRelay().valueRelay.accept(BluetoothGatt.GATT_SUCCESS)
             advanceTimeForWritesToComplete(1)

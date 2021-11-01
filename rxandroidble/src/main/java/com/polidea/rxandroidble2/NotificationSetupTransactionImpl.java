@@ -1,7 +1,5 @@
 package com.polidea.rxandroidble2;
 
-import android.bluetooth.BluetoothDevice;
-
 import com.polidea.rxandroidble2.internal.server.RxBleServerConnectionInternal;
 
 import java.util.UUID;
@@ -12,12 +10,12 @@ import io.reactivex.Flowable;
 
 @ServerTransactionScope
 public class NotificationSetupTransactionImpl implements NotificationSetupTransaction {
-    private final BluetoothDevice device;
+    private final RxBleDevice device;
     private final RxBleServerConnectionInternal connection;
     private final UUID characteristic;
     @Inject
     public NotificationSetupTransactionImpl(
-            BluetoothDevice device,
+            RxBleDevice device,
             RxBleServerConnectionInternal connection,
             UUID characteristic
     ) {
@@ -27,7 +25,7 @@ public class NotificationSetupTransactionImpl implements NotificationSetupTransa
     }
 
     @Override
-    public BluetoothDevice getDevice() {
+    public RxBleDevice getDevice() {
         return device;
     }
 

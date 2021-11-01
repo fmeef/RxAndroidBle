@@ -1,6 +1,5 @@
 package com.polidea.rxandroidble2.internal.server;
 
-import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothGattCharacteristic;
 import android.bluetooth.BluetoothGattDescriptor;
 import android.util.Pair;
@@ -9,6 +8,7 @@ import androidx.annotation.NonNull;
 
 import com.jakewharton.rxrelay2.PublishRelay;
 import com.polidea.rxandroidble2.RxBleConnection;
+import com.polidea.rxandroidble2.RxBleDevice;
 import com.polidea.rxandroidble2.RxBleServerConnection;
 import com.polidea.rxandroidble2.ServerConnectionScope;
 import com.polidea.rxandroidble2.exceptions.BleGattServerException;
@@ -63,14 +63,14 @@ public interface RxBleServerConnectionInternal extends Disposable {
 
     RxBleServerConnection getConnection();
 
-    Observable<Pair<BluetoothDevice, RxBleConnection.RxBleConnectionState>> getOnConnectionStateChange();
+    Observable<Pair<RxBleDevice, RxBleConnection.RxBleConnectionState>> getOnConnectionStateChange();
 
 
     void prepareDescriptorTransaction(
             BluetoothGattDescriptor descriptor,
             int requestID,
             int offset,
-            BluetoothDevice device,
+            RxBleDevice device,
             PublishRelay<GattServerTransaction<BluetoothGattDescriptor>> valueRelay,
             byte[] value
     );
@@ -79,7 +79,7 @@ public interface RxBleServerConnectionInternal extends Disposable {
             BluetoothGattCharacteristic descriptor,
             int requestID,
             int offset,
-            BluetoothDevice device,
+            RxBleDevice device,
             PublishRelay<GattServerTransaction<UUID>> valueRelay,
             byte[] value
     );
@@ -88,7 +88,7 @@ public interface RxBleServerConnectionInternal extends Disposable {
             int requestID,
             int status,
             byte[] value,
-            BluetoothDevice device
+            RxBleDevice device
     );
 
     class Output<T> {

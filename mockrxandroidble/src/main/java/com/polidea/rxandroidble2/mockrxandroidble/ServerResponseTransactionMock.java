@@ -1,7 +1,6 @@
 package com.polidea.rxandroidble2.mockrxandroidble;
 
-import android.bluetooth.BluetoothDevice;
-
+import com.polidea.rxandroidble2.RxBleDevice;
 import com.polidea.rxandroidble2.ServerResponseTransaction;
 
 import io.reactivex.Completable;
@@ -9,7 +8,7 @@ import io.reactivex.Completable;
 public class ServerResponseTransactionMock implements
         ServerResponseTransaction, Comparable<ServerResponseTransaction> {
 
-    private final BluetoothDevice mDevice;
+    private final RxBleDevice mDevice;
     private final int mOffset;
     private final int mRequestid;
     private final byte[] mValue;
@@ -19,7 +18,7 @@ public class ServerResponseTransactionMock implements
             int requestID,
             int offset,
             byte[] value,
-            BluetoothDevice device,
+            RxBleDevice device,
             boolean returnval
     ) {
         mRequestid = requestID;
@@ -50,7 +49,7 @@ public class ServerResponseTransactionMock implements
     }
 
     @Override
-    public BluetoothDevice getRemoteDevice() {
+    public RxBleDevice getRemoteDevice() {
         return mDevice;
     }
 

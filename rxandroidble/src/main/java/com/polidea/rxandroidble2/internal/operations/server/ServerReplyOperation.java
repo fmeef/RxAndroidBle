@@ -1,9 +1,9 @@
 package com.polidea.rxandroidble2.internal.operations.server;
 
-import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothGattServer;
 import android.os.DeadObjectException;
 
+import com.polidea.rxandroidble2.RxBleDevice;
 import com.polidea.rxandroidble2.exceptions.BleException;
 import com.polidea.rxandroidble2.exceptions.BleGattServerException;
 import com.polidea.rxandroidble2.exceptions.BleGattServerOperationType;
@@ -22,11 +22,11 @@ public class ServerReplyOperation extends QueueOperation<Boolean> {
     private final int offset;
     private final byte[] value;
     private final int status;
-    private final BluetoothDevice device;
+    private final RxBleDevice device;
 
     public ServerReplyOperation(
             BluetoothGattServer bluetoothGattServer,
-            BluetoothDevice device,
+            RxBleDevice device,
             int requestID,
             int status,
             int offset,
@@ -47,7 +47,7 @@ public class ServerReplyOperation extends QueueOperation<Boolean> {
         Observable.fromCallable(new Callable<Boolean>() {
             @Override
             public Boolean call() {
-                return bluetoothGattServer.sendResponse(device, requestID, status, offset, value);
+                return bluetoothGattServer.sendResponse(device.getBluetoothDevice(), requestID, status, offset, value);
             }
         }).subscribe(emitterWrapper);
     }

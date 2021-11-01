@@ -1,9 +1,9 @@
 package com.polidea.rxandroidble2.internal.operations.server
 
-import android.bluetooth.BluetoothDevice
+
 import android.bluetooth.BluetoothGattServer
+import com.polidea.rxandroidble2.RxBleDevice
 import com.polidea.rxandroidble2.internal.serialization.QueueReleaseInterface
-import com.polidea.rxandroidble2.internal.util.MockOperationTimeoutConfiguration
 import io.reactivex.schedulers.TestScheduler
 import spock.lang.Specification
 
@@ -15,7 +15,7 @@ public class ServerReplyOperationTest extends Specification {
     private static long DEFAULT_WRITE_DELAY = 1
     BluetoothGattServer mockGattServer = Mock BluetoothGattServer
     TestScheduler testScheduler = new TestScheduler()
-    BluetoothDevice device
+    RxBleDevice device
     QueueReleaseInterface mockQueueReleaseInterface = Mock QueueReleaseInterface
     ServerReplyOperation objectUnderTest
     byte[] value = [1, 2, 3, 4, 5, 6, 7, 8, 9]
@@ -24,7 +24,7 @@ public class ServerReplyOperationTest extends Specification {
     int offset = 0
 
     def setup() {
-        device = Mock BluetoothDevice
+        device = Mock RxBleDevice
         objectUnderTest = new ServerReplyOperation(
                 mockGattServer,
                 device,
@@ -42,7 +42,7 @@ public class ServerReplyOperationTest extends Specification {
         advanceTimeForWritesToComplete(1)
 
         then:
-        1 * mockGattServer.sendResponse(device, requestID, status, offset, value) >> true
+        1 * mockGattServer.sendResponse(device.getBluetoothDevice(), requestID, status, offset, value) >> true
 
         then:
         testSubscriber.assertNoErrors()
@@ -58,7 +58,7 @@ public class ServerReplyOperationTest extends Specification {
         advanceTimeForWritesToComplete(1)
 
         then:
-        1 * mockGattServer.sendResponse(device, requestID, status, offset, value) >> false
+        1 * mockGattServer.sendResponse(device.getBluetoothDevice(), requestID, status, offset, value) >> false
 
         then:
         testSubscriber.assertValue(false)

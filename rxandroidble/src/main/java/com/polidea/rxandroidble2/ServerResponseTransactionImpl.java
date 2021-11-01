@@ -1,7 +1,5 @@
 package com.polidea.rxandroidble2;
 
-import android.bluetooth.BluetoothDevice;
-
 import androidx.annotation.NonNull;
 
 import com.polidea.rxandroidble2.exceptions.BleException;
@@ -18,7 +16,7 @@ import io.reactivex.functions.Function;
 public class ServerResponseTransactionImpl implements ServerResponseTransaction, Comparable<ServerResponseTransaction> {
     private final ServerOperationQueue operationQueue;
     private final ServerConnectionOperationsProvider operationsProvider;
-    private final BluetoothDevice remoteDevice;
+    private final RxBleDevice remoteDevice;
     private final byte[] value;
     private final int requestID;
     private final int offset;
@@ -28,7 +26,7 @@ public class ServerResponseTransactionImpl implements ServerResponseTransaction,
             ServerOperationQueue operationQueue,
             ServerConnectionOperationsProvider operationsProvider,
             ServerTransactionComponent.TransactionConfig config,
-            BluetoothDevice device
+            RxBleDevice device
     ) {
         this.operationQueue = operationQueue;
         this.operationsProvider = operationsProvider;
@@ -50,7 +48,7 @@ public class ServerResponseTransactionImpl implements ServerResponseTransaction,
 
     @Override
     public Completable sendReply(byte[] value, int status) {
-        RxBleLog.d("sendReply to remote: " + remoteDevice.getAddress());
+        RxBleLog.d("sendReply to remote: " + remoteDevice.getMacAddress());
         return operationQueue.queue(operationsProvider.provideReplyOperation(
                 remoteDevice,
                 requestID,
@@ -81,7 +79,7 @@ public class ServerResponseTransactionImpl implements ServerResponseTransaction,
     }
 
     @Override
-    public BluetoothDevice getRemoteDevice() {
+    public RxBleDevice getRemoteDevice() {
         return remoteDevice;
     }
 

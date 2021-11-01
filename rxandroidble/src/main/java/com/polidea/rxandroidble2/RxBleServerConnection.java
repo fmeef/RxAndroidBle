@@ -1,7 +1,5 @@
 package com.polidea.rxandroidble2;
 
-import android.bluetooth.BluetoothDevice;
-
 import java.util.UUID;
 
 import io.reactivex.Completable;
@@ -14,9 +12,9 @@ import io.reactivex.disposables.Disposable;
  * BLE connection handle for a single devices connected to the GATT server
  */
 public interface RxBleServerConnection extends Disposable {
-    Completable setupNotifications(UUID characteristic, Flowable<byte[]> notifications, BluetoothDevice device);
+    Completable setupNotifications(UUID characteristic, Flowable<byte[]> notifications, RxBleDevice device);
 
-    Completable setupIndication(UUID characteristic, Flowable<byte[]> indications, BluetoothDevice device);
+    Completable setupIndication(UUID characteristic, Flowable<byte[]> indications, RxBleDevice device);
 
     Single<NotificationSetupTransaction> awaitNotifications(UUID characteristic);
 
@@ -26,11 +24,11 @@ public interface RxBleServerConnection extends Disposable {
 
     Observable<ServerResponseTransaction> getOnDescriptorWriteRequest(UUID characteristic, UUID descriptor);
 
-    Completable disconnect(BluetoothDevice device);
+    Completable disconnect(RxBleDevice device);
 
-    Observable<BluetoothDevice> observeDisconnect();
+    Observable<RxBleDevice> observeDisconnect();
 
-    Observable<BluetoothDevice> observeConnect();
+    Observable<RxBleDevice> observeConnect();
 
 }
 

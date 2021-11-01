@@ -1,7 +1,5 @@
 package com.polidea.rxandroidble2;
 
-import android.bluetooth.BluetoothDevice;
-
 import io.reactivex.Completable;
 
 public interface ServerResponseTransaction {
@@ -10,6 +8,6 @@ public interface ServerResponseTransaction {
     String toString();
     Completable sendReply(byte[] value, int status);
     byte[] getValue();
-    BluetoothDevice getRemoteDevice();
+    RxBleDevice getRemoteDevice();
     int getOffset();
 }

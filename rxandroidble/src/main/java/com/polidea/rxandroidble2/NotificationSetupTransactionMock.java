@@ -1,20 +1,18 @@
 package com.polidea.rxandroidble2;
 
-import android.bluetooth.BluetoothDevice;
-
 import io.reactivex.Completable;
 import io.reactivex.Flowable;
 
 public class NotificationSetupTransactionMock implements NotificationSetupTransaction {
 
-    private final BluetoothDevice device;
+    private final RxBleDevice device;
 
-    public NotificationSetupTransactionMock(BluetoothDevice device) {
+    public NotificationSetupTransactionMock(RxBleDevice device) {
         this.device = device;
     }
 
     @Override
-    public BluetoothDevice getDevice() {
+    public RxBleDevice getDevice() {
         return device;
     }
 

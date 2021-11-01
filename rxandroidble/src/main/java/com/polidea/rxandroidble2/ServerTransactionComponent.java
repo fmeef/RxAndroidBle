@@ -1,7 +1,5 @@
 package com.polidea.rxandroidble2;
 
-import android.bluetooth.BluetoothDevice;
-
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
@@ -27,7 +25,7 @@ public interface ServerTransactionComponent {
         ServerTransactionComponent build();
 
         @BindsInstance Builder config(TransactionConfig config);
-        @BindsInstance Builder device(BluetoothDevice device);
+        @BindsInstance Builder device(RxBleDevice device);
         @BindsInstance Builder characteristic(UUID characteristic);
     }
 

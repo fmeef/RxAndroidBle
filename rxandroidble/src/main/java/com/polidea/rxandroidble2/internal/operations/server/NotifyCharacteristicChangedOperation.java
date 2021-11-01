@@ -1,10 +1,10 @@
 package com.polidea.rxandroidble2.internal.operations.server;
 
-import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothGattCharacteristic;
 import android.bluetooth.BluetoothGattServer;
 import android.os.DeadObjectException;
 
+import com.polidea.rxandroidble2.RxBleDevice;
 import com.polidea.rxandroidble2.exceptions.BleException;
 import com.polidea.rxandroidble2.exceptions.BleGattServerException;
 import com.polidea.rxandroidble2.exceptions.BleGattServerOperationType;
@@ -27,7 +27,7 @@ public class NotifyCharacteristicChangedOperation extends QueueOperation<Integer
     private final RxBleServerConnectionInternal connection;
     private final byte[] value;
     private final boolean isIndication;
-    private final BluetoothDevice device;
+    private final RxBleDevice device;
 
 
     public NotifyCharacteristicChangedOperation(
@@ -37,7 +37,7 @@ public class NotifyCharacteristicChangedOperation extends QueueOperation<Integer
             RxBleServerConnectionInternal connection,
             byte[] value,
             boolean isindication,
-            BluetoothDevice device
+            RxBleDevice device
             ) {
         this.server = server;
         this.characteristic = characteristic;
@@ -88,7 +88,7 @@ public class NotifyCharacteristicChangedOperation extends QueueOperation<Integer
                     .subscribe(emitterWrapper);
 
             characteristic.setValue(value);
-            if (!server.notifyCharacteristicChanged(device, characteristic, isIndication)) {
+            if (!server.notifyCharacteristicChanged(device.getBluetoothDevice(), characteristic, isIndication)) {
                 emitterWrapper.onError(new BleGattServerException(
                         BleGattServerOperationType.CONNECTION_STATE,
                         "NotifyCharacteristicChangedOperation failed"

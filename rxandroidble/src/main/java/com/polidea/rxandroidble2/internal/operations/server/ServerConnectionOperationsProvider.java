@@ -1,23 +1,24 @@
 package com.polidea.rxandroidble2.internal.operations.server;
 
-import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothGattCharacteristic;
+
+import com.polidea.rxandroidble2.RxBleDevice;
 
 public interface ServerConnectionOperationsProvider {
     ServerReplyOperation provideReplyOperation(
-            BluetoothDevice device,
+            RxBleDevice device,
             int requestID,
             int status,
             int offset,
             byte[] value
     );
 
-    ServerDisconnectOperation provideDisconnectOperation(BluetoothDevice device);
+    ServerDisconnectOperation provideDisconnectOperation(RxBleDevice device);
 
     NotifyCharacteristicChangedOperation provideNotifyOperation(
             BluetoothGattCharacteristic characteristic,
             byte[] value,
             boolean isIndication,
-            BluetoothDevice device
+            RxBleDevice device
     );
 }

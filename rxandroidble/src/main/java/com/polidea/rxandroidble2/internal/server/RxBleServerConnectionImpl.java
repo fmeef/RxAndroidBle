@@ -22,6 +22,7 @@ import com.polidea.rxandroidble2.ClientComponent;
 import com.polidea.rxandroidble2.NotificationSetupTransaction;
 import com.polidea.rxandroidble2.RxBleClient;
 import com.polidea.rxandroidble2.RxBleConnection;
+import com.polidea.rxandroidble2.RxBleDevice;
 import com.polidea.rxandroidble2.RxBleServerConnection;
 import com.polidea.rxandroidble2.ServerConfig;
 import com.polidea.rxandroidble2.ServerConnectionScope;
@@ -30,6 +31,7 @@ import com.polidea.rxandroidble2.ServerTransactionFactory;
 import com.polidea.rxandroidble2.exceptions.BleException;
 import com.polidea.rxandroidble2.exceptions.BleGattServerException;
 import com.polidea.rxandroidble2.exceptions.BleGattServerOperationType;
+import com.polidea.rxandroidble2.internal.RxBleDeviceProvider;
 import com.polidea.rxandroidble2.internal.RxBleLog;
 import com.polidea.rxandroidble2.internal.operations.server.NotifyCharacteristicChangedOperation;
 import com.polidea.rxandroidble2.internal.operations.server.ServerConnectionOperationsProvider;
@@ -72,6 +74,7 @@ public class RxBleServerConnectionImpl implements RxBleServerConnectionInternal,
     private final RxBleServerState serverState;
     private final ServerConnectionOperationsProvider operationsProvider;
     private final ServerOperationQueue operationQueue;
+    private final RxBleDeviceProvider deviceProvider;
     private final MultiIndex<Integer, BluetoothGattCharacteristic, RxBleServerConnectionInternal.LongWriteClosableOutput<byte[]>>
             characteristicMultiIndex = new MultiIndexImpl<>();
     private final MultiIndex<Integer, BluetoothGattDescriptor, RxBleServerConnectionInternal.LongWriteClosableOutput<byte[]>>
@@ -94,7 +97,7 @@ public class RxBleServerConnectionImpl implements RxBleServerConnectionInternal,
             new RxBleServerConnectionInternal.Output<>();
     private final RxBleServerConnectionInternal.Output<GattServerTransaction<BluetoothGattDescriptor>> writeDescriptorOutput =
             new RxBleServerConnectionInternal.Output<>();
-    private final PublishRelay<Pair<BluetoothDevice, RxBleConnection.RxBleConnectionState>> connectionStatePublishRelay =
+    private final PublishRelay<Pair<RxBleDevice, RxBleConnection.RxBleConnectionState>> connectionStatePublishRelay =
             PublishRelay.create();
     private final RxBleServerConnectionInternal.Output<Integer> notificationPublishRelay =
             new RxBleServerConnectionInternal.Output<>();
@@ -147,13 +150,15 @@ public class RxBleServerConnectionImpl implements RxBleServerConnectionInternal,
                                                 final BluetoothGattCharacteristic characteristic) {
             super.onCharacteristicReadRequest(device, requestId, offset, characteristic);
 
+            final RxBleDevice rxBleDevice = deviceProvider.getBleDevice(device.getAddress());
+
             if (getReadCharacteristicOutput().hasObservers()) {
 
                 prepareCharacteristicTransaction(
                         characteristic,
                         requestId,
                         offset,
-                        device,
+                        rxBleDevice,
                         getReadCharacteristicOutput().valueRelay,
                         null
                 );
@@ -172,6 +177,8 @@ public class RxBleServerConnectionImpl implements RxBleServerConnectionInternal,
             RxBleLog.d("onCharacteristicWriteRequest characteristic: " + characteristic.getUuid()
                     + " device: " + device.getAddress());
 
+            final RxBleDevice rxBleDevice = deviceProvider.getBleDevice(device.getAddress());
+
             if (preparedWrite) {
                 RxBleLog.d("characteristic long write");
                 RxBleServerConnectionInternal.Output<byte[]> longWriteOuput
@@ -182,7 +189,7 @@ public class RxBleServerConnectionImpl implements RxBleServerConnectionInternal,
                         characteristic,
                         requestId,
                         offset,
-                        device,
+                        rxBleDevice,
                         getWriteCharacteristicOutput().valueRelay,
                         value
                 );
@@ -197,12 +204,14 @@ public class RxBleServerConnectionImpl implements RxBleServerConnectionInternal,
             super.onDescriptorReadRequest(device, requestId, offset, descriptor);
             RxBleLog.d("onDescriptorReadRequest: " + descriptor.getUuid());
 
+            final RxBleDevice rxBleDevice = deviceProvider.getBleDevice(device.getAddress());
+
             if (descriptor.getUuid().compareTo(RxBleClient.CLIENT_CONFIG) == 0) {
                 blindAck(
                         requestId,
                         BluetoothGatt.GATT_SUCCESS,
                         serverState.getNotificationValue(descriptor.getCharacteristic().getUuid()),
-                        device
+                        rxBleDevice
                 )
                         .subscribe();
             }
@@ -212,7 +221,7 @@ public class RxBleServerConnectionImpl implements RxBleServerConnectionInternal,
                         descriptor,
                         requestId,
                         offset,
-                        device,
+                        rxBleDevice,
                         getReadDescriptorOutput().valueRelay,
                         null
                 );
@@ -230,6 +239,7 @@ public class RxBleServerConnectionImpl implements RxBleServerConnectionInternal,
             super.onDescriptorWriteRequest(device, requestId, descriptor, preparedWrite, responseNeeded, offset, value);
             RxBleLog.d("onDescriptorWriteRequest: " + descriptor.getUuid());
 
+            final RxBleDevice rxBleDevice = deviceProvider.getBleDevice(device.getAddress());
             if (preparedWrite) {
                 RxBleLog.d("onDescriptorWriteRequest: invoking preparedWrite");
                 RxBleServerConnectionInternal.Output<byte[]> longWriteOutput
@@ -238,7 +248,7 @@ public class RxBleServerConnectionImpl implements RxBleServerConnectionInternal,
             }  else {
                 if (descriptor.getUuid().compareTo(RxBleClient.CLIENT_CONFIG) == 0) {
                     serverState.setNotifications(descriptor.getCharacteristic().getUuid(), value);
-                    blindAck(requestId, BluetoothGatt.GATT_SUCCESS, null, device)
+                    blindAck(requestId, BluetoothGatt.GATT_SUCCESS, null, rxBleDevice)
                             .subscribe();
                 }
 
@@ -247,7 +257,7 @@ public class RxBleServerConnectionImpl implements RxBleServerConnectionInternal,
                             descriptor,
                             requestId,
                             offset,
-                            device,
+                            rxBleDevice,
                             writeDescriptorOutput.valueRelay,
                             value
                     );
@@ -310,7 +320,8 @@ public class RxBleServerConnectionImpl implements RxBleServerConnectionInternal,
             ServerTransactionFactory serverTransactionFactory,
             ServerConfig config,
             Context context,
-            RxBleServerState serverState
+            RxBleServerState serverState,
+            RxBleDeviceProvider deviceProvider
     ) {
         this.connectionScheduler = connectionScheduler;
         this.operationsProvider = operationsProvider;
@@ -321,6 +332,7 @@ public class RxBleServerConnectionImpl implements RxBleServerConnectionInternal,
         this.context = context;
         this.callbackScheduler = callbackScheduler;
         this.serverState = serverState;
+        this.deviceProvider = deviceProvider;
         initializeServer(config);
     }
 
@@ -355,7 +367,7 @@ public class RxBleServerConnectionImpl implements RxBleServerConnectionInternal,
      * Does NOT emit errors even if status != GATT_SUCCESS.
      */
     @Override
-    public Observable<Pair<BluetoothDevice, RxBleConnection.RxBleConnectionState>> getOnConnectionStateChange() {
+    public Observable<Pair<RxBleDevice, RxBleConnection.RxBleConnectionState>> getOnConnectionStateChange() {
         return connectionStatePublishRelay.delay(0, TimeUnit.SECONDS, callbackScheduler);
     }
 
@@ -571,7 +583,7 @@ public class RxBleServerConnectionImpl implements RxBleServerConnectionInternal,
     }
 
     @Override
-    public Completable setupIndication(final UUID ch, final Flowable<byte[]> indications, final BluetoothDevice device) {
+    public Completable setupIndication(final UUID ch, final Flowable<byte[]> indications, final RxBleDevice device) {
         return Single.fromCallable(new Callable<Completable>() {
 
             @Override
@@ -641,7 +653,7 @@ public class RxBleServerConnectionImpl implements RxBleServerConnectionInternal,
     }
 
     @Override
-    public Completable setupNotifications(final UUID ch, final Flowable<byte[]> notifications, final BluetoothDevice device) {
+    public Completable setupNotifications(final UUID ch, final Flowable<byte[]> notifications, final RxBleDevice device) {
         return Single.fromCallable(new Callable<Completable>() {
             @Override
             public Completable call() {
@@ -667,7 +679,7 @@ public class RxBleServerConnectionImpl implements RxBleServerConnectionInternal,
             final BluetoothGattCharacteristic characteristic,
             final Flowable<byte[]> notifications,
             final boolean isIndication,
-            final BluetoothDevice device
+            final RxBleDevice device
     ) {
         return Single.fromCallable(new Callable<Completable>() {
             @Override
@@ -748,20 +760,20 @@ public class RxBleServerConnectionImpl implements RxBleServerConnectionInternal,
     }
 
     @Override
-    public Observable<BluetoothDevice> observeDisconnect() {
+    public Observable<RxBleDevice> observeDisconnect() {
         return connectionStatePublishRelay
-                .filter(new Predicate<Pair<BluetoothDevice, RxBleConnection.RxBleConnectionState>>() {
+                .filter(new Predicate<Pair<RxBleDevice, RxBleConnection.RxBleConnectionState>>() {
                     @Override
                     public boolean test(
-                            @NonNull Pair<BluetoothDevice, RxBleConnection.RxBleConnectionState> pair
+                            @NonNull Pair<RxBleDevice, RxBleConnection.RxBleConnectionState> pair
                     ) {
                         return pair.second == RxBleConnection.RxBleConnectionState.DISCONNECTED;
                     }
                 })
-                .map(new Function<Pair<BluetoothDevice, RxBleConnection.RxBleConnectionState>, BluetoothDevice>() {
+                .map(new Function<Pair<RxBleDevice, RxBleConnection.RxBleConnectionState>, RxBleDevice>() {
                     @Override
-                    public BluetoothDevice apply(
-                            @NonNull Pair<BluetoothDevice, RxBleConnection.RxBleConnectionState> pair) {
+                    public RxBleDevice apply(
+                            @NonNull Pair<RxBleDevice, RxBleConnection.RxBleConnectionState> pair) {
                         return pair.first;
                     }
                 })
@@ -769,20 +781,20 @@ public class RxBleServerConnectionImpl implements RxBleServerConnectionInternal,
     }
 
     @Override
-    public Observable<BluetoothDevice> observeConnect() {
+    public Observable<RxBleDevice> observeConnect() {
         return connectionStatePublishRelay
-                .filter(new Predicate<Pair<BluetoothDevice, RxBleConnection.RxBleConnectionState>>() {
+                .filter(new Predicate<Pair<RxBleDevice, RxBleConnection.RxBleConnectionState>>() {
                     @Override
                     public boolean test(
-                            @NonNull Pair<BluetoothDevice, RxBleConnection.RxBleConnectionState> pair
+                            @NonNull Pair<RxBleDevice, RxBleConnection.RxBleConnectionState> pair
                     ) {
                         return pair.second == RxBleConnection.RxBleConnectionState.CONNECTED;
                     }
                 })
-                .map(new Function<Pair<BluetoothDevice, RxBleConnection.RxBleConnectionState>, BluetoothDevice>() {
+                .map(new Function<Pair<RxBleDevice, RxBleConnection.RxBleConnectionState>, RxBleDevice>() {
                     @Override
-                    public BluetoothDevice apply(
-                            @NonNull Pair<BluetoothDevice, RxBleConnection.RxBleConnectionState> pair
+                    public RxBleDevice apply(
+                            @NonNull Pair<RxBleDevice, RxBleConnection.RxBleConnectionState> pair
                     ) {
                         return pair.first;
                     }
@@ -839,7 +851,7 @@ public class RxBleServerConnectionImpl implements RxBleServerConnectionInternal,
     }
 
     @Override
-    public Completable disconnect(final BluetoothDevice device) {
+    public Completable disconnect(final RxBleDevice device) {
         return operationQueue.queue(operationsProvider.provideDisconnectOperation(device)).ignoreElements();
     }
 
@@ -847,7 +859,7 @@ public class RxBleServerConnectionImpl implements RxBleServerConnectionInternal,
     public void prepareDescriptorTransaction(
             final BluetoothGattDescriptor descriptor,
             int requestID,
-            int offset, BluetoothDevice device,
+            int offset, RxBleDevice device,
             PublishRelay<GattServerTransaction<BluetoothGattDescriptor>> valueRelay,
             byte[] value
     ) {
@@ -866,7 +878,7 @@ public class RxBleServerConnectionImpl implements RxBleServerConnectionInternal,
     public void prepareCharacteristicTransaction(
             final BluetoothGattCharacteristic characteristic,
             int requestID,
-            int offset, BluetoothDevice device,
+            int offset, RxBleDevice device,
             PublishRelay<GattServerTransaction<UUID>> valueRelay,
             byte[] value
     ) {
@@ -881,7 +893,7 @@ public class RxBleServerConnectionImpl implements RxBleServerConnectionInternal,
     }
 
     @Override
-    public Observable<Boolean> blindAck(int requestID, int status, byte[] value, final BluetoothDevice device) {
+    public Observable<Boolean> blindAck(int requestID, int status, byte[] value, final RxBleDevice device) {
         return operationQueue.queue(operationsProvider.provideReplyOperation(
                 device,
                 requestID,

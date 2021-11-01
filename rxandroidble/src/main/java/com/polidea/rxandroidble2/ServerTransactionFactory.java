@@ -17,4 +17,17 @@ public interface ServerTransactionFactory {
             BluetoothDevice device,
             UUID characteristic
     );
+    ServerResponseTransaction prepareCharacteristicTransaction(
+            byte[] value,
+            int requestID,
+            int offset,
+            RxBleDevice device,
+            UUID characteristic
+    );
+
+    NotificationSetupTransaction prepareNotificationSetupTransaction(
+            RxBleDevice device,
+            UUID characteristic
+    );
+
 }
