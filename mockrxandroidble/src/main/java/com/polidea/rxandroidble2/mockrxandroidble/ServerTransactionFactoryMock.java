@@ -4,6 +4,7 @@ import android.bluetooth.BluetoothDevice;
 
 import com.polidea.rxandroidble2.NotificationSetupTransaction;
 import com.polidea.rxandroidble2.NotificationSetupTransactionMock;
+import com.polidea.rxandroidble2.RxBleDevice;
 import com.polidea.rxandroidble2.ServerResponseTransaction;
 import com.polidea.rxandroidble2.ServerTransactionFactory;
 
@@ -13,7 +14,9 @@ public class ServerTransactionFactoryMock implements ServerTransactionFactory {
 
     private final boolean response;
 
-    public ServerTransactionFactoryMock(boolean response) {
+    public ServerTransactionFactoryMock(
+            boolean response
+    ) {
         this.response = response;
     }
 
@@ -25,7 +28,10 @@ public class ServerTransactionFactoryMock implements ServerTransactionFactory {
             final BluetoothDevice device,
             final UUID ch
     ) {
-        return new ServerResponseTransactionMock(requestID, offset, value, device, response);
+        final RxBleDevice d = new RxBleDeviceMock.Builder()
+                .bluetoothDevice(device)
+                .build();
+        return new ServerResponseTransactionMock(requestID, offset, value, d, response);
     }
 
     @Override
@@ -33,6 +39,28 @@ public class ServerTransactionFactoryMock implements ServerTransactionFactory {
             final BluetoothDevice device,
             final UUID characteristic
             ) {
+        final RxBleDevice d = new RxBleDeviceMock.Builder()
+                .bluetoothDevice(device)
+                .build();
+        return new NotificationSetupTransactionMock(d);
+    }
+
+    @Override
+    public ServerResponseTransaction prepareCharacteristicTransaction(
+            byte[] value,
+            int requestID,
+            int offset,
+            RxBleDevice device,
+            UUID characteristic
+    ) {
+        return new ServerResponseTransactionMock(requestID, offset, value, device, response);
+    }
+
+    @Override
+    public NotificationSetupTransaction prepareNotificationSetupTransaction(
+            RxBleDevice device,
+            UUID characteristic
+    ) {
         return new NotificationSetupTransactionMock(device);
     }
 }

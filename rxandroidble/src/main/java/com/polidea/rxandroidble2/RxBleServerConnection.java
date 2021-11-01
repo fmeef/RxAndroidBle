@@ -24,6 +24,10 @@ public interface RxBleServerConnection extends Disposable {
 
     Observable<ServerResponseTransaction> getOnDescriptorWriteRequest(UUID characteristic, UUID descriptor);
 
+    Observable<ServerResponseTransaction> getOnCharacteristicWriteRequest(UUID characteristic);
+
+    Observable<ServerResponseTransaction> getOnDescriptorReadRequest(UUID characteristic, UUID descriptor);
+
     Completable disconnect(RxBleDevice device);
 
     Observable<RxBleDevice> observeDisconnect();

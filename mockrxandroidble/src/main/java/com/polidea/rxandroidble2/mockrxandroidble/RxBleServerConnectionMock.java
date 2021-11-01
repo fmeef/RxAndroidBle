@@ -14,6 +14,7 @@ import com.jakewharton.rxrelay2.PublishRelay;
 import com.polidea.rxandroidble2.NotificationSetupTransaction;
 import com.polidea.rxandroidble2.RxBleClient;
 import com.polidea.rxandroidble2.RxBleConnection;
+import com.polidea.rxandroidble2.RxBleDevice;
 import com.polidea.rxandroidble2.RxBleServerConnection;
 import com.polidea.rxandroidble2.ServerResponseTransaction;
 import com.polidea.rxandroidble2.exceptions.BleDisconnectedException;
@@ -160,12 +161,12 @@ public class RxBleServerConnectionMock implements RxBleServerConnection, RxBleSe
     }
 
     @Override
-    public Completable setupNotifications(UUID ch, Flowable<byte[]> notifications, BluetoothDevice device) {
+    public Completable setupNotifications(UUID ch, Flowable<byte[]> notifications, RxBleDevice device) {
         return Completable.complete();
     }
 
     @Override
-    public Completable setupIndication(UUID ch, Flowable<byte[]> indications, BluetoothDevice device) {
+    public Completable setupIndication(UUID ch, Flowable<byte[]> indications, RxBleDevice device) {
         return Completable.complete();
     }
 
@@ -207,6 +208,16 @@ public class RxBleServerConnectionMock implements RxBleServerConnection, RxBleSe
     }
 
     @Override
+    public Observable<ServerResponseTransaction> getOnCharacteristicWriteRequest(UUID characteristic) {
+        return Observable.never();
+    }
+
+    @Override
+    public Observable<ServerResponseTransaction> getOnDescriptorReadRequest(UUID characteristic, UUID descriptor) {
+        return Observable.never();
+    }
+
+    @Override
     public Observable<Integer> getOnNotification() {
         if (notificationResults != null) {
             return Observable.fromIterable(notificationResults);
@@ -216,23 +227,23 @@ public class RxBleServerConnectionMock implements RxBleServerConnection, RxBleSe
     }
 
     @Override
-    public Completable disconnect(final BluetoothDevice device) {
+    public Completable disconnect(final RxBleDevice device) {
         return Completable.fromAction(new Action() {
             @Override
             public void run() throws Exception {
-                disconnectionBehaviorRelay.accept(new BleDisconnectedException(device.getAddress(), 0));
+                disconnectionBehaviorRelay.accept(new BleDisconnectedException(device.getMacAddress(), 0));
             }
         });
     }
 
     @Override
-    public Observable<Pair<BluetoothDevice, RxBleConnection.RxBleConnectionState>> getOnConnectionStateChange() {
+    public Observable<Pair<RxBleDevice, RxBleConnection.RxBleConnectionState>> getOnConnectionStateChange() {
         return null;
     }
 
     @Override
-    public Observable<Boolean> blindAck(int requestID, int status, byte[] value, BluetoothDevice device) {
-        return null;
+    public Observable<Boolean> blindAck(int requestID, int status, byte[] value, RxBleDevice device) {
+        return Observable.never();
     }
 
     @NonNull
@@ -359,7 +370,7 @@ public class RxBleServerConnectionMock implements RxBleServerConnection, RxBleSe
             final BluetoothGattDescriptor descriptor,
             int requestID,
             int offset,
-            BluetoothDevice device,
+            RxBleDevice device,
             PublishRelay<GattServerTransaction<BluetoothGattDescriptor>> valueRelay,
             byte[] value
     ) {
@@ -378,7 +389,7 @@ public class RxBleServerConnectionMock implements RxBleServerConnection, RxBleSe
             final BluetoothGattCharacteristic descriptor,
             int requestID,
             int offset,
-            BluetoothDevice device,
+            RxBleDevice device,
             final PublishRelay<GattServerTransaction<UUID>> valueRelay,
             byte[] value) {
         final ServerResponseTransaction transaction = serverTransactionFactory.prepareCharacteristicTransaction(
@@ -398,12 +409,12 @@ public class RxBleServerConnectionMock implements RxBleServerConnection, RxBleSe
     }
 
     @Override
-    public Observable<BluetoothDevice> observeDisconnect() {
+    public Observable<RxBleDevice> observeDisconnect() {
         return Observable.never();
     }
 
     @Override
-    public Observable<BluetoothDevice> observeConnect() {
+    public Observable<RxBleDevice> observeConnect() {
         return Observable.never();
     }
 

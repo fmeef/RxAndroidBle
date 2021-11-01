@@ -820,6 +820,50 @@ public class RxBleServerConnectionImpl implements RxBleServerConnectionInternal,
                 .delay(0, TimeUnit.SECONDS, callbackScheduler);
     }
 
+
+    @Override
+    public Observable<ServerResponseTransaction> getOnCharacteristicWriteRequest(final UUID characteristic) {
+        return withDisconnectionHandling(getWriteCharacteristicOutput())
+                .filter(new Predicate<GattServerTransaction<UUID>>() {
+                    @Override
+                    public boolean test(@NonNull GattServerTransaction<UUID> uuidGattServerTransaction) {
+                        return uuidGattServerTransaction.getPayload().compareTo(characteristic) == 0;
+                    }
+                })
+                .map(new Function<GattServerTransaction<UUID>, ServerResponseTransaction>() {
+                    @Override
+                    public ServerResponseTransaction apply(@NonNull GattServerTransaction<UUID> uuidGattServerTransaction) {
+                        return uuidGattServerTransaction.getTransaction();
+                    }
+                })
+                .delay(0, TimeUnit.SECONDS, callbackScheduler);
+    }
+
+    @Override
+    public Observable<ServerResponseTransaction> getOnDescriptorReadRequest(
+            final UUID characteristic,
+            final UUID descriptor
+    ) {
+        return withDisconnectionHandling(getWriteDescriptorOutput())
+                .filter(new Predicate<GattServerTransaction<BluetoothGattDescriptor>>() {
+                    @Override
+                    public boolean test(@NonNull GattServerTransaction<BluetoothGattDescriptor> transaction) {
+                        return transaction.getPayload().getUuid().compareTo(descriptor) == 0
+                                && transaction.getPayload().getCharacteristic().getUuid()
+                                .compareTo(characteristic) == 0;
+                    }
+                })
+                .map(new Function<GattServerTransaction<BluetoothGattDescriptor>, ServerResponseTransaction>() {
+                    @Override
+                    public ServerResponseTransaction apply(
+                            @NonNull GattServerTransaction<BluetoothGattDescriptor> transaction
+                    ) {
+                        return transaction.getTransaction();
+                    }
+                })
+                .delay(0, TimeUnit.SECONDS, callbackScheduler);
+    }
+
     @Override
     public Observable<ServerResponseTransaction> getOnDescriptorWriteRequest(
             final UUID characteristicuuid,
