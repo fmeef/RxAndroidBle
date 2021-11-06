@@ -70,6 +70,7 @@ public class RxBleServerConnectionImpl implements RxBleServerConnectionInternal,
     private final BluetoothManager bluetoothManager;
     private final AtomicReference<BluetoothGattServer> server = new AtomicReference<>(null);
     private final Context context;
+    private final Scheduler connectionScheduler;
     private final RxBleServerState serverState;
     private final ServerConnectionOperationsProvider operationsProvider;
     private final ServerOperationQueue operationQueue;
@@ -311,7 +312,8 @@ public class RxBleServerConnectionImpl implements RxBleServerConnectionInternal,
 
     @Inject
     public RxBleServerConnectionImpl(
-            @Named(ClientComponent.NamedSchedulers.SERVER_CALLBACKS) Scheduler callbackScheduler,
+            @Named(ClientComponent.NamedSchedulers.BLUETOOTH_INTERACTION) Scheduler connectionScheduler,
+            @Named(ClientComponent.NamedSchedulers.BLUETOOTH_CALLBACKS) Scheduler callbackScheduler,
             ServerConnectionOperationsProvider operationsProvider,
             ServerOperationQueue operationQueue,
             BluetoothManager bluetoothManager,
@@ -321,6 +323,7 @@ public class RxBleServerConnectionImpl implements RxBleServerConnectionInternal,
             RxBleServerState serverState,
             RxBleDeviceProvider deviceProvider
     ) {
+        this.connectionScheduler = connectionScheduler;
         this.operationsProvider = operationsProvider;
         this.operationQueue = operationQueue;
         this.bluetoothManager = bluetoothManager;
@@ -446,6 +449,7 @@ public class RxBleServerConnectionImpl implements RxBleServerConnectionInternal,
                             return both;
                         }
                     })
+                    .subscribeOn(connectionScheduler)
                     .toSingle()
                     .subscribe(output.out);
             characteristicMultiIndex.put(requestid, output);
@@ -470,6 +474,7 @@ public class RxBleServerConnectionImpl implements RxBleServerConnectionInternal,
                             return both;
                         }
                     })
+                    .subscribeOn(connectionScheduler)
                     .toSingle()
                     .subscribe(output.out);
             descriptorMultiIndex.put(requestid, output);
@@ -560,7 +565,7 @@ public class RxBleServerConnectionImpl implements RxBleServerConnectionInternal,
                         if (output != null) {
                             output.valueRelay.onComplete();
                             characteristicMultiIndex.remove(integer);
-                            return output.out.delay(0, TimeUnit.SECONDS, callbackScheduler);
+                            return output.out.delay(0, TimeUnit.SECONDS, connectionScheduler);
                         }
                         return Single.never();
                     }
@@ -688,6 +693,7 @@ public class RxBleServerConnectionImpl implements RxBleServerConnectionInternal,
                     ));
                 }
                 return notifications
+                        .subscribeOn(connectionScheduler)
                         .delay(new Function<byte[], Publisher<byte[]>>() {
                             @Override
                             public Publisher<byte[]> apply(@io.reactivex.annotations.NonNull byte[] bytes) {
@@ -949,6 +955,7 @@ public class RxBleServerConnectionImpl implements RxBleServerConnectionInternal,
     @Override
     public void dispose() {
         getBluetoothGattServer().close();
+        connectionScheduler.shutdown();
         callbackScheduler.shutdown();
         compositeDisposable.dispose();
     }
