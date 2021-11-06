@@ -175,7 +175,7 @@ public class RxBleServerConnectionImpl implements RxBleServerConnectionInternal,
                                                  final byte[] value) {
             super.onCharacteristicWriteRequest(device, requestId, characteristic, preparedWrite, responseNeeded, offset, value);
             RxBleLog.v("onCharacteristicWriteRequest characteristic: " + characteristic.getUuid()
-                    + " device: " + device.getAddress());
+                    + " device: " + device.getAddress() + " responseNeeded " + responseNeeded);
 
             final RxBleDevice rxBleDevice = deviceProvider.getBleDevice(device.getAddress());
 
@@ -183,6 +183,11 @@ public class RxBleServerConnectionImpl implements RxBleServerConnectionInternal,
                 RxBleLog.v("characteristic long write");
                 RxBleServerConnectionInternal.Output<byte[]> longWriteOuput
                         = openLongWriteCharacteristicOutput(requestId, characteristic);
+
+                if (responseNeeded) {
+                    server.get().sendResponse(device, requestId, BluetoothGatt.GATT_SUCCESS, 0, null);
+                }
+
                 longWriteOuput.valueRelay.accept(value);
             } else if (getWriteCharacteristicOutput().hasObservers()) {
                 prepareCharacteristicTransaction(
@@ -207,13 +212,13 @@ public class RxBleServerConnectionImpl implements RxBleServerConnectionInternal,
             final RxBleDevice rxBleDevice = deviceProvider.getBleDevice(device.getAddress());
 
             if (descriptor.getUuid().compareTo(RxBleClient.CLIENT_CONFIG) == 0) {
-                blindAck(
+                server.get().sendResponse(
+                        device,
                         requestId,
                         BluetoothGatt.GATT_SUCCESS,
-                        serverState.getNotificationValue(descriptor.getCharacteristic().getUuid()),
-                        rxBleDevice
-                )
-                        .subscribe();
+                        offset,
+                        serverState.getNotificationValue(descriptor.getCharacteristic().getUuid())
+                );
             }
 
             if (getReadDescriptorOutput().hasObservers()) {
@@ -223,7 +228,7 @@ public class RxBleServerConnectionImpl implements RxBleServerConnectionInternal,
                         offset,
                         rxBleDevice,
                         getReadDescriptorOutput().valueRelay,
-                        null
+                        new byte[0]
                 );
             }
         }
@@ -244,12 +249,16 @@ public class RxBleServerConnectionImpl implements RxBleServerConnectionInternal,
                 RxBleLog.v("onDescriptorWriteRequest: invoking preparedWrite");
                 RxBleServerConnectionInternal.Output<byte[]> longWriteOutput
                         = openLongWriteDescriptorOutput(requestId, descriptor);
+
+                if (responseNeeded) {
+                    server.get().sendResponse(device, requestId, BluetoothGatt.GATT_SUCCESS, 0, new byte[0]);
+                }
+
                 longWriteOutput.valueRelay.accept(value); //TODO: offset?
             }  else {
                 if (descriptor.getUuid().compareTo(RxBleClient.CLIENT_CONFIG) == 0) {
                     serverState.setNotifications(descriptor.getCharacteristic().getUuid(), value);
-                    blindAck(requestId, BluetoothGatt.GATT_SUCCESS, null, rxBleDevice)
-                            .subscribe();
+                    server.get().sendResponse(device, requestId, BluetoothGatt.GATT_SUCCESS, 0, new byte[0]);
                 }
 
                 if (writeDescriptorOutput.hasObservers()) {
@@ -268,9 +277,10 @@ public class RxBleServerConnectionImpl implements RxBleServerConnectionInternal,
         @Override
         public void onExecuteWrite(final BluetoothDevice device, final int requestId, final boolean execute) {
             super.onExecuteWrite(device, requestId, execute);
+            RxBleLog.v("onExecuteWrite " + requestId + " " + execute);
+            server.get().sendResponse(device, requestId, BluetoothGatt.GATT_SUCCESS, 0, new byte[0]);
             if (execute) {
                 closeLongWriteCharacteristicOutput(requestId);
-
                 resetCharacteristicMap();
                 resetDescriptorMap();
             }
