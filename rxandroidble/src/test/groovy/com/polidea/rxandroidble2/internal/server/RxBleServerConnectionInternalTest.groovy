@@ -71,7 +71,6 @@ public class RxBleServerConnectionInternalTest extends Specification {
 
         objectUnderTest = new RxBleServerConnectionImpl(
                 testScheduler,
-                testScheduler,
                 operationsProvider,
                 dummyQueue,
                 bluetoothManager,

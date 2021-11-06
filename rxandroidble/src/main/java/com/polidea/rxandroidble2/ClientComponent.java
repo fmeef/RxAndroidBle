@@ -78,6 +78,7 @@ public interface ClientComponent {
         public static final String TIMEOUT = "timeout";
         public static final String BLUETOOTH_INTERACTION = "bluetooth_interaction";
         public static final String BLUETOOTH_CALLBACKS = "bluetooth_callbacks";
+        public static final String SERVER_CALLBACKS = "server_callbacks";
 
         private NamedSchedulers() {
 
@@ -247,6 +248,14 @@ public interface ClientComponent {
         @Named(NamedSchedulers.BLUETOOTH_CALLBACKS)
         @ClientScope
         static Scheduler provideBluetoothCallbacksScheduler() {
+            return RxJavaPlugins.createSingleScheduler(new RxBleThreadFactory());
+        }
+
+
+        @Provides
+        @Named(NamedSchedulers.SERVER_CALLBACKS)
+        @ClientScope
+        static Scheduler provideServerCallbackScheduler() {
             return RxJavaPlugins.createSingleScheduler(new RxBleThreadFactory());
         }
 
