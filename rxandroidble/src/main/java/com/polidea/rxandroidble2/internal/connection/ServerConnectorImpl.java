@@ -24,7 +24,7 @@ public class ServerConnectorImpl implements ServerConnector {
 
     @Inject
     public ServerConnectorImpl(
-            final @Named(ClientComponent.NamedSchedulers.SERVER_CALLBACKS) Scheduler callbackScheduler,
+            final @Named(ClientComponent.NamedSchedulers.BLUETOOTH_CALLBACKS) Scheduler callbackScheduler,
             ServerConnectionComponent.Builder connectionComponentBuilder
             ) {
         this.callbackScheduler = callbackScheduler;
