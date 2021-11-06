@@ -15,7 +15,7 @@ public class ServerOperationQueueImpl extends OperationQueueBase implements
 
     @Inject
     public ServerOperationQueueImpl(
-            @Named(ClientComponent.NamedSchedulers.SERVER_INTERACTION) final Scheduler callbackScheduler
+            @Named(ClientComponent.NamedSchedulers.SERVER_CALLBACKS) final Scheduler callbackScheduler
     ) {
         super(callbackScheduler);
     }

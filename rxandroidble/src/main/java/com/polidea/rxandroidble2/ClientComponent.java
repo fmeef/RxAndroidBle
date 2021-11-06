@@ -65,7 +65,6 @@ public interface ClientComponent {
     class NamedExecutors {
 
         public static final String BLUETOOTH_INTERACTION = "executor_bluetooth_interaction";
-        public static final String SERVER_INTERACTION = "executor_server_interaction";
         public static final String CONNECTION_QUEUE = "executor_connection_queue";
 
         private NamedExecutors() {
@@ -80,7 +79,6 @@ public interface ClientComponent {
         public static final String BLUETOOTH_INTERACTION = "bluetooth_interaction";
         public static final String BLUETOOTH_CALLBACKS = "bluetooth_callbacks";
         public static final String SERVER_CALLBACKS = "server_callbacks";
-        public static final String SERVER_INTERACTION = "server_interaction";
 
         private NamedSchedulers() {
 
@@ -240,23 +238,9 @@ public interface ClientComponent {
         }
 
         @Provides
-        @Named(NamedExecutors.SERVER_INTERACTION)
-        @ClientScope
-        static ExecutorService provideServerInteractionExecutorService() {
-            return Executors.newSingleThreadExecutor();
-        }
-
-        @Provides
         @Named(NamedSchedulers.BLUETOOTH_INTERACTION)
         @ClientScope
-        static Scheduler provideBluetoothInteractionScheduler(@Named(NamedExecutors.SERVER_INTERACTION) ExecutorService service) {
-            return Schedulers.from(service);
-        }
-
-        @Provides
-        @Named(NamedSchedulers.SERVER_INTERACTION)
-        @ClientScope
-        static Scheduler provideServerInteractionScheduler(@Named(NamedExecutors.SERVER_INTERACTION) ExecutorService service) {
+        static Scheduler provideBluetoothInteractionScheduler(@Named(NamedExecutors.BLUETOOTH_INTERACTION) ExecutorService service) {
             return Schedulers.from(service);
         }
 
@@ -279,18 +263,14 @@ public interface ClientComponent {
         static ClientComponentFinalizer provideFinalizationCloseable(
                 @Named(NamedExecutors.BLUETOOTH_INTERACTION) final ExecutorService interactionExecutorService,
                 @Named(NamedSchedulers.BLUETOOTH_CALLBACKS) final Scheduler callbacksScheduler,
-                @Named(NamedExecutors.CONNECTION_QUEUE) final ExecutorService connectionQueueExecutorService,
-                @Named(NamedExecutors.SERVER_INTERACTION) final ExecutorService serverInteractionExecutor,
-                @Named(NamedSchedulers.SERVER_INTERACTION) final Scheduler serverInteractionScheduler
+                @Named(NamedExecutors.CONNECTION_QUEUE) final ExecutorService connectionQueueExecutorService
         ) {
             return new ClientComponentFinalizer() {
                 @Override
                 public void onFinalize() {
                     interactionExecutorService.shutdown();
-                    serverInteractionExecutor.shutdown();
                     callbacksScheduler.shutdown();
                     connectionQueueExecutorService.shutdown();
-                    serverInteractionScheduler.shutdown();
                 }
             };
         }
