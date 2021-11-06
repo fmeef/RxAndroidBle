@@ -173,13 +173,13 @@ public class RxBleServerConnectionImpl implements RxBleServerConnectionInternal,
                                                  final int offset,
                                                  final byte[] value) {
             super.onCharacteristicWriteRequest(device, requestId, characteristic, preparedWrite, responseNeeded, offset, value);
-            RxBleLog.d("onCharacteristicWriteRequest characteristic: " + characteristic.getUuid()
+            RxBleLog.v("onCharacteristicWriteRequest characteristic: " + characteristic.getUuid()
                     + " device: " + device.getAddress());
 
             final RxBleDevice rxBleDevice = deviceProvider.getBleDevice(device.getAddress());
 
             if (preparedWrite) {
-                RxBleLog.d("characteristic long write");
+                RxBleLog.v("characteristic long write");
                 RxBleServerConnectionInternal.Output<byte[]> longWriteOuput
                         = openLongWriteCharacteristicOutput(requestId, characteristic);
                 longWriteOuput.valueRelay.accept(value);
@@ -201,7 +201,7 @@ public class RxBleServerConnectionImpl implements RxBleServerConnectionInternal,
                                             final int offset,
                                             final BluetoothGattDescriptor descriptor) {
             super.onDescriptorReadRequest(device, requestId, offset, descriptor);
-            RxBleLog.d("onDescriptorReadRequest: " + descriptor.getUuid());
+            RxBleLog.v("onDescriptorReadRequest: " + descriptor.getUuid());
 
             final RxBleDevice rxBleDevice = deviceProvider.getBleDevice(device.getAddress());
 
@@ -236,11 +236,11 @@ public class RxBleServerConnectionImpl implements RxBleServerConnectionInternal,
                                              final int offset,
                                              final byte[] value) {
             super.onDescriptorWriteRequest(device, requestId, descriptor, preparedWrite, responseNeeded, offset, value);
-            RxBleLog.d("onDescriptorWriteRequest: " + descriptor.getUuid());
+            RxBleLog.v("onDescriptorWriteRequest: " + descriptor.getUuid());
 
             final RxBleDevice rxBleDevice = deviceProvider.getBleDevice(device.getAddress());
             if (preparedWrite) {
-                RxBleLog.d("onDescriptorWriteRequest: invoking preparedWrite");
+                RxBleLog.v("onDescriptorWriteRequest: invoking preparedWrite");
                 RxBleServerConnectionInternal.Output<byte[]> longWriteOutput
                         = openLongWriteDescriptorOutput(requestId, descriptor);
                 longWriteOutput.valueRelay.accept(value); //TODO: offset?
@@ -280,7 +280,7 @@ public class RxBleServerConnectionImpl implements RxBleServerConnectionInternal,
             super.onNotificationSent(device, status);
 
             if (getNotificationPublishRelay().hasObservers()) {
-                RxBleLog.d("onNotificationSent: " + device.getAddress() + " " + status);
+                RxBleLog.v("onNotificationSent: " + device.getAddress() + " " + status);
                 getNotificationPublishRelay().valueRelay.accept(
                         status
                 );
@@ -609,12 +609,12 @@ public class RxBleServerConnectionImpl implements RxBleServerConnectionInternal,
             public Completable call() {
                 if (isIndication) {
                     if (serverState.getIndications(characteristic.getUuid())) {
-                        RxBleLog.d("immediate start indication");
+                        RxBleLog.v("immediate start indication");
                         return Completable.complete();
                     }
                 } else {
                     if (serverState.getNotifications(characteristic.getUuid())) {
-                        RxBleLog.d("immediate start notification");
+                        RxBleLog.v("immediate start notification");
                         return Completable.complete();
                     }
                 }
@@ -679,7 +679,7 @@ public class RxBleServerConnectionImpl implements RxBleServerConnectionInternal,
         return Single.fromCallable(new Callable<Completable>() {
             @Override
             public Completable call() {
-                RxBleLog.d("setupNotifictions: " + characteristic.getUuid());
+                RxBleLog.v("setupNotifictions: " + characteristic.getUuid());
                 final BluetoothGattDescriptor clientconfig = characteristic.getDescriptor(RxBleClient.CLIENT_CONFIG);
                 if (clientconfig == null) {
                     return Completable.error(new BleGattServerException(
@@ -698,7 +698,7 @@ public class RxBleServerConnectionImpl implements RxBleServerConnectionInternal,
                         .concatMap(new Function<byte[], Publisher<Integer>>() {
                             @Override
                             public Publisher<Integer> apply(@io.reactivex.annotations.NonNull final byte[] bytes) {
-                                RxBleLog.d("processing bytes length: " + bytes.length);
+                                RxBleLog.v("processing bytes length: " + bytes.length);
                                 final NotifyCharacteristicChangedOperation operation
                                         = operationsProvider.provideNotifyOperation(
                                         characteristic,
@@ -706,14 +706,14 @@ public class RxBleServerConnectionImpl implements RxBleServerConnectionInternal,
                                         isIndication,
                                         device
                                 );
-                                RxBleLog.d("queueing notification/indication");
+                                RxBleLog.v("queueing notification/indication");
                                 return operationQueue.queue(operation).toFlowable(BackpressureStrategy.BUFFER);
                             }
                         })
                         .flatMap(new Function<Integer, Publisher<Integer>>() {
                             @Override
                             public Publisher<Integer> apply(@io.reactivex.annotations.NonNull Integer integer) {
-                                RxBleLog.d("notification result: " + integer);
+                                RxBleLog.v("notification result: " + integer);
                                 if (integer != BluetoothGatt.GATT_SUCCESS) {
                                     return Flowable.error(new BleGattServerException(
                                             BleGattServerOperationType.NOTIFICATION_SENT,
@@ -728,7 +728,7 @@ public class RxBleServerConnectionImpl implements RxBleServerConnectionInternal,
                         .doOnComplete(new Action() {
                             @Override
                             public void run() {
-                                RxBleLog.d("notifications completed!");
+                                RxBleLog.v("notifications completed!");
                             }
                         });
             }
