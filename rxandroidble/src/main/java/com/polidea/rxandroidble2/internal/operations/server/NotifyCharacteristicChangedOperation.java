@@ -1,9 +1,14 @@
 package com.polidea.rxandroidble2.internal.operations.server;
 
+import android.bluetooth.BluetoothGatt;
 import android.bluetooth.BluetoothGattCharacteristic;
 import android.bluetooth.BluetoothGattServer;
 import android.os.DeadObjectException;
+import android.util.Pair;
 
+import androidx.annotation.NonNull;
+
+import com.polidea.rxandroidble2.RxBleConnection;
 import com.polidea.rxandroidble2.RxBleDevice;
 import com.polidea.rxandroidble2.exceptions.BleException;
 import com.polidea.rxandroidble2.exceptions.BleGattServerException;
@@ -15,9 +20,11 @@ import com.polidea.rxandroidble2.internal.serialization.QueueReleaseInterface;
 import com.polidea.rxandroidble2.internal.server.RxBleServerConnectionInternal;
 import com.polidea.rxandroidble2.internal.util.QueueReleasingEmitterWrapper;
 
+import io.reactivex.Completable;
 import io.reactivex.ObservableEmitter;
 import io.reactivex.Single;
 import io.reactivex.functions.Action;
+import io.reactivex.functions.Predicate;
 
 public class NotifyCharacteristicChangedOperation extends QueueOperation<Integer> {
 
@@ -72,19 +79,20 @@ public class NotifyCharacteristicChangedOperation extends QueueOperation<Integer
             RxBleLog.d("running notifycharacteristic notification/indication operation device: ");
 
 
+
             getCompleted()
-                    .timeout(
-                            timeoutConfiguration.timeout,
-                            timeoutConfiguration.timeoutTimeUnit,
-                            timeoutConfiguration.timeoutScheduler
-                    )
                     .toObservable()
                     .doOnComplete(new Action() {
                         @Override
-                        public void run() throws Exception {
+                        public void run() {
                             RxBleLog.d("completed notifycharacteristic operation");
                         }
                     })
+                    .subscribe(emitterWrapper);
+
+            getOnDisconnect()
+                    .toSingleDefault(BluetoothGatt.GATT_FAILURE)
+                    .toObservable()
                     .subscribe(emitterWrapper);
 
             characteristic.setValue(value);
@@ -95,6 +103,18 @@ public class NotifyCharacteristicChangedOperation extends QueueOperation<Integer
                 ));
             }
         }
+    }
+
+    private Completable getOnDisconnect() {
+        return connection.getOnConnectionStateChange()
+                .takeUntil(new Predicate<Pair<RxBleDevice, RxBleConnection.RxBleConnectionState>>() {
+                    @Override
+                    public boolean test(@NonNull Pair<RxBleDevice, RxBleConnection.RxBleConnectionState> pair) {
+                        return pair.second == RxBleConnection.RxBleConnectionState.DISCONNECTING
+                                || pair.second == RxBleConnection.RxBleConnectionState.DISCONNECTED;
+                    }
+                })
+                .ignoreElements();
     }
 
     private Single<Integer> getCompleted() {

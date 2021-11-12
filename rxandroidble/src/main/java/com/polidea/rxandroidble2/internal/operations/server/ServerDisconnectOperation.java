@@ -134,7 +134,8 @@ public class ServerDisconnectOperation extends QueueOperation<Void> {
                     .filter(new Predicate<Pair<RxBleDevice, RxBleConnection.RxBleConnectionState>>() {
                         @Override
                         public boolean test(Pair<RxBleDevice, RxBleConnection.RxBleConnectionState> pair) {
-                            return pair.first.equals(device) && pair.second == RxBleConnection.RxBleConnectionState.DISCONNECTED;
+                            return pair.first.getMacAddress().equals(device.getMacAddress())
+                                    && pair.second == RxBleConnection.RxBleConnectionState.DISCONNECTED;
                         }
                     })
                     .firstOrError()

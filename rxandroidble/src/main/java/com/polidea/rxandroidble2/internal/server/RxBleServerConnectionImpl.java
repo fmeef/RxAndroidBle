@@ -135,6 +135,9 @@ public class RxBleServerConnectionImpl implements RxBleServerConnectionInternal,
                 //TODO:
                 RxBleLog.e("GattServer state change failed %i", status);
             }
+            connectionStatePublishRelay.accept(new Pair<>(
+                    deviceProvider.getBleDevice(device.getAddress()), mapConnectionStateToRxBleConnectionStatus(newState)
+            ));
         }
 
         @Override
@@ -185,7 +188,7 @@ public class RxBleServerConnectionImpl implements RxBleServerConnectionInternal,
                         = openLongWriteCharacteristicOutput(requestId, characteristic);
 
                 if (responseNeeded) {
-                    server.get().sendResponse(device, requestId, BluetoothGatt.GATT_SUCCESS, 0, null);
+                    server.get().sendResponse(device, requestId, BluetoothGatt.GATT_SUCCESS, 0, new byte[0]);
                 }
 
                 longWriteOuput.valueRelay.accept(value);
@@ -703,6 +706,13 @@ public class RxBleServerConnectionImpl implements RxBleServerConnectionInternal,
                     ));
                 }
                 return notifications
+                        .takeWhile(new Predicate<byte[]>() {
+                            @Override
+                            public boolean test(@NonNull byte[] bytes) {
+                                return bluetoothManager.getConnectionState(device.getBluetoothDevice(), BluetoothProfile.GATT_SERVER)
+                                        == BluetoothProfile.STATE_CONNECTED;
+                            }
+                        })
                         .subscribeOn(connectionScheduler)
                         .delay(new Function<byte[], Publisher<byte[]>>() {
                             @Override
