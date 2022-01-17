@@ -1,7 +1,5 @@
 <resources>
     <string name="app_name">RxAndroidBle Sample Kotlin</string>
-    <string name="title_activity_scan">ScanActivity</string>
-    <string name="action_settings">Settings</string>
     <string name="button_start_scan">Start scan</string>
     <string name="button_stop_scan">Stop scan</string>
     <string name="mac_address">MAC: %s</string>
@@ -35,7 +33,6 @@
     <string name="title_set_mtu">Set MTU:</string>
     <string name="button_set">Set</string>
     <string name="button_connect_and_discover_services">Connect &amp; discover services</string>
-    <string name="button_run_custom">Run Custom</string>
     <string name="title_characteristic">Characteristic:</string>
     <string name="title_service">Service:</string>
 
