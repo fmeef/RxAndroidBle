@@ -1,7 +1,5 @@
 apply plugin: 'com.android.library'
 apply plugin: 'groovyx.android'
-apply from: rootProject.file('gradle/gradle-mvn-push.gradle')
-
 android {
     compileSdkVersion 31
 
