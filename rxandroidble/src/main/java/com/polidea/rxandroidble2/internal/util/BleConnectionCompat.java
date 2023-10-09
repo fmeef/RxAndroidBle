@@ -28,7 +28,12 @@ public class BleConnectionCompat {
         this.context = context;
     }
 
-    public BluetoothGatt connectGatt(BluetoothDevice remoteDevice, boolean autoConnect, BluetoothGattCallback bluetoothGattCallback) {
+    public BluetoothGatt connectGatt(
+            BluetoothDevice remoteDevice,
+            boolean autoConnect,
+            BluetoothGattCallback bluetoothGattCallback,
+            int phy
+    ) {
 
         if (remoteDevice == null) {
             return null;
@@ -42,7 +47,7 @@ public class BleConnectionCompat {
          * issue: https://android.googlesource.com/platform/frameworks/base/+/d35167adcaa40cb54df8e392379dfdfe98bcdba2%5E%21/#F0
           */
         if (Build.VERSION.SDK_INT >= 24 /* Build.VERSION_CODES.N */ || !autoConnect) {
-            return connectGattCompat(bluetoothGattCallback, remoteDevice, autoConnect);
+            return connectGattCompat(bluetoothGattCallback, remoteDevice, autoConnect, phy);
         }
 
         /**
@@ -57,14 +62,14 @@ public class BleConnectionCompat {
 
             if (iBluetoothGatt == null) {
                 RxBleLog.w("Couldn't get iBluetoothGatt object");
-                return connectGattCompat(bluetoothGattCallback, remoteDevice, true);
+                return connectGattCompat(bluetoothGattCallback, remoteDevice, true, phy);
             }
 
             BluetoothGatt bluetoothGatt = createBluetoothGatt(iBluetoothGatt, remoteDevice);
 
             if (bluetoothGatt == null) {
                 RxBleLog.w("Couldn't create BluetoothGatt object");
-                return connectGattCompat(bluetoothGattCallback, remoteDevice, true);
+                return connectGattCompat(bluetoothGattCallback, remoteDevice, true, phy);
             }
 
             boolean connectedSuccessfully = connectUsingReflection(bluetoothGatt, bluetoothGattCallback, true);
@@ -82,14 +87,20 @@ public class BleConnectionCompat {
                 | InstantiationException
                 | NoSuchFieldException exception) {
             RxBleLog.w(exception, "Error while trying to connect via reflection");
-            return connectGattCompat(bluetoothGattCallback, remoteDevice, true);
+            return connectGattCompat(bluetoothGattCallback, remoteDevice, true, phy);
         }
     }
 
-    private BluetoothGatt connectGattCompat(BluetoothGattCallback bluetoothGattCallback, BluetoothDevice device, boolean autoConnect) {
+    private BluetoothGatt connectGattCompat(
+            BluetoothGattCallback bluetoothGattCallback,
+            BluetoothDevice device,
+            boolean autoConnect,
+            int phy
+    ) {
         RxBleLog.v("Connecting without reflection");
-
-        if (Build.VERSION.SDK_INT >= 23 /* Build.VERSION_CODES.M */) {
+        if (Build.VERSION.SDK_INT >= 26) {
+            return device.connectGatt(context, autoConnect, bluetoothGattCallback, TRANSPORT_LE, phy);
+        } else if (Build.VERSION.SDK_INT >= 23 /* Build.VERSION_CODES.M */) {
             return device.connectGatt(context, autoConnect, bluetoothGattCallback, TRANSPORT_LE);
         } else {
             return device.connectGatt(context, autoConnect, bluetoothGattCallback);

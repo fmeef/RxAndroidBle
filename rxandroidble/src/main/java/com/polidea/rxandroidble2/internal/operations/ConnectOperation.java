@@ -35,6 +35,7 @@ import static com.polidea.rxandroidble2.RxBleConnection.RxBleConnectionState.CON
 import static com.polidea.rxandroidble2.RxBleConnection.RxBleConnectionState.CONNECTING;
 import static com.polidea.rxandroidble2.internal.DeviceModule.CONNECT_TIMEOUT;
 import static com.polidea.rxandroidble2.internal.connection.ConnectionComponent.NamedBooleans.AUTO_CONNECT;
+import static com.polidea.rxandroidble2.internal.connection.ConnectionComponent.NamedInts.PREFERRED_PHY;
 import static com.polidea.rxandroidble2.internal.util.DisposableUtil.disposableSingleObserverFromEmitter;
 
 public class ConnectOperation extends QueueOperation<BluetoothGatt> {
@@ -47,6 +48,8 @@ public class ConnectOperation extends QueueOperation<BluetoothGatt> {
     final boolean autoConnect;
     final ConnectionStateChangeListener connectionStateChangedAction;
 
+    final int preferredPhy;
+
     @Inject
     ConnectOperation(
             BluetoothDevice bluetoothDevice,
@@ -55,7 +58,8 @@ public class ConnectOperation extends QueueOperation<BluetoothGatt> {
             BluetoothGattProvider bluetoothGattProvider,
             @Named(CONNECT_TIMEOUT) TimeoutConfiguration connectTimeout,
             @Named(AUTO_CONNECT) boolean autoConnect,
-            ConnectionStateChangeListener connectionStateChangedAction) {
+            ConnectionStateChangeListener connectionStateChangedAction,
+            @Named(PREFERRED_PHY) int preferredPhy) {
         this.bluetoothDevice = bluetoothDevice;
         this.connectionCompat = connectionCompat;
         this.rxBleGattCallback = rxBleGattCallback;
@@ -63,6 +67,7 @@ public class ConnectOperation extends QueueOperation<BluetoothGatt> {
         this.connectTimeout = connectTimeout;
         this.autoConnect = autoConnect;
         this.connectionStateChangedAction = connectionStateChangedAction;
+        this.preferredPhy = preferredPhy;
     }
 
     @Override
@@ -151,9 +156,8 @@ public class ConnectOperation extends QueueOperation<BluetoothGatt> {
                         * must be established first before starting the connection.
                         * https://github.com/Polidea/RxAndroidBle/issues/178
                         * */
-
                 final BluetoothGatt bluetoothGatt = connectionCompat
-                        .connectGatt(bluetoothDevice, autoConnect, rxBleGattCallback.getBluetoothGattCallback());
+                        .connectGatt(bluetoothDevice, autoConnect, rxBleGattCallback.getBluetoothGattCallback(), preferredPhy);
                         /*
                         * Update BluetoothGatt when connection is initiated. It is not certain
                         * if this or RxBleGattCallback.onConnectionStateChange will be first.

@@ -21,6 +21,8 @@ public interface ConnectionComponent {
     class NamedInts {
         static final String GATT_WRITE_MTU_OVERHEAD = "GATT_WRITE_MTU_OVERHEAD";
         static final String GATT_MTU_MINIMUM = "GATT_MTU_MINIMUM";
+
+        public static final String PREFERRED_PHY = "PREFERRED_PHY";
         private NamedInts() { }
     }
 
@@ -32,6 +34,9 @@ public interface ConnectionComponent {
 
         @BindsInstance
         Builder suppressOperationChecks(@Named(NamedBooleans.SUPPRESS_OPERATION_CHECKS) boolean suppressOperationChecks);
+
+        @BindsInstance
+        Builder preferredPhy(@Named(NamedInts.PREFERRED_PHY) int preferredPhy);
 
         @BindsInstance
         Builder operationTimeout(Timeout operationTimeout);

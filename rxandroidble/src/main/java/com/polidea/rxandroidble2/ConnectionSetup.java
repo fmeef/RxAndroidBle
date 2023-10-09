@@ -1,5 +1,6 @@
 package com.polidea.rxandroidble2;
 
+import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothGattCallback;
 import android.content.Context;
 
@@ -33,10 +34,16 @@ public class ConnectionSetup {
      */
     public final Timeout operationTimeout;
 
-    ConnectionSetup(boolean autoConnect, boolean suppressOperationCheck, Timeout operationTimeout) {
+    /**
+     * PHY to attempt connection on.
+     */
+    public final int preferredPhy;
+
+    ConnectionSetup(boolean autoConnect, boolean suppressOperationCheck, Timeout operationTimeout, int preferredPhy) {
         this.autoConnect = autoConnect;
         this.suppressOperationCheck = suppressOperationCheck;
         this.operationTimeout = operationTimeout;
+        this.preferredPhy = preferredPhy;
     }
 
     public static class Builder {
@@ -44,6 +51,8 @@ public class ConnectionSetup {
         private boolean autoConnect = false;
         private boolean suppressOperationCheck = false;
         private Timeout operationTimeout = new Timeout(DEFAULT_OPERATION_TIMEOUT, TimeUnit.SECONDS);
+
+        private int preferredPhy = 0;
 
 
         /**
@@ -61,6 +70,17 @@ public class ConnectionSetup {
          */
         public Builder setAutoConnect(boolean autoConnect) {
             this.autoConnect = autoConnect;
+            return this;
+        }
+
+        /**
+         * Set the preferred PHY to attempt connection on. This defaults to {@link BluetoothDevice.PHY_LE_1M}
+         * Setting the PHY requires Api 26 or higher.
+         * @param preferredPhy phy to attempt connection with
+         * @return this builder instance
+         */
+        public Builder setPreferredPhy(int preferredPhy) {
+            this.preferredPhy = preferredPhy;
             return this;
         }
 
@@ -88,7 +108,7 @@ public class ConnectionSetup {
         }
 
         public ConnectionSetup build() {
-            return new ConnectionSetup(autoConnect, suppressOperationCheck, operationTimeout);
+            return new ConnectionSetup(autoConnect, suppressOperationCheck, operationTimeout, preferredPhy);
         }
     }
 }
