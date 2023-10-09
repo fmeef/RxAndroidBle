@@ -32,6 +32,7 @@ class ConnectorImplTest extends Specification {
         mockConnectionComponentBuilder.autoConnect(_) >> mockConnectionComponentBuilder
         mockConnectionComponentBuilder.suppressOperationChecks(_) >> mockConnectionComponentBuilder
         mockConnectionComponentBuilder.operationTimeout(_) >> mockConnectionComponentBuilder
+        mockConnectionComponentBuilder.preferredPhy(_) >> mockConnectionComponentBuilder
         mockConnectionComponentBuilder.build() >> mockConnectionComponent
         mockConnectionComponent.connectOperation() >> mockConnect
         mockConnectionComponent.gattCallback() >> mockCallback

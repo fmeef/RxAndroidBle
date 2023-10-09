@@ -52,7 +52,7 @@ public class OperationConnectTest extends Specification {
 
     def prepareObjectUnderTest(boolean autoConnect) {
         objectUnderTest = new ConnectOperation(mockBluetoothDevice, mockBleConnectionCompat, mockCallback,
-                mockBluetoothGattProvider, timeoutConfiguration, autoConnect, mockConnectionStateChangeListener)
+                mockBluetoothGattProvider, timeoutConfiguration, autoConnect, mockConnectionStateChangeListener, 0)
     }
 
     def "asObservable() should not emit onNext before connection is established"() {
