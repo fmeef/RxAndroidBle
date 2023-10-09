@@ -74,7 +74,7 @@ public class ConnectionSetup {
         }
 
         /**
-         * Set the preferred PHY to attempt connection on. This defaults to {@link BluetoothDevice.PHY_LE_1M}
+         * Set the preferred PHY to attempt connection on. This defaults to {@link BluetoothDevice#PHY_LE_1M}
          * Setting the PHY requires Api 26 or higher.
          * @param preferredPhy phy to attempt connection with
          * @return this builder instance
