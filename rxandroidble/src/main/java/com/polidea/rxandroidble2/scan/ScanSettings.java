@@ -1,6 +1,7 @@
 package com.polidea.rxandroidble2.scan;
 
 
+import android.bluetooth.BluetoothDevice;
 import android.bluetooth.le.BluetoothLeScanner;
 import android.os.Parcel;
 import android.os.Parcelable;
@@ -142,6 +143,8 @@ public class ScanSettings implements Parcelable, ExternalScanSettingsExtension<S
 
     private boolean mShouldCheckLocationProviderState;
 
+    private int mPreferredPhy;
+
     @ScanMode
     public int getScanMode() {
         return mScanMode;
@@ -166,6 +169,10 @@ public class ScanSettings implements Parcelable, ExternalScanSettingsExtension<S
         return mLegacy;
     }
 
+    public int getPreferredPhy() {
+        return mPreferredPhy;
+    }
+
     /**
      * Returns report delay timestamp based on the device clock.
      */
@@ -180,7 +187,7 @@ public class ScanSettings implements Parcelable, ExternalScanSettingsExtension<S
 
     ScanSettings(int scanMode, int callbackType,
                  long reportDelayMillis, int matchMode, int numOfMatchesPerFilter, boolean legacy,
-                 boolean shouldCheckLocationServicesState) {
+                 boolean shouldCheckLocationServicesState, int preferredPhy) {
         mScanMode = scanMode;
         mCallbackType = callbackType;
         mReportDelayMillis = reportDelayMillis;
@@ -188,6 +195,7 @@ public class ScanSettings implements Parcelable, ExternalScanSettingsExtension<S
         mMatchMode = matchMode;
         mLegacy = legacy;
         mShouldCheckLocationProviderState = shouldCheckLocationServicesState;
+        mPreferredPhy = preferredPhy;
     }
 
     ScanSettings(Parcel in) {
@@ -202,6 +210,7 @@ public class ScanSettings implements Parcelable, ExternalScanSettingsExtension<S
         mNumOfMatchesPerFilter = in.readInt();
         mLegacy = in.readInt() != 0;
         mShouldCheckLocationProviderState = in.readInt() != 0;
+        mPreferredPhy = in.readInt();
     }
 
     @Override
@@ -213,6 +222,7 @@ public class ScanSettings implements Parcelable, ExternalScanSettingsExtension<S
         dest.writeInt(mNumOfMatchesPerFilter);
         dest.writeInt(mLegacy ? 1 : 0);
         dest.writeInt(mShouldCheckLocationProviderState ? 1 : 0);
+        dest.writeInt(mPreferredPhy);
     }
 
     @Override
@@ -242,7 +252,8 @@ public class ScanSettings implements Parcelable, ExternalScanSettingsExtension<S
                 this.mMatchMode,
                 this.mNumOfMatchesPerFilter,
                 this.mLegacy,
-                this.mShouldCheckLocationProviderState
+                this.mShouldCheckLocationProviderState,
+                this.mPreferredPhy
         );
     }
 
@@ -258,6 +269,8 @@ public class ScanSettings implements Parcelable, ExternalScanSettingsExtension<S
         private int mNumOfMatchesPerFilter = MATCH_NUM_MAX_ADVERTISEMENT;
         private boolean mLegacy = true;
         private boolean mShouldCheckLocationProviderState = true;
+        private int mPreferredPhy = 0;
+
 
         /**
          * Set scan mode for Bluetooth LE scan.
@@ -272,6 +285,17 @@ public class ScanSettings implements Parcelable, ExternalScanSettingsExtension<S
                 throw new IllegalArgumentException("invalid scan mode " + scanMode);
             }
             mScanMode = scanMode;
+            return this;
+        }
+
+        /**
+         * Set the preferred PHY to attempt connection on. This defaults to {@link BluetoothDevice#PHY_LE_1M}
+         * Setting the PHY requires Api 26 or higher.
+         * @param preferredPhy phy to attempt connection with
+         * @return this builder instance
+         */
+        public ScanSettings.Builder setPreferredPhy(int preferredPhy) {
+            mPreferredPhy = preferredPhy;
             return this;
         }
 
@@ -373,7 +397,8 @@ public class ScanSettings implements Parcelable, ExternalScanSettingsExtension<S
          */
         public ScanSettings build() {
             return new ScanSettings(mScanMode, mCallbackType,
-                    mReportDelayMillis, mMatchMode, mNumOfMatchesPerFilter, mLegacy, mShouldCheckLocationProviderState);
+                    mReportDelayMillis, mMatchMode, mNumOfMatchesPerFilter, mLegacy, mShouldCheckLocationProviderState,
+                    mPreferredPhy);
         }
     }
 }

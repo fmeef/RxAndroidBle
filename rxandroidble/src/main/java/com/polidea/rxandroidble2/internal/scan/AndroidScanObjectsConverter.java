@@ -32,6 +32,7 @@ public class AndroidScanObjectsConverter {
             setMarshmallowSettings(scanSettings, builder);
             if (deviceSdk >= 26 /* Build.VERSION_CODES.O */) {
                 builder.setLegacy(scanSettings.getLegacy());
+                builder.setPhy(scanSettings.getPreferredPhy());
             }
         }
         return builder
